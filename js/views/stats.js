@@ -9,11 +9,17 @@ import { page, section, swatch, linkRow, emptyState } from './common.js';
 
 const pct = (x) => (x == null ? '–' : `${Math.round(x * 100)}%`);
 
-function tabs(current) {
+function tabs(ctx, current) {
+  const tab = (hash, key, label) => el('a', {
+    class: 'seg tab', href: hash, 'aria-current': current === key ? 'page' : null,
+    onclick: (e) => {
+      e.preventDefault();
+      ctx.replace(hash);
+    },
+  }, label);
   return el('nav', { class: 'segmented tabs', 'aria-label': 'Stats sections' },
-    el('a', { class: 'seg', href: '#/stats', 'aria-current': current === 'stats' ? 'page' : null, style: { display: 'inline-grid', placeItems: 'center', textDecoration: 'none' } }, 'Overview'),
-    el('a', { class: 'seg', href: '#/history', 'aria-current': current === 'history' ? 'page' : null, style: { display: 'inline-grid', placeItems: 'center', textDecoration: 'none' } }, 'History'),
-  );
+    tab('#/stats', 'stats', 'Overview'),
+    tab('#/history', 'history', 'History'));
 }
 
 function stat(label, value, unit, note) {
@@ -72,7 +78,7 @@ export function statsView(app, ctx) {
 
   if (!sessions.length) {
     const root = page(ctx, { title: 'Stats', parent: '#/' },
-      tabs('stats'),
+      tabs(ctx, 'stats'),
       el('div', { class: 'card', style: { marginTop: '16px' } },
         emptyState('No sessions yet', 'Complete a block and your stats start here. A day counts toward your streak once any block is done.')),
       consistency,
@@ -116,7 +122,7 @@ export function statsView(app, ctx) {
     : el('div', { class: 'card' }, emptyState('Nothing stands out yet', 'Items show up here once they have at least two ratings.'));
 
   const root = page(ctx, { title: 'Stats', parent: '#/' },
-    tabs('stats'),
+    tabs(ctx, 'stats'),
     consistency,
     section('Totals',
       el('div', { class: 'stat-grid' },
@@ -209,7 +215,7 @@ export function historyView(app, ctx) {
         [fmtDuration(s.total_active_seconds), `${done}/${s.tiles.length} blocks`, avg == null ? null : `★ ${fmtRating(avg)}`].filter(Boolean).join(' · '));
     }))
     : el('div', { class: 'card' }, emptyState('No sessions yet', 'Finished and ended sessions are listed here.'));
-  const root = page(ctx, { title: 'Stats', parent: '#/' }, tabs('history'), section(null, list));
+  const root = page(ctx, { title: 'Stats', parent: '#/' }, tabs(ctx, 'history'), section(null, list));
   return { root, title: 'History' };
 }
 

@@ -72,35 +72,71 @@ export function playChime() {
 }
 
 // ---- scheduled chime for the running block ----
+//
+// The audio clock stops while iOS suspends audio (screen locked, app in the
+// background), so a chime scheduled before a suspension would ring late after
+// it. `drift` compares the audio clock with the wall clock to catch that.
 
-let scheduled = null; // { at (epoch ms), nodes }
+let scheduled = null; // { at: epoch ms, ctxTime, nodes }
+let rang = null; // `at` of the last scheduled chime that actually started
+
+function drift() {
+  if (!scheduled || !ctx) return Infinity;
+  return Math.abs(ctx.currentTime + (scheduled.at - Date.now()) / 1000 - scheduled.ctxTime);
+}
+
+function started() {
+  return !!scheduled && !!ctx && ctx.state === 'running' && ctx.currentTime >= scheduled.ctxTime - 0.02;
+}
 
 /** Schedule the chime for wall-clock time `at`. Replaces any earlier schedule. */
 export function scheduleChime(at) {
-  if (scheduled && scheduled.at === at) return;
+  if (scheduled && scheduled.at === at && audioRunning() && drift() < 0.25) return;
   cancelChime();
   const c = context();
-  if (!c || c.state !== 'running') return;
+  if (!c) return;
+  if (c.state !== 'running') {
+    // Resuming is asynchronous; try again once audio is running.
+    c.resume().then(() => {
+      if (!scheduled && c.state === 'running') scheduleChime(at);
+    }).catch(() => {});
+    return;
+  }
   const delay = (at - Date.now()) / 1000;
   if (delay < 0.05) return;
-  scheduled = { at, nodes: chimeAt(c.currentTime + delay) };
+  const ctxTime = c.currentTime + delay;
+  scheduled = { at, ctxTime, nodes: chimeAt(ctxTime) };
 }
 
+/**
+ * Drop the scheduled chime. One that has already started is left to ring out
+ * (and remembered, so it isn't played twice); one still waiting is silenced,
+ * which also stops a chime the suspended audio clock would play late.
+ */
 export function cancelChime() {
   if (!scheduled) return;
-  for (const n of scheduled.nodes) {
-    try {
-      n.stop();
-    } catch {
-      /* already stopped */
+  if (started()) {
+    rang = scheduled.at;
+  } else {
+    for (const n of scheduled.nodes) {
+      try {
+        n.stop();
+      } catch {
+        /* already stopped */
+      }
     }
   }
   scheduled = null;
 }
 
-/** True if the chime for this time-up moment was already scheduled on the audio clock. */
+/** True if the chime for this time-up moment rang (or is ringing) from the audio clock. */
 export function chimeWasScheduledFor(at) {
-  return !!scheduled && scheduled.at === at && audioRunning();
+  return rang === at || (!!scheduled && scheduled.at === at && started());
+}
+
+/** Try to resume audio after the app comes back (iOS may still need a tap). */
+export function resumeAudio() {
+  if (ctx && ctx.state !== 'running') ctx.resume().catch(() => {});
 }
 
 export function vibrate() {

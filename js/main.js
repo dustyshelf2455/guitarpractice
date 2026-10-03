@@ -5,7 +5,7 @@ import { openStore, requestPersistence } from './store.js';
 import { TILE_MS, tileElapsed, sessionElapsed } from './engine.js';
 import { el } from './util.js';
 import {
-  unlockAudio, playChime, vibrate, scheduleChime, cancelChime, chimeWasScheduledFor, metronome,
+  unlockAudio, resumeAudio, playChime, vibrate, scheduleChime, cancelChime, chimeWasScheduledFor, metronome,
 } from './audio.js';
 import { setWakeLock } from './wakelock.js';
 import { sessionView } from './views/session.js';
@@ -37,10 +37,13 @@ const ctx = {
    *  phone's back gesture stays in step), otherwise replace this entry. */
   back: (parent = '#/') => {
     if (navStack.length > 1 && navStack[navStack.length - 2] === parent) history.back();
-    else {
-      replacing = true;
-      location.replace(parent);
-    }
+    else ctx.replace(parent);
+  },
+  /** Switch screens without adding a history entry (tabs). */
+  replace: (hash) => {
+    if (location.hash === hash) return;
+    replacing = true;
+    location.replace(hash);
   },
   openMetronome: () => openMetronomeSheet(app, { onChange: syncSideEffects }),
   announce,
@@ -154,10 +157,14 @@ async function frame() {
   scheduleFrame();
 }
 
+// Returning to the app (or the 30 s check): settle timers and roll the day over.
+// Only the session screen refreshes here; other screens rebuild only when data
+// actually changed (via the app's change event), so typing is never interrupted.
 async function catchUp() {
+  resumeAudio();
   const events = await app.refresh();
   handleEvents(events);
-  rerender();
+  if (view && view.update) view.update();
   syncSideEffects();
 }
 
@@ -195,19 +202,24 @@ async function boot() {
   });
 
   window.addEventListener('hashchange', () => {
+    // A back gesture shouldn't leave a sheet floating over the new screen.
+    for (const d of document.querySelectorAll('dialog[open]')) d.close();
     const hash = location.hash || '#/';
     if (replacing) navStack[navStack.length - 1] = hash;
     else if (navStack[navStack.length - 2] === hash) navStack.pop();
     else navStack.push(hash);
     replacing = false;
     render();
+    syncSideEffects();
     window.scrollTo(0, 0);
   });
 
   // Unlock audio on every gesture until it's running (iOS needs a gesture each time it suspends).
+  // iOS only counts some events as activation for audio, so listen to several.
   const unlock = () => unlockAudio();
-  window.addEventListener('pointerdown', unlock, { capture: true, passive: true });
-  window.addEventListener('keydown', unlock, { capture: true });
+  for (const type of ['pointerdown', 'touchend', 'click', 'keydown']) {
+    window.addEventListener(type, unlock, { capture: true, passive: true });
+  }
 
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') catchUp();

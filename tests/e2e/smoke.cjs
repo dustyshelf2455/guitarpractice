@@ -147,6 +147,33 @@ function check(cond, msg) {
   await page.waitForSelector('.page-title');
   await shot('12-subtype-editor');
 
+  // A full 12-block session from a fresh plan, with a reload halfway through.
+  await page.goto(BASE);
+  await page.waitForSelector('[data-mode="done"]');
+  await page.locator('.master-btn').click(); // New
+  await page.waitForSelector('[data-mode="plan"]');
+  for (let i = 0; i < 12; i++) {
+    await tap(i);
+    await stateIs(i, 'running');
+    await page.clock.runFor(5 * MIN);
+    if (i === 6) {
+      await page.reload();
+      await page.waitForSelector('.tile[data-state]');
+    }
+    await stateIs(i, 'timeup');
+    await tap(i);
+    await page.waitForSelector('dialog.rating-sheet[open]');
+    await page.locator('dialog.rating-sheet .star').nth(i % 5).click();
+    await page.waitForSelector('dialog.rating-sheet', { state: 'detached' });
+  }
+  check((await text(page.locator('.done-title'), 'Session complete')) === 'Session complete', 'full session ends complete');
+  const last = await page.evaluate(() => {
+    const s = window.timebox.app.doneSession;
+    return { secs: s.total_active_seconds, rated: s.tiles.filter((t) => t.rating).length, status: s.status };
+  });
+  check(last.secs === 3600 && last.rated === 12 && last.status === 'complete', `exactly 60:00 logged, 12 ratings (${JSON.stringify(last)})`);
+  await shot('13-full-session-done');
+
   check(errors.length === 0, `no console errors${errors.length ? `: ${errors.join(' | ')}` : ''}`);
   await browser.close();
   console.log(failures ? `\n${failures} check(s) failed` : '\nall checks passed');

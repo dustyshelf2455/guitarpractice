@@ -452,6 +452,7 @@ select.input { appearance: none; padding-right: 34px;
 .page-head .icon-btn { color: var(--text); }
 .page-intro { color: var(--text-2); margin-top: 4px; }
 .tabs { margin: 8px 0 4px; }
+.tab { display: inline-grid; place-items: center; text-decoration: none; }
 
 .section { margin-top: 28px; }
 .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; }

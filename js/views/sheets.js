@@ -1,0 +1,131 @@
+// Bottom sheets built on <dialog>: rating, confirm, and a generic container.
+
+import { el, icon, fmtDuration } from '../util.js';
+
+/**
+ * Open a modal bottom sheet. Tapping the backdrop or pressing Escape dismisses it.
+ * Returns { dialog, body, close(value) }; onClose(value) runs once when it closes
+ * (value is undefined when dismissed).
+ */
+export function openSheet({ title, label, className = '', onClose, content = [] }) {
+  const titleId = `sheet-title-${Math.random().toString(36).slice(2, 8)}`;
+  const body = el('div', { class: 'sheet-body' }, content);
+  const dialog = el('dialog', {
+    class: `sheet ${className}`.trim(),
+    'aria-labelledby': title ? titleId : null,
+    'aria-label': title ? null : label,
+  },
+  el('div', { class: 'sheet-panel' },
+    el('div', { class: 'sheet-grip', 'aria-hidden': 'true' }),
+    title ? el('h2', { class: 'sheet-title', id: titleId, text: title }) : null,
+    body,
+  ));
+  let result;
+  let closed = false;
+  const close = (value) => {
+    if (closed) return;
+    result = value;
+    dialog.close();
+  };
+  dialog.addEventListener('click', (e) => {
+    if (e.target === dialog) close(undefined); // backdrop
+  });
+  dialog.addEventListener('close', () => {
+    if (closed) return;
+    closed = true;
+    dialog.remove();
+    if (onClose) onClose(result);
+  });
+  document.body.append(dialog);
+  dialog.showModal();
+  return { dialog, body, close };
+}
+
+const RATING_WORDS = ['', 'Rough', 'Shaky', 'OK', 'Good', 'Nailed it'];
+
+/** Star rating sheet. onRate(n) on a star; onDismiss() if closed without choosing. */
+export function ratingSheet({ tile, onRate, onDismiss }) {
+  const current = tile.rating;
+  const meta = [tile.subtype_name, tile.area_name].filter(Boolean).join(' · ');
+  const caption = el('div', { class: 'stars-scale', 'aria-hidden': 'true' },
+    el('span', { text: RATING_WORDS[1] }), el('span', { text: RATING_WORDS[5] }));
+  const stars = el('div', { class: 'stars', role: 'radiogroup', 'aria-label': 'Rating, 1 to 5 stars' });
+  let sheet;
+  for (let n = 1; n <= 5; n++) {
+    const btn = el('button', {
+      class: `star${current && n <= current ? ' on' : ''}`,
+      type: 'button',
+      role: 'radio',
+      'aria-checked': String(current === n),
+      'aria-label': `${n} star${n > 1 ? 's' : ''}, ${RATING_WORDS[n]}`,
+      onclick: () => sheet.close(n),
+      onpointerenter: (e) => e.pointerType === 'mouse' && preview(n),
+      onpointerleave: () => preview(current || 0),
+    }, icon('star'));
+    stars.append(btn);
+  }
+  function preview(n) {
+    [...stars.children].forEach((b, i) => b.classList.toggle('on', i < n));
+  }
+  sheet = openSheet({
+    title: current ? 'Change rating' : 'How did it go?',
+    className: 'rating-sheet',
+    content: [
+      el('p', { class: 'rating-item', text: tile.item_text }),
+      el('p', { class: 'rating-meta', text: `${meta}${meta ? ' · ' : ''}${fmtDuration(tile.elapsed_seconds)}` }),
+      stars,
+      caption,
+      el('button', {
+        class: 'text-btn rating-skip',
+        type: 'button',
+        text: current ? 'Keep current rating' : 'Skip rating',
+        onclick: () => sheet.close(undefined),
+      }),
+    ],
+    onClose: (value) => (value ? onRate(value) : onDismiss && onDismiss()),
+  });
+  if (current) stars.children[current - 1].focus({ preventScroll: true });
+  return sheet;
+}
+
+/** Resolves true if confirmed. */
+export function confirmSheet({ title, body, confirmLabel = 'OK', cancelLabel = 'Cancel', danger = false }) {
+  return new Promise((resolve) => {
+    let sheet;
+    const confirm = el('button', {
+      class: `btn ${danger ? 'btn-danger' : 'btn-primary'}`,
+      type: 'button',
+      text: confirmLabel,
+      onclick: () => sheet.close(true),
+    });
+    sheet = openSheet({
+      title,
+      className: 'confirm-sheet',
+      content: [
+        ...(Array.isArray(body) ? body : [body]).map((b) => (typeof b === 'string' ? el('p', { text: b }) : b)),
+        el('div', { class: 'sheet-actions' },
+          el('button', { class: 'btn', type: 'button', text: cancelLabel, onclick: () => sheet.close(false) }),
+          confirm,
+        ),
+      ],
+      onClose: (v) => resolve(v === true),
+    });
+    confirm.focus({ preventScroll: true });
+  });
+}
+
+/** Brief, non-blocking message at the bottom of the screen. */
+export function toast(message) {
+  let host = document.querySelector('.toast-host');
+  if (!host) {
+    host = el('div', { class: 'toast-host', role: 'status', 'aria-live': 'polite' });
+    document.body.append(host);
+  }
+  const t = el('div', { class: 'toast', text: message });
+  host.append(t);
+  setTimeout(() => t.remove(), 3200);
+}
+
+export function iconButton(name, label, onclick, cls = '', props = {}) {
+  return el('button', { class: `icon-btn ${cls}`.trim(), type: 'button', 'aria-label': label, title: label, onclick, ...props }, icon(name));
+}

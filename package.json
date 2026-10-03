@@ -1,0 +1,10 @@
+{
+  "name": "timebox",
+  "private": true,
+  "description": "Timeboxed guitar practice tracker (PWA). No build step, no runtime dependencies.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test \"tests/*.test.js\"",
+    "serve": "npx --yes http-server -p 8080 -c-1 ."
+  }
+}

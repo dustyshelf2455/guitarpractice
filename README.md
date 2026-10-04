@@ -20,15 +20,15 @@ Install it rather than using it in a browser tab. Installed, it opens full scree
 
 | You do | It does |
 |---|---|
-| Tap a block | Starts its 5:00 countdown (the session clock starts too). Starting another block pauses this one. |
-| Tap the running block | Pauses it. Tap again to resume. |
-| **Pause / Resume** (top) | Pauses or resumes the whole session. |
+| Tap a block | Starts its 5:00 countdown and opens it **full screen**: the item, a big countdown ring, and Pause. Starting a block pauses any other running block. |
+| Tap the ring or **Pause** | Pauses the block. Tap again to resume. **Finish** appears while paused, to complete it early. |
+| **All blocks** (top left), or the back gesture | Returns to the grid. The block keeps running, and tapping it reopens full screen. |
+| **Pause / Resume** (top of grid) | Pauses or resumes the whole session. Resume reopens the block full screen. |
 | ⇄ on a block | Swaps in the next item from that block's list. Tap again to keep cycling. Only on blocks you haven't started. |
-| Block hits 0:00 | Chimes and vibrates (vibration is Android only). Tap it to complete it and rate it. |
-| **Finish** on a paused block | Completes it early. The actual time is recorded. |
+| Block hits 0:00 | Chimes and vibrates (vibration is Android only). Tap **Finish and rate**, choose stars, and you're back at the grid. |
 | **End** (bottom) | Ends the session. It is saved as partial if not every block is done, and discarded if none are. |
 | 🔗 on a block | Opens that item's link (backing track, tab, video). |
-| Metronome (bottom) | Click track with accents. It offers the tempo from the current block, e.g. "70 bpm". It keeps playing when the sheet is closed. |
+| Metronome (bottom, or top right when full screen) | Click track with accents. It offers the tempo from the current block, e.g. "70 bpm". It keeps playing when the sheet is closed. |
 
 **Which item comes up:** each block has a subtype (Warm-up, Scales, Songs, and so on). Within a subtype, the item you completed longest ago comes first, and items you've never done come before everything. Only completed blocks count, so anything you skip stays next in line. Today's plan is fixed the first time you open the app each day.
 

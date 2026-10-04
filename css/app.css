@@ -319,6 +319,78 @@ h1, h2, h3, p { margin: 0; }
   .clock { font-size: 2.25rem; }
 }
 
+/* ------------------------------------------------------------- focus view */
+
+.focus {
+  --area: var(--c-none);
+  position: fixed; inset: 0; z-index: 20;
+  display: flex; flex-direction: column;
+  background: var(--page);
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+.focus[data-color="0"] { --area: var(--c0); } .focus[data-color="1"] { --area: var(--c1); }
+.focus[data-color="2"] { --area: var(--c2); } .focus[data-color="3"] { --area: var(--c3); }
+.focus[data-color="4"] { --area: var(--c4); } .focus[data-color="5"] { --area: var(--c5); }
+.focus[data-color="6"] { --area: var(--c6); } .focus[data-color="7"] { --area: var(--c7); }
+.focus[data-color="none"] .dot { background: transparent; box-shadow: inset 0 0 0 1.5px var(--c-none); }
+.focus-inner { flex: 1; min-height: 0; width: 100%; max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; }
+.focus-head { display: flex; align-items: center; gap: 4px; padding: 6px 6px 0 4px; }
+.focus-back {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 44px; padding: 0 12px 0 8px;
+  border: 0; border-radius: 12px; background: none;
+  color: var(--text-2); font-size: 0.9375rem; font-weight: 600;
+}
+.focus-back .icon { width: 20px; height: 20px; }
+.focus-session { flex: 1; text-align: right; font-size: 0.875rem; color: var(--text-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.metro-on .focus-metro { color: var(--text); background: var(--surface-2); }
+
+.focus-body {
+  flex: 1; min-height: 0; overflow-y: auto;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 10px 20px 4px; text-align: center;
+}
+.focus-meta { display: flex; align-items: center; gap: 6px; font-size: 0.9375rem; font-weight: 600; color: var(--text-2); }
+.focus-sub { color: var(--muted); font-weight: 500; }
+.focus-title {
+  margin-top: 8px; max-width: 20ch;
+  font-size: clamp(1.5rem, 6.8vw, 2.125rem); line-height: 1.18; font-weight: 650;
+  text-wrap: balance; overflow-wrap: break-word; hyphens: auto;
+}
+.focus-link { margin-top: 14px; gap: 6px; text-decoration: none; }
+.focus-link .icon { width: 16px; height: 16px; }
+
+.focus-timer { margin: auto 0; padding: 16px 0; }
+.focus-dial {
+  position: relative; display: grid; place-items: center;
+  width: min(74vw, 42dvh, 340px); aspect-ratio: 1;
+  padding: 0; border: 0; border-radius: 50%; background: none; color: inherit;
+}
+.focus-dial svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring-bg { fill: none; stroke: var(--track); stroke-width: 2.5; }
+.ring-fg { fill: none; stroke: var(--text); stroke-width: 2.5; stroke-linecap: round; transition: stroke-dashoffset 1s linear, stroke 0.2s; }
+.ring-fg.no-anim { transition: none; }
+.focus-readout { display: flex; flex-direction: column; align-items: center; }
+.focus-time {
+  font-size: clamp(3.25rem, 18vw, 5.75rem); font-weight: 650; line-height: 1;
+  font-variant-numeric: tabular-nums; letter-spacing: -0.02em;
+}
+.focus-state { min-height: 1.5em; margin-top: 8px; font-size: 1rem; font-weight: 650; color: var(--text-2); }
+.focus[data-state="paused"] .ring-fg { stroke: var(--muted); }
+.focus[data-state="paused"] .focus-time { color: var(--text-2); }
+.focus[data-state="timeup"] .focus-state { color: var(--text); font-size: 1.125rem; }
+.focus[data-state="timeup"] .ring-bg { stroke: var(--text); }
+.focus-details { width: 100%; margin-bottom: 8px; }
+
+.focus-actions { display: flex; gap: 10px; padding: 10px 16px 14px; }
+.focus-actions .btn { flex: 1; min-height: 56px; font-size: 1.0625rem; border-radius: 16px; }
+.focus-actions .focus-finish { flex: 0 1 40%; }
+
+@media (max-height: 600px) {
+  .focus-title { font-size: 1.375rem; }
+  .focus-timer { padding: 8px 0; }
+}
+
 /* ------------------------------------------------------------- sheets */
 
 dialog.sheet {

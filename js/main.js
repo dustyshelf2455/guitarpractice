@@ -64,6 +64,13 @@ const ROUTES = [
   [/^#\/settings\/subtype\/([^/]+)$/, (id) => subtypeEditorView(app, ctx, decodeURIComponent(id))],
 ];
 
+/** '#/' is the grid; '#/block/N' is block N full screen on top of it. */
+function sessionRoute(hash) {
+  if (!hash || hash === '#' || hash === '#/') return { focus: null };
+  const m = /^#\/block\/(\d+)$/.exec(hash);
+  return m ? { focus: Number(m[1]) } : null;
+}
+
 function resolve(hash) {
   for (const [re, make] of ROUTES) {
     const m = re.exec(hash || '#/');
@@ -75,16 +82,25 @@ function resolve(hash) {
 /** Build the view for the current route (or refresh it in place). */
 function render() {
   const key = location.hash || '#/';
+  const sr = sessionRoute(key);
+  // Opening or closing the focus view keeps the session screen (and its grid) mounted.
+  if (sr && view && view.setFocus) {
+    viewKey = key;
+    view.update();
+    view.setFocus(sr.focus);
+    return;
+  }
   if (view && viewKey === key && view.update) {
     view.update();
     return;
   }
   const scroll = viewKey === key ? window.scrollY : 0;
   const focusKey = document.activeElement?.dataset?.key;
-  view = resolve(key)();
+  view = sr ? sessionView(app, ctx) : resolve(key)();
   viewKey = key;
   root.replaceChildren(view.root);
   if (view.update) view.update();
+  if (sr) view.setFocus(sr.focus);
   document.title = view.title && view.title !== 'Timebox' ? `${view.title} · Timebox` : 'Timebox';
   window.scrollTo(0, scroll);
   if (focusKey) root.querySelector(`[data-key="${CSS.escape(focusKey)}"]`)?.focus({ preventScroll: true });

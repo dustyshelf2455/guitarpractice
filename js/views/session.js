@@ -1,10 +1,12 @@
-// Session screen: session clock, 3x4 grid of blocks, bottom toolbar.
-// Tile DOM nodes are created once and updated in place, so the 250 ms clock
-// refresh is cheap and keyboard/screen-reader focus is never lost.
+// Session screen: session clock, 3x4 grid of blocks, bottom toolbar, and the
+// full-screen focus view for the block being practised (route #/block/N).
+// Tile DOM nodes are created once and updated in place, so the clock refresh
+// is cheap and keyboard/screen-reader focus is never lost.
 
 import { el, icon, fmtClock, fmtDuration, fmtDate, mean } from '../util.js';
 import { tileRemaining, sessionRemaining, masterState, completedCount, TILE_MS } from '../engine.js';
 import { ratingSheet, confirmSheet, iconButton } from './sheets.js';
+import { createFocus } from './focus.js';
 
 const STATE_LABEL = {
   idle: 'Not started',
@@ -14,7 +16,8 @@ const STATE_LABEL = {
   completed: 'Done',
 };
 
-export function sessionView(app, { navigate, openMetronome, announce }) {
+export function sessionView(app, ctx) {
+  const { navigate, openMetronome, announce } = ctx;
   const clock = el('div', { class: 'clock', role: 'timer', 'aria-label': 'Session time remaining' });
   const headSub = el('div', { class: 'head-sub' });
   const masterBtn = el('button', { class: 'master-btn', type: 'button', onclick: onMaster });
@@ -55,7 +58,16 @@ export function sessionView(app, { navigate, openMetronome, announce }) {
     iconButton('settings', 'Settings', () => navigate('#/settings'), 'bar-icon'),
   );
 
-  const root = el('div', { class: 'screen session-screen' }, head, grid, bar);
+  const focus = createFocus({
+    collapse: () => ctx.back('#/'),
+    primary: onFocusPrimary,
+    finish: () => onFinish(focusIndex),
+    openMetronome: () => openMetronome(),
+  });
+  let focusIndex = null;
+  let origin = null; // tile rect captured at tap time, for the grow animation
+
+  const root = el('div', { class: 'screen session-screen' }, head, grid, bar, focus.root);
 
   function makeTile(i) {
     const area = el('span', { class: 'tile-area' });
@@ -85,24 +97,78 @@ export function sessionView(app, { navigate, openMetronome, announce }) {
   // ---- actions ----
 
   async function onTap(i) {
+    // The running block opens full screen; starting or resuming one does too.
+    if (app.mode === 'active' && app.active.tiles[i].state === 'running') {
+      openFocus(i);
+      return;
+    }
     const r = await app.tapTile(i);
-    if (r.action === 'completed' || r.action === 'rate') rate(r.session, r.index);
+    if (r.action === 'started' || r.action === 'resumed') openFocus(i);
+    else if (r.action === 'completed' || r.action === 'rate') rate(r.session, r.index);
   }
 
   async function onFinish(i) {
+    if (i == null) return;
     const r = await app.completeTile(i);
     if (r.action === 'completed') rate(r.session, r.index);
   }
 
+  /** Rate a block; when it was rated from the focus view, return to the grid afterwards. */
   function rate(session, index) {
     const tile = session.tiles[index];
+    const fromFocus = focusIndex === index;
+    const done = () => {
+      if (fromFocus && focusIndex === index) ctx.back('#/');
+      else tiles[index].main.focus({ preventScroll: true });
+    };
     ratingSheet({
       tile,
-      onRate: (n) => app.rateTile(session.id, index, n),
-      onDismiss: () => {
-        tiles[index].main.focus({ preventScroll: true });
+      onRate: async (n) => {
+        await app.rateTile(session.id, index, n);
+        done();
       },
+      onDismiss: done,
     });
+  }
+
+  function openFocus(i) {
+    const li = tiles[i].li;
+    origin = { rect: li.getBoundingClientRect(), bg: getComputedStyle(li).backgroundColor };
+    navigate(`#/block/${i}`);
+  }
+
+  async function onFocusPrimary() {
+    const i = focusIndex;
+    if (i == null || !app.active) return;
+    const r = await app.tapTile(i); // start / pause / resume, or complete when time is up
+    if (r.action === 'completed') rate(r.session, r.index);
+    else if (r.action === 'paused') announce('Paused');
+  }
+
+  /** Show the focus view for block i, or the grid when i is null (driven by the route). */
+  function setFocus(i) {
+    if (i != null) {
+      const t = app.active ? app.active.tiles[i] : null;
+      if (!t || t.state === 'completed') {
+        if (focusIndex == null) ctx.replace('#/');
+        return;
+      }
+    }
+    if (i === focusIndex) return;
+    const prev = focusIndex;
+    focusIndex = i;
+    for (const part of [head, grid, bar]) part.inert = i != null;
+    if (i != null) {
+      update();
+      const from = origin || (root.isConnected ? { rect: tiles[i].li.getBoundingClientRect(), bg: null } : null);
+      focus.show(from && from.rect, from && from.bg);
+      origin = null;
+    } else {
+      update();
+      const li = prev != null ? tiles[prev].li : null;
+      focus.hide(li && li.getBoundingClientRect(), li && getComputedStyle(li).backgroundColor);
+      if (li) tiles[prev].main.focus({ preventScroll: true });
+    }
   }
 
   async function onSwap(i) {
@@ -116,6 +182,7 @@ export function sessionView(app, { navigate, openMetronome, announce }) {
     }
     const state = await app.masterToggle();
     if (state === 'paused') announce('Paused');
+    else if (state === 'running') openFocus(app.active.running);
   }
 
   async function onEnd() {
@@ -192,6 +259,17 @@ export function sessionView(app, { navigate, openMetronome, announce }) {
       if (!t) continue;
       updateTile(view, t, i, now, mode);
     }
+
+    // Focus view
+    if (focusIndex != null) {
+      const t = board[focusIndex];
+      if (!t) {
+        ctx.replace('#/');
+        return;
+      }
+      const area = t.area_id ? app.area(t.area_id) : null;
+      focus.update(t, session, area ? area.color : null, t.area_id ? (area ? area.name : t.area_name) : 'Other', now);
+    }
   }
 
   function updateTile(v, t, i, now, mode) {
@@ -239,8 +317,8 @@ export function sessionView(app, { navigate, openMetronome, announce }) {
 
     const action = {
       idle: mode === 'done' ? '' : 'Tap to start.',
-      running: 'Tap to pause.',
-      paused: 'Tap to resume.',
+      running: 'Tap to open full screen.',
+      paused: 'Tap to resume full screen.',
       timeup: 'Tap to complete and rate.',
       completed: 'Tap to change rating.',
     }[state];
@@ -257,7 +335,7 @@ export function sessionView(app, { navigate, openMetronome, announce }) {
     v.main.disabled = mode === 'done' && state !== 'completed';
   }
 
-  /** Called every 250 ms while a block runs: only the moving numbers change. */
+  /** Called once a second while a block runs: only the moving numbers change. */
   function tick(now = app.clock()) {
     const s = app.active;
     if (!s || s.running == null) return;
@@ -265,7 +343,8 @@ export function sessionView(app, { navigate, openMetronome, announce }) {
     const i = s.running;
     const t = s.tiles[i];
     if (t.state === 'running') tiles[i].time.textContent = fmtClock(tileRemaining(t, now));
+    if (focusIndex != null) focus.tick(s.tiles[focusIndex], s, now);
   }
 
-  return { root, update, tick, title: 'Timebox' };
+  return { root, update, tick, setFocus, title: 'Timebox' };
 }

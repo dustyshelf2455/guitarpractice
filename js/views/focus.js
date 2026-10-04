@@ -84,11 +84,19 @@ export function createFocus(handlers) {
 
   function show(fromRect, fromBg) {
     if (anim) anim.cancel();
+    const wasOpen = !root.hidden;
     root.hidden = false;
     root.style.pointerEvents = '';
     fill.classList.add('no-anim');
     requestAnimationFrame(() => fill.classList.remove('no-anim'));
-    if (fromRect && fromRect.width && !reducedMotion()) {
+    if (wasOpen) {
+      // Straight on to the next block: it slides in where the last one was.
+      inner.getAnimations().forEach((a) => a.cancel());
+      if (!reducedMotion()) {
+        inner.animate([{ opacity: 0, transform: 'translateX(2.5rem)' }, { opacity: 1, transform: 'none' }],
+          { duration: 260, easing: 'cubic-bezier(0.2, 0.75, 0.2, 1)' });
+      }
+    } else if (fromRect && fromRect.width && !reducedMotion()) {
       const pageBg = getComputedStyle(root).backgroundColor;
       anim = root.animate(
         [{ clipPath: insetOf(fromRect), backgroundColor: fromBg || pageBg }, { clipPath: FULL, backgroundColor: pageBg }],

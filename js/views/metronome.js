@@ -34,6 +34,24 @@ export function openMetronomeSheet(app, { onChange }) {
   const step = (d, label) => el('button', { class: 'step-btn', type: 'button', 'aria-label': label, onclick: () => setBpm(metronome.bpm + d) },
     d > 0 ? `+${d}` : `−${-d}`);
 
+  // Tap tempo: tap along a few times and the tempo follows (the last few taps, averaged).
+  let taps = [];
+  const tapBtn = el('button', {
+    class: 'btn metro-tap', type: 'button', 'aria-label': 'Tap tempo: tap along to set the tempo',
+    onclick: () => {
+      const now = performance.now();
+      if (taps.length && now - taps[taps.length - 1] > 2500) taps = []; // a pause starts over
+      taps.push(now);
+      taps = taps.slice(-6);
+      tapBtn.classList.remove('tapped');
+      void tapBtn.offsetWidth;
+      tapBtn.classList.add('tapped');
+      if (taps.length < 2) return;
+      const avg = (taps[taps.length - 1] - taps[0]) / (taps.length - 1);
+      setBpm(60000 / avg);
+    },
+  }, 'Tap');
+
   const beatsGroup = el('div', { class: 'segmented', role: 'radiogroup', 'aria-label': 'Accent the first beat of every' });
   const beatOptions = [[0, 'Off'], [2, '2'], [3, '3'], [4, '4']];
   for (const [n, label] of beatOptions) {
@@ -106,7 +124,7 @@ export function openMetronomeSheet(app, { onChange }) {
       slider,
       blockChip,
       el('div', { class: 'metro-row' }, el('span', { class: 'field-label', text: 'Accent every' }), beatsGroup),
-      playBtn,
+      el('div', { class: 'metro-go' }, tapBtn, playBtn),
     ],
     onClose: () => {
       stopListening();

@@ -173,7 +173,20 @@ export function heatmapChart(days, today) {
 
 // ---- rating line (one series, y fixed 1..5) ----
 
-export function ratingChart(series, { label = 'Average rating per session', minPoints = 3 } = {}) {
+/** Centred moving average over `span` points (shorter at the ends). */
+function smooth(values, span) {
+  const half = Math.floor(span / 2);
+  return values.map((_, i) => {
+    const slice = values.slice(Math.max(0, i - half), Math.min(values.length, i + half + 1));
+    return slice.reduce((a, b) => a + b, 0) / slice.length;
+  });
+}
+
+/**
+ * Per-session averages as faint marks, with the trend drawn through them (a
+ * five-session moving average) once there are enough sessions to have one.
+ */
+export function ratingChart(series, { label = 'Average rating per session', minPoints = 3, trendFrom = 6 } = {}) {
   if (series.length < minPoints) return null;
   const W = 340;
   const H = 150;
@@ -193,10 +206,15 @@ export function ratingChart(series, { label = 'Average rating per session', minP
     g.append(svg('text', { x: left - 6, y: y(t) + 3.5, 'text-anchor': 'end', text: String(t) }));
   }
   const pts = series.map((p, i) => `${x(i).toFixed(1)},${y(p.avg).toFixed(1)}`).join(' ');
-  g.append(svg('polyline', { class: 'line', points: pts }));
+  const trended = n >= trendFrom;
+  g.append(svg('polyline', { class: trended ? 'line line-raw' : 'line', points: pts }));
+  if (trended) {
+    const trend = smooth(series.map((p) => p.avg), 5);
+    g.append(svg('polyline', { class: 'line line-trend', points: trend.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ') }));
+  }
   const showAll = n <= 24;
   series.forEach((p, i) => {
-    if (showAll || i === n - 1) g.append(svg('circle', { class: 'marker', 'data-id': `pt-${i}`, cx: x(i), cy: y(p.avg), r: 4 }));
+    if (showAll || i === n - 1) g.append(svg('circle', { class: `marker${trended && i < n - 1 ? ' marker-raw' : ''}`, 'data-id': `pt-${i}`, cx: x(i), cy: y(p.avg), r: trended && i < n - 1 ? 3 : 4 }));
   });
   g.append(svg('text', { x: left, y: H - 6, text: fmtShortDate(series[0].date) }));
   g.append(svg('text', { x: W - right, y: H - 6, 'text-anchor': 'end', text: fmtShortDate(series[n - 1].date) }));
@@ -213,6 +231,9 @@ export function ratingChart(series, { label = 'Average rating per session', minP
   withTooltip(chart);
   return el('div', {},
     chart,
+    trended ? el('div', { class: 'legend' },
+      el('span', { class: 'legend-key' }, el('span', { class: 'legend-swatch legend-line' }), 'Trend (5-session average)'),
+      el('span', { class: 'legend-key' }, el('span', { class: 'legend-swatch legend-dot' }), 'Each session')) : null,
     tableView(label, ['Session', 'Rating'], series.slice().reverse().map((p) => [fmtShortDate(p.date), p.avg.toFixed(1)])),
   );
 }

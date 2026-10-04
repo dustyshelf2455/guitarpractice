@@ -28,12 +28,12 @@ Install it rather than using it in a browser tab. Installed, it opens full scree
 | **All blocks** (top left), or the back gesture | Returns to the grid and stops the metronome. The block keeps running, and tapping it reopens full screen. |
 | **Pause / Resume** (top of grid) | Pauses or resumes the whole session. Resume reopens the block full screen. |
 | ⇄ on a block | Swaps in the next item from that block's list. Tap again to keep cycling. Only on blocks you haven't started. |
-| Block hits 0:00 | Chimes and vibrates (vibration is Android only). A metronome that is playing drops to half volume, so you can finish the phrase. Tap **Finish and rate**, choose stars, and you're back at the grid. |
+| Block hits 0:00 | Chimes and vibrates (vibration is Android only). A metronome that is playing drops to half volume, so you can finish the phrase. Tap **Finish and rate**, choose stars, and the next unfinished block slides in, ready for **Begin** (back on the grid once nothing is left; **All blocks** gets you there any time). |
 | Tap a finished block | Change its rating, or reopen it: **Continue** picks up with the time it had left, **Do it over** starts again from 5:00. For a block finished by mistake. |
 | **End** (bottom) | Ends the session. It is saved as partial if not every block is done, and discarded if none are. |
 | 🔗 on a block | Opens that item's link (backing track, tab, YouTube lesson). |
 | **Edit** / **Add notes** on a full-screen block | Opens the item: its notes, its link, and its diagrams (paste a tab or a chord sheet right there). Your notes show under the diagrams. |
-| Metronome (bottom, or top right when full screen) | A wooden click track with accents. It starts by itself when you Begin or Resume a block and stops when you pause, finish or go back to the grid (turn that off in Settings → Metronome). Its tempo is the one you last chose, carried from block to block, except on a block that names its own ("70 bpm"); resuming a block keeps whatever tempo it had. While it plays, a glow swings across the top of the screen in time (handy with the phone on silent), and it shows its tempo at the top of a full-screen block. |
+| Metronome (bottom, or top right when full screen) | A wooden click track with accents, with **Tap** to set the tempo by tapping along. It starts by itself when you Begin or Resume a block and stops when you pause, finish or go back to the grid (turn that off in Settings → Metronome). Its tempo is the one you last chose, carried from block to block, except on a block that names its own ("70 bpm"); resuming a block keeps whatever tempo it had. While it plays, a glow swings across the top of the screen in time (handy with the phone on silent), and it shows its tempo at the top of a full-screen block. |
 
 **Notes and links:** every item can have notes (anything to remember: where you got to, the capo, what to watch) and a link (a YouTube lesson, a backing track, a tab). Add them from the full-screen block (**Edit**), or in Settings → Library → a subtype → tap an item.
 
@@ -52,7 +52,7 @@ Install it rather than using it in a browser tab. Installed, it opens full scree
 
 - **Style:** *Lounge* (default) is forest green and parchment with brass accents, the Fraunces serif, faint paper grain and double-rule borders. *Classic* is the original plain high-contrast look.
 - **Theme:** Auto follows your phone's light/dark setting; Dark and Light force one.
-- **Blocks:** *Grid* shows all twelve at once (3×4). *List* shows full-width rows, six to a screen, and scrolls.
+- **Blocks:** *Grid* shows all twelve at once (3×4): each block carries its subtype and a diamond in its area's colour, so the item's name gets the room. *List* shows full-width rows with the area's name too, six to a screen, and scrolls.
 
 **iPad:** on a tablet (sized for the 13" iPad Pro) the whole interface scales up about 1.6× for easy reading. In landscape the grid is 4×3.
 
@@ -62,7 +62,7 @@ Install it rather than using it in a browser tab. Installed, it opens full scree
 
 **Settings:** choose what each of the 12 slots practises and in what order. Edit the library (add, edit, reorder, add links, archive). Add areas and subtypes. Pick the theme. Export or import a backup, and reset the library to defaults. Archived items leave the rotation but keep their history.
 
-**Stats:** streaks, sessions per week, a 13-week practice calendar, totals, your rating trend, and time share by area. Tap an area to see its subtypes, then a subtype to see its items. "Weak spots" lists your lowest-rated items, and History has every session block by block. A day counts toward your streak once any block is completed.
+**Stats:** streaks, sessions per week, a 13-week practice calendar, totals, your rating trend (a five-session average drawn through the per-session marks, once there are enough sessions), and time share by area. Tap an area to see its subtypes, then a subtype to see its items. "Weak spots" lists your lowest-rated items, and History has every session block by block. A day counts toward your streak once any block is completed.
 
 ## Your data
 
@@ -76,6 +76,7 @@ Install it rather than using it in a browser tab. Installed, it opens full scree
 - Ending a session with no completed blocks discards it rather than saving an empty session.
 - After a session ends, the screen shows its result. **New** starts another session with a fresh plan from the rotation.
 - You can tap a completed block (or a block in History) to change its rating.
+- Rating a block from its full-screen view opens the next unfinished block (the first after it, going round, that is waiting or paused), ready but not started. Rating from the grid stays on the grid.
 - A finished block can be reopened in today's session, including the last block of a session that just ended (the session comes back). Its item returns to its earlier place in the rotation, so a mistaken finish doesn't push it to the back of the queue.
 - The 45-character item limit is a soft warning, not a hard stop.
 - "Reset library to defaults" keeps all session history.

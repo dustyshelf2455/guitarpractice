@@ -112,14 +112,13 @@ function check(cond, msg) {
   await page.waitForSelector('dialog.rating-sheet[open]');
   await shot('05-rating');
   await rateWith(4);
-  check(await focusOpen(false), 'rating returns to the grid');
+  check(await focusOpen() && page.url().endsWith('#/block/2'), 'rating from the block opens the next unfinished block');
+  check((await focusState('idle')) === 'idle' && (await page.locator('.focus-primary').textContent()).includes('Begin'), 'the next block is ready, not started');
   check(await stateIs(1, 'completed'), 'tile 2 completed');
   check((await text(tile(1).locator('.tile-status'), '4')) === '4', 'tile 2 shows rating 4');
   check((await text(page.locator('.progress-label'), '1 of 12')) === '1 of 12', 'progress 1 of 12');
 
   // Pause in focus, then resume from the grid's master button (which reopens focus).
-  await tap(2);
-  await focusOpen();
   await primary(); // Begin
   check(await page.locator('.focus .board-v').isVisible(), 'scale block shows its fretboard, upright in portrait');
   check(!(await page.locator('.focus .board-h').isVisible()), 'the sideways neck is hidden in portrait');
@@ -268,9 +267,10 @@ function check(cond, msg) {
   await page.waitForSelector('[data-mode="done"]');
   await page.locator('.master-btn').click(); // New
   await page.waitForSelector('[data-mode="plan"]');
+  await tap(0);
   for (let i = 0; i < 12; i++) {
-    await tap(i);
     await focusOpen();
+    check(page.url().endsWith(`#/block/${i}`), `block ${i + 1} is open`);
     await primary(); // Begin
     if (i === 3) {
       check((await page.locator('.focus .chord').count()) === 5, 'chord block shows five chord boxes');
@@ -300,8 +300,8 @@ function check(cond, msg) {
     await focusState('timeup');
     await primary();
     await rateWith((i % 5) + 1);
-    await focusOpen(false);
   }
+  check(await focusOpen(false), 'after the last block, back to the grid');
   check((await text(page.locator('.done-title'), 'Session complete')) === 'Session complete', 'full session ends complete');
   const last = await page.evaluate(() => {
     const s = window.timebox.app.doneSession;

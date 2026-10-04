@@ -96,8 +96,10 @@ export function sessionView(app, ctx) {
   if (globalThis.ResizeObserver) new ResizeObserver(sizeRows).observe(grid);
 
   function makeTile(i) {
-    const area = el('span', { class: 'tile-area' });
+    // One label line: the area's colour as a dot, then the subtype (the area's
+    // name joins it in the list layout, where there is room).
     const sub = el('span', { class: 'tile-sub' });
+    const area = el('span', { class: 'tile-area' });
     const text = el('span', { class: 'tile-text' });
     const hint = el('span', { class: 'tile-hint', text: 'Add items in Settings' });
     const time = el('span', { class: 'tile-time' });
@@ -105,8 +107,8 @@ export function sessionView(app, ctx) {
     const lockMark = icon('lock', 'tile-lock');
     lockMark.hidden = true;
     const main = el('button', { class: 'tile-main', type: 'button', onclick: () => onTap(i) },
-      el('span', { class: 'tile-meta' }, el('span', { class: 'dot', 'aria-hidden': 'true' }), area, lockMark),
-      sub, text, hint,
+      el('span', { class: 'tile-meta' }, el('span', { class: 'dot', 'aria-hidden': 'true' }), sub, area, lockMark),
+      text, hint,
       el('span', { class: 'tile-foot' }, time, status),
     );
     const swap = el('button', {
@@ -142,16 +144,34 @@ export function sessionView(app, ctx) {
     if (r.action === 'completed') rate(r.session, r.index);
   }
 
+  /** The block to practise after block i: the first one after it (going round) that is waiting or paused. */
+  function nextAfter(i) {
+    if (app.mode !== 'active') return null;
+    const board = app.boardTiles();
+    for (let k = 1; k < board.length; k++) {
+      const j = (i + k) % board.length;
+      if (['idle', 'paused'].includes(board[j].state)) return j;
+    }
+    return null;
+  }
+
   /**
-   * Rate a block; when it was rated from the focus view, return to the grid
-   * afterwards. The sheet also offers to reopen the block (continue, or do it over).
+   * Rate a block. Rated from its full-screen view, the next unfinished block
+   * opens in its place, ready to Begin (the grid, when nothing is left). The
+   * sheet also offers to reopen the block (continue, or do it over).
    */
   function rate(session, index) {
     const tile = session.tiles[index];
     const fromFocus = focusIndex === index;
     const done = () => {
-      if (fromFocus && focusIndex === index) ctx.back('#/');
-      else tiles[index].main.focus({ preventScroll: true });
+      if (fromFocus && focusIndex === index) {
+        const next = nextAfter(index);
+        if (next == null) ctx.back('#/');
+        else {
+          ctx.replace(`#/block/${next}`);
+          announce(`Up next: ${app.boardTiles()[next].item_text}`);
+        }
+      } else tiles[index].main.focus({ preventScroll: true });
     };
     const reopen = app.canReopen(session.id, index) ? {
       remainingMs: TILE_MS - tile.elapsed_seconds * 1000,
@@ -341,8 +361,9 @@ export function sessionView(app, ctx) {
     v.li.dataset.state = state;
     const area = t.area_id ? app.area(t.area_id) : null;
     v.li.dataset.color = area && area.color != null ? String(area.color) : 'none';
-    v.area.textContent = t.area_id ? (area ? area.name : t.area_name) : 'Other';
-    v.sub.textContent = t.subtype_name;
+    const areaName = t.area_id ? (area ? area.name : t.area_name) : 'Other';
+    v.sub.textContent = t.subtype_name || areaName;
+    v.area.textContent = t.subtype_name ? areaName : '';
     v.text.textContent = t.item_text;
     v.hint.hidden = !t.empty || state === 'completed';
 
@@ -396,7 +417,7 @@ export function sessionView(app, ctx) {
       : `${fmtClock(remaining)} left`;
     v.main.setAttribute('aria-label', [
       `Block ${i + 1}: ${t.item_text}`,
-      [v.area.textContent, t.subtype_name].filter(Boolean).join(', '),
+      [areaName, t.subtype_name].filter(Boolean).join(', '),
       STATE_LABEL[state],
       app.isLocked(i) ? 'Locked to your board' : null,
       timeText,

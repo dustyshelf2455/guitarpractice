@@ -220,8 +220,9 @@ h1, h2, h3, p { margin: 0; }
 .has-finish.has-link .tile-meta { padding-right: 1.625rem; }
 .dot { width: 0.4375rem; height: 0.4375rem; border-radius: 50%; background: var(--area); flex: none; }
 .tile[data-color="none"] .dot { background: transparent; box-shadow: inset 0 0 0 1.5px var(--c-none); }
-.tile-area, .tile-sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-.tile-sub { font-size: 0.6875rem; line-height: 1.2; color: var(--muted); margin-top: 1px; }
+.tile-sub, .tile-area { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+/* The area's name is what the dot's colour says; a tile shows the subtype and gives the name its room. */
+.tile-area { display: none; font-weight: 500; color: var(--muted); }
 .tile-text {
   margin-top: 0.3125rem;
   font-size: 0.875rem;
@@ -229,8 +230,8 @@ h1, h2, h3, p { margin: 0; }
   font-weight: 600;
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
   overflow: hidden;
   overflow-wrap: break-word;
   -webkit-hyphens: auto;
@@ -238,8 +239,8 @@ h1, h2, h3, p { margin: 0; }
 }
 /* Lines follow the tile's height: 3 normally, 4 on tall screens, 2 when cramped.
    Thresholds are in rem like the text, so they hold at any system text size. */
-@container (min-height: 7.75rem) {
-  .tile-text { -webkit-line-clamp: 3; line-clamp: 3; }
+@container (max-height: 6.75rem) {
+  .tile-text { -webkit-line-clamp: 2; line-clamp: 2; }
 }
 @container (min-height: 8.75rem) {
   .tile-text { -webkit-line-clamp: 4; line-clamp: 4; }
@@ -282,7 +283,7 @@ h1, h2, h3, p { margin: 0; }
 /* Running: inverted, unmistakable from arm's length. */
 .tile[data-state="running"] { background: var(--invert-bg); border-color: var(--invert-bg); color: var(--invert-text); }
 .tile[data-state="running"] .tile-meta,
-.tile[data-state="running"] .tile-sub,
+.tile[data-state="running"] .tile-area,
 .tile[data-state="running"] .tile-link { color: var(--invert-muted); }
 .tile[data-state="running"] .tile-time { color: var(--invert-text); font-size: 1.375rem; font-weight: 700; }
 
@@ -305,6 +306,7 @@ h1, h2, h3, p { margin: 0; }
 .star-sm { color: var(--star); width: 0.8125rem; height: 0.8125rem; }
 .star-sm svg { fill: currentColor; }
 [data-mode="done"] .tile[data-state="idle"] { opacity: 0.5; }
+[data-mode="done"] .tile[data-state="idle"] .tile-status { color: var(--muted); font-weight: 500; }
 
 .session-bar {
   display: flex; align-items: center; gap: 0.25rem;
@@ -338,20 +340,23 @@ h1, h2, h3, p { margin: 0; }
   grid-template-rows: none;
   grid-auto-rows: max(var(--row-h, 5.75rem), 4.5rem);
 }
-.layout-list .tile { container-type: normal; }
 .layout-list .tile[data-state] .tile-main {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   grid-template-rows: auto auto;
-  grid-template-areas: "meta sub foot" "text text foot" "hint hint foot";
+  grid-template-areas: "meta foot" "text foot" "hint foot";
   align-content: center;
   column-gap: 0.375rem; row-gap: 2px;
   padding: 0.5625rem 0.875rem 0.5625rem 0.8125rem;
 }
 .layout-list .tile-meta { grid-area: meta; }
-.layout-list .tile-sub { grid-area: sub; margin: 0; align-self: center; }
-.layout-list .tile-sub:not(:empty)::before { content: '· '; }
+.layout-list .tile-area { display: inline; }
+.layout-list .tile-area:not(:empty)::before { content: '· '; }
 .layout-list .tile-text { grid-area: text; margin: 0; font-size: 1.0625rem; -webkit-line-clamp: 2; line-clamp: 2; }
+/* A short row (six must fit above the toolbar) keeps the name to one line rather than cutting the second in half. */
+@container (max-height: 4.75rem) {
+  .layout-list .tile-text { -webkit-line-clamp: 1; line-clamp: 1; }
+}
 .layout-list .tile-hint { grid-area: hint; margin: 0; }
 .layout-list .tile-foot {
   grid-area: foot; margin: 0 0 0 0.75rem; padding: 0; min-height: 0;
@@ -782,7 +787,11 @@ select.input { appearance: none; padding-right: 2.125rem;
 .metro-slider { width: 100%; accent-color: var(--text); margin-top: 1.125rem !important; }
 .metro-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
 .metro-row .field-label { margin: 0; }
-.metro-play { width: 100%; margin-top: 1.125rem !important; }
+.metro-go { display: flex; gap: 0.625rem; margin-top: 1.125rem !important; }
+.metro-go .metro-play { flex: 1.6 1 0; }
+.metro-go .metro-tap { flex: 1 1 0; }
+.metro-tap.tapped { animation: tap-flash 0.18s ease-out; }
+@keyframes tap-flash { from { background: var(--surface-3); transform: scale(0.97); } to { transform: none; } }
 
 /* ------------------------------------------------------------- pages (stats, settings) */
 
@@ -873,6 +882,11 @@ details.more[open] > summary::before { content: '▾ '; }
 .chart .mark-complete { fill: var(--series); }
 .chart .mark-partial { fill: var(--series-partial); }
 .chart .line { fill: none; stroke: var(--series); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart .line-raw { stroke-width: 1; opacity: 0.35; }
+.chart .line-trend { stroke-width: 2.5; }
+.chart .marker-raw { opacity: 0.5; stroke-width: 1.5; r: 3; }
+.legend-line { width: 1rem; height: 0; border-top: 2.5px solid var(--series); border-radius: 0; }
+.legend-dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--series); opacity: 0.6; }
 .chart .area-fill { fill: var(--series); opacity: 0.1; }
 .chart .marker { fill: var(--series); stroke: var(--surface); stroke-width: 2; }
 .chart .active-mark { stroke: var(--text); stroke-width: 2; }
@@ -1001,5 +1015,4 @@ details.more[open] > summary::before { content: '▾ '; }
   @container (min-height: 8.5rem) { .tile-text { -webkit-line-clamp: 3; line-clamp: 3; } }
   @container (min-height: 10rem) { .tile-text { -webkit-line-clamp: 4; line-clamp: 4; } }
   .layout-list .tile-text { font-size: 1.125rem; }
-}
 }

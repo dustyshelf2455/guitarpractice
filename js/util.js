@@ -75,9 +75,14 @@ export function fmtDuration(seconds) {
   return rem ? `${h}h ${pad(rem)}m` : `${h}h`;
 }
 
+/** Time of day the way the device writes it: "6:05 pm" or "18:05". */
 export function fmtTimeOfDay(ms) {
   const d = new Date(ms);
-  return `${d.getHours()}:${pad(d.getMinutes())}`;
+  try {
+    return d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }).replace(/\s?([AP]M)$/, (_, ap) => ` ${ap.toLowerCase()}`);
+  } catch {
+    return `${d.getHours()}:${pad(d.getMinutes())}`;
+  }
 }
 
 export function fmtRating(r) {

@@ -151,6 +151,8 @@ function syncSideEffects() {
   const running = s && s.running != null ? s.tiles[s.running] : null;
   if (running && running.state === 'running') {
     scheduleChime(running.run_started_at + (TILE_MS - running.elapsed_ms));
+    // A block is under way again (say, one reopened at time-up): full volume.
+    if (metronome.level < 1) metronome.setLevel(1);
   } else {
     cancelChime();
   }
@@ -159,6 +161,8 @@ function syncSideEffects() {
   document.documentElement.classList.toggle('metro-on', metronome.playing);
   const label = root.querySelector('.metro-label');
   if (label) label.textContent = metronome.playing ? `${metronome.bpm} bpm` : 'Metronome';
+  const focusLabel = root.querySelector('.focus-metro-bpm');
+  if (focusLabel) focusLabel.textContent = metronome.playing ? String(metronome.bpm) : '';
 }
 
 function handleEvents(events) {
@@ -168,6 +172,8 @@ function handleEvents(events) {
     const recent = now - e.at < 30_000;
     if (recent && !chimeWasScheduledFor(e.at)) playChime();
     if (recent) vibrate();
+    // Keep the click going for anyone still playing, at half volume: time's up.
+    if (metronome.playing) metronome.setLevel(0.5);
     const tile = app.boardTiles()[e.index];
     if (tile) announce(`Time's up: ${tile.item_text}. Tap it to finish.`);
   }
@@ -256,6 +262,8 @@ async function boot() {
     // A back gesture shouldn't leave a sheet floating over the new screen.
     for (const d of document.querySelectorAll('dialog[open]')) d.close();
     const hash = location.hash || '#/';
+    // Back on the grid of blocks means the exercise is over: stop the metronome.
+    if (metronome.playing && sessionRoute(hash)?.focus === null) metronome.stop();
     if (replacing) navStack[navStack.length - 1] = hash;
     else if (navStack[navStack.length - 2] === hash) navStack.pop();
     else navStack.push(hash);

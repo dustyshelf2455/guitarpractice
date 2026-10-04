@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   TILE_MS, createSession, startTile, pauseTile, masterPause, masterResume, masterState,
   completeTile, rateTile, endSession, settle, tileElapsed, tileRemaining,
-  sessionRemaining, sessionElapsed, isStale, completedCount,
+  sessionRemaining, sessionElapsed, isStale, completedCount, reopenTile, reactivateSession,
 } from '../js/engine.js';
 
 const T0 = Date.UTC(2026, 9, 3, 18, 0, 0);
@@ -231,4 +231,49 @@ test('timers stay exact over a long session with irregular wake-ups', () => {
   }
   assert.equal(sessionElapsed(s, now), expectedMs);
   assert.ok(Math.abs(sessionRemaining(s, now) - (60 * MIN - expectedMs)) < 1);
+});
+
+test('reopen: continue from where it was finished, or do it over from 5:00', () => {
+  const s = fresh();
+  startTile(s, 0, T0);
+  completeTile(s, 0, T0 + 2 * MIN); // finished by mistake
+  rateTile(s, 0, 2);
+  assert.ok(reopenTile(s, 0, T0 + 3 * MIN));
+  const t = s.tiles[0];
+  assert.equal(t.state, 'paused');
+  assert.equal(t.completed, false);
+  assert.equal(t.rating, null);
+  assert.equal(t.completed_at, null);
+  assert.equal(tileRemaining(t, T0 + 3 * MIN), 3 * MIN, 'picks up where it stopped');
+  assert.ok(startTile(s, 0, T0 + 3 * MIN));
+
+  completeTile(s, 0, T0 + 4 * MIN);
+  assert.ok(reopenTile(s, 0, T0 + 5 * MIN, true));
+  assert.equal(t.state, 'idle');
+  assert.equal(tileRemaining(t, T0 + 5 * MIN), 5 * MIN, 'do it over: back to 5:00');
+  assert.equal(sessionRemaining(s, T0 + 5 * MIN), 60 * MIN);
+  assert.equal(reopenTile(s, 0, T0 + 5 * MIN), false, 'only finished blocks reopen');
+});
+
+test('reopen: a block that used its full five minutes always starts over', () => {
+  const s = fresh();
+  startTile(s, 1, T0);
+  settle(s, T0 + 6 * MIN);
+  completeTile(s, 1, T0 + 6 * MIN);
+  assert.ok(reopenTile(s, 1, T0 + 7 * MIN));
+  assert.equal(s.tiles[1].state, 'idle');
+  assert.equal(s.tiles[1].timeup_at, null);
+  assert.equal(tileRemaining(s.tiles[1], T0 + 7 * MIN), 5 * MIN);
+});
+
+test('reactivating an ended session clears its end', () => {
+  const s = fresh();
+  startTile(s, 0, T0);
+  completeTile(s, 0, T0 + MIN);
+  endSession(s, T0 + 2 * MIN);
+  assert.equal(s.status, 'partial');
+  reactivateSession(s, T0 + 3 * MIN);
+  assert.equal(s.status, 'active');
+  assert.equal(s.ended_at, null);
+  assert.equal(masterState(s), 'idle');
 });

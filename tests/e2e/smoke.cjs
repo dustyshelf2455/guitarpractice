@@ -114,8 +114,10 @@ function check(cond, msg) {
   // Pause in focus, then resume from the grid's master button (which reopens focus).
   await tap(2);
   await focusOpen();
-  check(await page.locator('.focus .board').isVisible(), 'scale block shows its fretboard diagram');
-  check((await page.locator('.focus .board-dot.root').count()) === 2, 'C major open position: two root Cs');
+  check(await page.locator('.focus .board-v').isVisible(), 'scale block shows its fretboard, upright in portrait');
+  check(!(await page.locator('.focus .board-h').isVisible()), 'the sideways neck is hidden in portrait');
+  check((await page.locator('.focus .board-v .board-dot.root').count()) === 2, 'C major open position: two root Cs');
+  { const box = await page.locator('.focus-dial').boundingBox(); check(box.width <= 140, `the dial is compact (${Math.round(box.width)}px)`); }
   await page.clock.runFor(30_000);
   await primary();
   check(await stateIs(2, 'paused'), 'Pause in focus pauses tile 3');
@@ -149,6 +151,51 @@ function check(cond, msg) {
   await page.waitForSelector('dialog.rating-sheet', { state: 'detached' });
   check(await stateIs(0, 'completed'), 'tile 1 finished early, rating skipped');
   check(!(await page.locator('.focus').isVisible()), 'finishing from the grid stays on the grid');
+
+  // Finished by mistake: reopen it from the rating sheet and carry on.
+  await tap(0);
+  await page.waitForSelector('dialog.rating-sheet[open] .reopen');
+  await shot('07a-reopen');
+  const cont = page.locator('dialog.rating-sheet .reopen .btn', { hasText: 'Continue' });
+  check((await cont.textContent()).includes('3:59 left'), 'reopen offers to continue with the time left');
+  await cont.click();
+  check(await stateIs(0, 'running'), 'continue: block 1 running again');
+  check(await focusOpen() && page.url().endsWith('#/block/0'), 'continue opens it full screen');
+  check((await text(page.locator('.focus-time'), '3:59')) === '3:59', 'continues from 3:59');
+  await page.clock.runFor(20_000);
+  await primary(); // pause
+  await focusState('paused');
+  await page.locator('.focus-finish').click();
+  await page.waitForSelector('dialog.rating-sheet[open] .reopen');
+  await page.locator('dialog.rating-sheet .reopen .btn', { hasText: 'Do it over' }).click();
+  await page.waitForSelector('dialog.rating-sheet', { state: 'detached' });
+  check((await focusState('running')) === 'running', 'do it over: running again, still full screen');
+  check((await text(page.locator('.focus-time'), '5:00')) === '5:00', 'do it over starts from 5:00');
+
+  // The metronome plays on in the block, drops to half volume at time-up, and stops on the grid.
+  await page.locator('.focus-metro').click();
+  await page.waitForSelector('dialog.metro-sheet[open]');
+  await page.locator('.metro-play').click();
+  await page.keyboard.press('Escape');
+  const metro = () => page.evaluate(async () => {
+    const { metronome } = await import('./js/audio.js');
+    return { playing: metronome.playing, level: metronome.level };
+  });
+  check((await metro()).playing, 'metronome started from the block');
+  check((await text(page.locator('.focus-metro-bpm'), '__never__', 200)).length > 0, 'block header shows the tempo');
+  await page.clock.runFor(5 * MIN + 1000);
+  await focusState('timeup');
+  { const m = await settle(async () => (await metro()).level, 0.5); check(m === 0.5, `metronome at half volume at time-up (${m})`); }
+  check((await metro()).playing, 'metronome keeps playing at time-up');
+  await back();
+  await focusOpen(false);
+  check(!(await settle(async () => (await metro()).playing, false)), 'back on the grid: metronome stopped');
+  check(!(await page.evaluate(() => document.documentElement.classList.contains('metro-on'))), 'beat pulse gone');
+  await tap(0);
+  await page.waitForSelector('dialog.rating-sheet[open]');
+  await page.locator('dialog.rating-sheet .rating-skip').click();
+  await page.waitForSelector('dialog.rating-sheet', { state: 'detached' });
+  check(await stateIs(0, 'completed'), 'block 1 finished again');
 
   // Metronome sheet opens and closes.
   await page.locator('.metro-btn').click();

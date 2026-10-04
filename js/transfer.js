@@ -173,6 +173,7 @@ function normaliseSession(s) {
     completed: !!t.completed,
     rating: t.rating ?? null,
     completed_at: t.completed_at ?? null,
+    prev_completed_at: isNum(t.prev_completed_at) ? t.prev_completed_at : null,
   }));
   out.running = Number.isInteger(out.running) ? out.running : null;
   out.last_tile = Number.isInteger(out.last_tile) ? out.last_tile : null;

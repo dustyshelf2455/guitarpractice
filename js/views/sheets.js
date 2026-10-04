@@ -1,6 +1,6 @@
 // Bottom sheets built on <dialog>: rating, confirm, and a generic container.
 
-import { el, icon, fmtDuration } from '../util.js';
+import { el, icon, fmtDuration, fmtClock } from '../util.js';
 
 /**
  * Open a modal bottom sheet. Tapping the backdrop or pressing Escape dismisses it.
@@ -43,8 +43,12 @@ export function openSheet({ title, label, className = '', onClose, content = [] 
 
 const RATING_WORDS = ['', 'Rough', 'Shaky', 'OK', 'Good', 'Nailed it'];
 
-/** Star rating sheet. onRate(n) on a star; onDismiss() if closed without choosing. */
-export function ratingSheet({ tile, onRate, onDismiss }) {
+/**
+ * Star rating sheet. onRate(n) on a star; onDismiss() if closed without choosing.
+ * With `reopen` ({ remainingMs, onReopen(restart) }) it also offers to continue
+ * the block or do it over, for a block finished by mistake.
+ */
+export function ratingSheet({ tile, onRate, onDismiss, reopen }) {
   const current = tile.rating;
   const meta = [tile.subtype_name, tile.area_name].filter(Boolean).join(' · ');
   const caption = el('div', { class: 'stars-scale', 'aria-hidden': 'true' },
@@ -81,8 +85,20 @@ export function ratingSheet({ tile, onRate, onDismiss }) {
         text: current ? 'Keep current rating' : 'Skip rating',
         onclick: () => sheet.close(undefined),
       }),
+      reopen ? el('div', { class: 'reopen' },
+        el('p', { class: 'reopen-label', text: 'Not finished after all?' }),
+        el('div', { class: 'reopen-actions' },
+          reopen.remainingMs >= 1000 ? el('button', {
+            class: 'btn btn-small', type: 'button', onclick: () => sheet.close('continue'),
+          }, icon('play'), `Continue · ${fmtClock(reopen.remainingMs)} left`) : null,
+          el('button', { class: 'btn btn-small', type: 'button', onclick: () => sheet.close('restart') }, icon('restart'), 'Do it over'),
+        )) : null,
     ],
-    onClose: (value) => (value ? onRate(value) : onDismiss && onDismiss()),
+    onClose: (value) => {
+      if (value === 'continue' || value === 'restart') reopen.onReopen(value === 'restart');
+      else if (value) onRate(value);
+      else if (onDismiss) onDismiss();
+    },
   });
   if (current) stars.children[current - 1].focus({ preventScroll: true });
   return sheet;

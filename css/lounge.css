@@ -243,12 +243,10 @@
 
 [data-skin="lounge"] .focus {
   background:
-    radial-gradient(85% 50% at 50% 64%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 72%),
+    radial-gradient(90% 45% at 50% 0%, color-mix(in srgb, var(--accent) 11%, transparent), transparent 75%),
     var(--grain),
     var(--page);
 }
-[data-skin="lounge"] .focus-title { font-size: clamp(1.625rem, 7.2vw, 2.25rem); }
-[data-skin="lounge"] .focus.has-details .focus-title { font-size: clamp(1.375rem, 6vw, 1.875rem); }
 [data-skin="lounge"] .focus-time { font-weight: 400; font-variation-settings: 'SOFT' 30, 'WONK' 0; }
 [data-skin="lounge"] .focus-state { font-family: var(--font-display); font-style: italic; font-weight: 500; font-size: 1.0625rem; }
 [data-skin="lounge"] .ring-ticks { display: inline; }

@@ -205,9 +205,11 @@ export class App {
     const s = this.active;
     if (!s) return { action: 'none' };
     const now = this.clock();
-    if (!E.completeTile(s, i, now)) return { action: 'none' };
     const t = s.tiles[i];
+    const before = t && t.item_id ? this.item(t.item_id)?.last_completed_at ?? null : null;
+    if (!E.completeTile(s, i, now)) return { action: 'none' };
     if (t.item_id) {
+      t.prev_completed_at = before;
       P.markCompleted(this.library, t.item_id, now);
       await this.saveLibrary();
     }
@@ -215,6 +217,44 @@ export class App {
     else await this.saveSession(s);
     this.emit('change');
     return { action: 'completed', session: s, index: i };
+  }
+
+  /** Can this finished block be reopened? Only in the session in progress, or the one just finished today. */
+  canReopen(sessionId, i) {
+    const s = this.sessions.find((x) => x.id === sessionId);
+    if (!s || !s.tiles[i] || !s.tiles[i].completed) return false;
+    if (s === this.active) return true;
+    return !this.active && s === this.doneSession;
+  }
+
+  /**
+   * Reopen a finished block and start it again: continuing from where it was
+   * finished, or from 5:00 with `restart`. Its item goes back to its earlier
+   * place in the rotation. Reopening a block of a session that just ended
+   * brings that session back.
+   */
+  async reopenTile(sessionId, i, { restart = false } = {}) {
+    if (!this.canReopen(sessionId, i)) return false;
+    const now = this.clock();
+    const s = this.sessions.find((x) => x.id === sessionId);
+    const t = s.tiles[i];
+    if (s !== this.active) {
+      E.reactivateSession(s, now);
+      this.active = s;
+      await this.setHome({ mode: 'plan' });
+    }
+    if (t.item_id) {
+      const item = this.item(t.item_id);
+      if (item && item.last_completed_at === t.completed_at) {
+        item.last_completed_at = t.prev_completed_at ?? null;
+        await this.saveLibrary();
+      }
+    }
+    E.reopenTile(s, i, now, restart);
+    E.startTile(s, i, now);
+    await this.saveSession(s);
+    this.emit('change');
+    return true;
   }
 
   async rateTile(sessionId, i, rating) {

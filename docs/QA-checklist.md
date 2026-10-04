@@ -18,6 +18,7 @@ Note the iOS and Android versions you test on. ✅ = works, ❌ = broken (note w
 - [ ] Start a second block: the first one pauses.
 - [ ] Top **Pause** pauses everything; **Resume** restarts the same block.
 - [ ] **Finish** on a paused block opens the rating sheet; its recorded time matches.
+- [ ] Tap a finished block: the sheet offers **Continue · m:ss left** and **Do it over**. Continue picks up where it stopped; Do it over starts from 5:00. Both open the block full screen.
 
 ## Chime, vibration, screen
 
@@ -40,6 +41,8 @@ Note the iOS and Android versions you test on. ✅ = works, ❌ = broken (note w
 - [ ] Play a backing track in another app (Spotify, YouTube), then run Timebox: the chime plays over it without stopping the music.
 - [ ] Metronome: start it, close the sheet. It keeps clicking and the toolbar shows the bpm. It stays steady (no drift or stutter) for a few minutes.
 - [ ] On a block that says "70 bpm", the metronome offers "Use 70 bpm from this block".
+- [ ] Metronome on in a full-screen block: at 0:00 the chime plays and the click carries on at half volume. Going back to the grid stops it.
+- [ ] After turning the metronome off and on again (from a block), it clicks.
 
 ## Data
 

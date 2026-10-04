@@ -20,15 +20,16 @@ Install it rather than using it in a browser tab. Installed, it opens full scree
 
 | You do | It does |
 |---|---|
-| Tap a block | Starts its 5:00 countdown and opens it **full screen**: the item, a big countdown ring, and Pause. Starting a block pauses any other running block. |
+| Tap a block | Starts its 5:00 countdown and opens it **full screen**: the item and its diagram fill the screen, with a compact countdown dial and the buttons at the bottom (on a phone held sideways, down the right). Starting a block pauses any other running block. |
 | Tap the ring or **Pause** | Pauses the block. Tap again to resume. **Finish** appears while paused, to complete it early. |
-| **All blocks** (top left), or the back gesture | Returns to the grid. The block keeps running, and tapping it reopens full screen. |
+| **All blocks** (top left), or the back gesture | Returns to the grid and stops the metronome. The block keeps running, and tapping it reopens full screen. |
 | **Pause / Resume** (top of grid) | Pauses or resumes the whole session. Resume reopens the block full screen. |
 | ⇄ on a block | Swaps in the next item from that block's list. Tap again to keep cycling. Only on blocks you haven't started. |
-| Block hits 0:00 | Chimes and vibrates (vibration is Android only). Tap **Finish and rate**, choose stars, and you're back at the grid. |
+| Block hits 0:00 | Chimes and vibrates (vibration is Android only). A metronome that is playing drops to half volume, so you can finish the phrase. Tap **Finish and rate**, choose stars, and you're back at the grid. |
+| Tap a finished block | Change its rating, or reopen it: **Continue** picks up with the time it had left, **Do it over** starts again from 5:00. For a block finished by mistake. |
 | **End** (bottom) | Ends the session. It is saved as partial if not every block is done, and discarded if none are. |
 | 🔗 on a block | Opens that item's link (backing track, tab, video). |
-| Metronome (bottom, or top right when full screen) | A wooden click track with accents. While it plays, a glow swings across the top of the screen in time, landing on each click (handy with the phone on silent). It offers the tempo from the current block, e.g. "70 bpm". It keeps playing when the sheet is closed. |
+| Metronome (bottom, or top right when full screen) | A wooden click track with accents. While it plays, a glow swings across the top of the screen in time, landing on each click (handy with the phone on silent). It offers the tempo from the current block, e.g. "70 bpm". It keeps playing when the sheet is closed, and shows its tempo at the top of a full-screen block. It stops when you go back to the grid. |
 
 **Diagrams:** a block can show scale shapes, arpeggios or chord charts on its full-screen card. The starter library has them for its scales, chords, picking patterns and pentatonic or blues items. To add or change one, go to Settings → Library → a subtype → tap an item → **Diagrams**:
 
@@ -42,7 +43,9 @@ Install it rather than using it in a browser tab. Installed, it opens full scree
 - **Theme:** Auto follows your phone's light/dark setting; Dark and Light force one.
 - **Blocks:** *Grid* shows all twelve at once (3×4). *List* shows full-width rows, six to a screen, and scrolls.
 
-**iPad:** on a tablet (sized for the 13" iPad Pro) the whole interface scales up about 1.6× for easy reading. In landscape the grid is 4×3, and a full-screen block puts its diagram beside the dial.
+**iPad:** on a tablet (sized for the 13" iPad Pro) the whole interface scales up about 1.6× for easy reading. In landscape the grid is 4×3.
+
+**Diagrams full screen:** held upright, scales and runs are drawn on an upright neck (low E on the left, nut at the top), as big as the screen allows. Sideways, the neck runs across. Chord charts sit in a grid.
 
 **Which item comes up:** each block has a subtype (Warm-up, Scales, Songs, and so on). Within a subtype, the item you completed longest ago comes first, and items you've never done come before everything. Only completed blocks count, so anything you skip stays next in line. Today's plan is fixed the first time you open the app each day.
 
@@ -62,6 +65,7 @@ Install it rather than using it in a browser tab. Installed, it opens full scree
 - Ending a session with no completed blocks discards it rather than saving an empty session.
 - After a session ends, the screen shows its result. **New** starts another session with a fresh plan from the rotation.
 - You can tap a completed block (or a block in History) to change its rating.
+- A finished block can be reopened in today's session, including the last block of a session that just ended (the session comes back). Its item returns to its earlier place in the rotation, so a mistaken finish doesn't push it to the back of the queue.
 - The 45-character item limit is a soft warning, not a hard stop.
 - "Reset library to defaults" keeps all session history.
 - Requested extras: an optional link per library item, and the built-in metronome.

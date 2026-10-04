@@ -88,6 +88,79 @@ test('full session: 12 blocks complete, saved as complete, done screen, rotation
   assert.ok(!tomorrow.slice(4, 8).some((id) => planned.includes(id)), 'yesterday\'s songs rotate out');
 });
 
+test('a block finished by mistake reopens, and its item keeps its place in the rotation', async () => {
+  const { make, clock } = setup();
+  let app = await make();
+  const itemId = app.boardTiles()[2].item_id;
+  await app.tapTile(2);
+  clock.now += MIN;
+  await app.tapTile(2); // pause
+  const r = await app.completeTile(2);
+  assert.equal(r.action, 'completed');
+  assert.equal(app.item(itemId).last_completed_at, clock.now);
+  assert.ok(app.canReopen(r.session.id, 2));
+  assert.equal(app.canReopen(r.session.id, 3), false, 'not finished, nothing to reopen');
+
+  clock.now += 5000;
+  assert.ok(await app.reopenTile(r.session.id, 2));
+  const t = app.active.tiles[2];
+  assert.equal(t.state, 'running', 'continues straight away');
+  assert.equal(app.item(itemId).last_completed_at, null, 'never completed after all');
+  clock.now += 30_000;
+  assert.equal(TILE_MS - (t.elapsed_ms + (clock.now - t.run_started_at)), 3.5 * MIN);
+
+  await app.tapTile(2); // pause
+  await app.completeTile(2);
+  assert.ok(await app.reopenTile(r.session.id, 2, { restart: true }));
+  app = await make();
+  assert.equal(app.active.tiles[2].state, 'running');
+  assert.equal(app.active.tiles[2].elapsed_ms, 0, 'do it over: from 5:00');
+});
+
+test('reopening the last block brings a finished session back', async () => {
+  const { make, clock } = setup();
+  let app = await make();
+  for (let i = 0; i < 12; i++) {
+    await app.tapTile(i);
+    clock.now += TILE_MS + 2000;
+    await app.tick();
+    await app.tapTile(i);
+  }
+  assert.equal(app.mode, 'done');
+  const s = app.doneSession;
+  const itemId = s.tiles[11].item_id;
+  assert.ok(app.canReopen(s.id, 11));
+  assert.ok(await app.reopenTile(s.id, 11, { restart: true }));
+  assert.equal(app.mode, 'active');
+  assert.equal(app.active.id, s.id);
+  assert.equal(app.active.status, 'active');
+  assert.equal(app.active.tiles[11].state, 'running');
+  assert.equal(app.item(itemId).last_completed_at, null);
+  app = await make();
+  assert.equal(app.mode, 'active', 'survives a reload');
+  assert.equal(app.sessions.length, 1, 'still one session, not a copy');
+
+  clock.now += TILE_MS + 2000;
+  await app.tick();
+  await app.tapTile(11);
+  assert.equal(app.mode, 'done');
+  assert.equal(app.doneSession.status, 'complete');
+});
+
+test('older sessions cannot be reopened', async () => {
+  const { make, clock } = setup();
+  const app = await make();
+  await app.tapTile(0);
+  clock.now += MIN;
+  await app.tapTile(0);
+  await app.completeTile(0);
+  const old = await app.endSession();
+  await app.newSession();
+  await app.tapTile(1); // a new session is under way
+  assert.equal(app.canReopen(old.id, 0), false);
+  assert.equal(await app.reopenTile(old.id, 0), false);
+});
+
 test('master pause and resume through the app', async () => {
   const { make, clock } = setup();
   const app = await make();

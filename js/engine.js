@@ -30,6 +30,7 @@ export function newTile(entry) {
     completed: false,
     rating: null,
     completed_at: null,
+    prev_completed_at: null, // the item's rotation date before this block completed it
   };
 }
 
@@ -178,6 +179,39 @@ export function completeTile(s, i, now) {
   if (s.last_tile === i) s.last_tile = null;
   s.last_activity_at = now;
   return true;
+}
+
+/**
+ * Undo a completion so the block can be practised again. With `restart` (or
+ * when its five minutes were used up) it goes back to 5:00; otherwise it
+ * continues from where it was finished, paused.
+ */
+export function reopenTile(s, i, now, restart = false) {
+  settle(s, now);
+  const t = s.tiles[i];
+  if (!t || !t.completed) return false;
+  t.completed = false;
+  t.completed_at = null;
+  t.rating = null;
+  if (restart || t.elapsed_ms >= TILE_MS) {
+    t.elapsed_ms = 0;
+    t.timeup_at = null;
+    t.state = 'idle';
+  } else {
+    t.state = 'paused';
+  }
+  t.elapsed_seconds = Math.round(t.elapsed_ms / 1000);
+  s.last_activity_at = now;
+  return true;
+}
+
+/** Bring an ended session back to life (when its last block is reopened). */
+export function reactivateSession(s, now) {
+  s.status = 'active';
+  s.ended_at = null;
+  s.running = null;
+  s.last_tile = null;
+  s.last_activity_at = now;
 }
 
 export function rateTile(s, i, rating) {

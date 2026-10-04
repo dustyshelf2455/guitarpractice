@@ -6,6 +6,7 @@
 
 let ctx = null;
 let master = null;
+let metroBus = null; // the metronome's own volume, so it can be turned down without touching the chime
 
 function context() {
   if (!ctx) {
@@ -15,6 +16,9 @@ function context() {
     master = ctx.createGain();
     master.gain.value = 0.9;
     master.connect(ctx.destination);
+    metroBus = ctx.createGain();
+    metroBus.gain.value = metronome.level;
+    metroBus.connect(master);
   }
   return ctx;
 }
@@ -51,6 +55,7 @@ export function freshAudio() {
   const old = ctx;
   ctx = null;
   master = null;
+  metroBus = null;
   clicks = null;
   scheduled = null;
   unlockAudio.done = false;
@@ -248,7 +253,7 @@ async function clickBuffers(c) {
 function playBuffer(c, buffer, when) {
   const src = c.createBufferSource();
   src.buffer = buffer;
-  src.connect(master);
+  src.connect(metroBus);
   src.start(when);
 }
 
@@ -260,13 +265,25 @@ export const metronome = {
   beats: 4, // 0 = no accent grouping
   accent: true,
   listeners: new Set(), // (beatIndex, strong) => void, called close to when each click sounds
+  level: 1, // 1 = full volume; 0.5 once the block's time is up
   _timer: null,
   _next: 0,
   _beat: 0,
 
+  /** Set the metronome volume (0..1), with a short ramp so it never clicks. */
+  setLevel(level) {
+    this.level = level;
+    if (!ctx || !metroBus) return;
+    const now = ctx.currentTime;
+    metroBus.gain.cancelScheduledValues(now);
+    metroBus.gain.setValueAtTime(metroBus.gain.value, now);
+    metroBus.gain.linearRampToValueAtTime(level, now + 0.15);
+  },
+
   start() {
     const c = context();
     if (!c) return;
+    this.setLevel(1);
     if (c.state !== 'running') c.resume().catch(() => {});
     this.playing = true;
     this._beat = 0;

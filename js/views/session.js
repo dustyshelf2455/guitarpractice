@@ -128,7 +128,10 @@ export function sessionView(app, ctx) {
     if (r.action === 'completed') rate(r.session, r.index);
   }
 
-  /** Rate a block; when it was rated from the focus view, return to the grid afterwards. */
+  /**
+   * Rate a block; when it was rated from the focus view, return to the grid
+   * afterwards. The sheet also offers to reopen the block (continue, or do it over).
+   */
   function rate(session, index) {
     const tile = session.tiles[index];
     const fromFocus = focusIndex === index;
@@ -136,8 +139,16 @@ export function sessionView(app, ctx) {
       if (fromFocus && focusIndex === index) ctx.back('#/');
       else tiles[index].main.focus({ preventScroll: true });
     };
+    const reopen = app.canReopen(session.id, index) ? {
+      remainingMs: TILE_MS - tile.elapsed_seconds * 1000,
+      onReopen: async (restart) => {
+        ctx.refreshAudio?.();
+        if (await app.reopenTile(session.id, index, { restart }) && focusIndex !== index) openFocus(index);
+      },
+    } : null;
     ratingSheet({
       tile,
+      reopen,
       onRate: async (n) => {
         await app.rateTile(session.id, index, n);
         done();

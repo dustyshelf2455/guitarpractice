@@ -4,7 +4,6 @@
 
 import { el, svg, icon, fmtClock, setDigits } from '../util.js';
 import { tileRemaining, sessionRemaining, completedCount, TILE_MS } from '../engine.js';
-import { iconButton } from './sheets.js';
 import { renderDiagrams } from '../diagrams.js';
 
 const R = 46;
@@ -38,7 +37,8 @@ export function createFocus(handlers) {
     el('button', { class: 'focus-back', type: 'button', onclick: handlers.collapse },
       icon('down'), el('span', { text: 'All blocks' })),
     sessionInfo,
-    iconButton('metronome', 'Metronome', handlers.openMetronome, 'focus-metro'),
+    el('button', { class: 'focus-metro', type: 'button', 'aria-label': 'Metronome', title: 'Metronome', onclick: handlers.openMetronome },
+      icon('metronome'), el('span', { class: 'focus-metro-bpm' })),
   );
 
   const area = el('span', { class: 'focus-area' });
@@ -73,10 +73,14 @@ export function createFocus(handlers) {
   const finish = el('button', { class: 'btn focus-finish', type: 'button', onclick: handlers.finish }, icon('check'), 'Finish');
   const actions = el('div', { class: 'focus-actions' }, primary, finish);
 
+  // Layout: header; the exercise and its diagrams fill the middle; a compact
+  // dock at the bottom holds the dial and the buttons, within thumb reach.
   const inner = el('div', { class: 'focus-inner' },
     head,
-    el('div', { class: 'focus-body' }, meta, title, link, details, timer),
-    actions,
+    el('div', { class: 'focus-body' },
+      el('div', { class: 'focus-hero' }, meta, title, link),
+      details),
+    el('div', { class: 'focus-dock' }, timer, actions),
   );
   const root = el('section', { class: 'focus', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'focus-title', hidden: true }, inner);
   root.addEventListener('keydown', (e) => {
@@ -141,9 +145,10 @@ export function createFocus(handlers) {
     const key = JSON.stringify([diagrams || [], itemText]);
     if (key === detailsKey) return;
     detailsKey = key;
-    const nodes = renderDiagrams(diagrams, itemText);
+    const nodes = renderDiagrams(diagrams, itemText, { upright: true });
     details.replaceChildren(...(nodes || []));
     details.hidden = !nodes;
+    details.classList.toggle('multi', !!nodes && nodes.length > 1);
     root.classList.toggle('has-details', !!nodes);
   }
 

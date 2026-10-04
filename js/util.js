@@ -202,6 +202,7 @@ const ICONS = {
   plus: '<path d="M12 5v14M5 12h14"/>',
   flag: '<path d="M6 21V4M6 4h11l-2 4 2 4H6"/>',
   star: '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',
+  restart: '<path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.5h4.5"/>',
 };
 
 export function icon(name, cls = '') {

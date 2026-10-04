@@ -1,13 +1,13 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-skin="lounge">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Timebox</title>
   <meta name="description" content="Timeboxed guitar practice: twelve 5-minute blocks a day, with ratings and stats.">
   <meta name="color-scheme" content="dark light">
-  <meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
-  <meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121a16" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f2ebdb" media="(prefers-color-scheme: light)">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Timebox">
@@ -17,12 +17,15 @@
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="preload" href="fonts/fraunces-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/lounge.css">
   <script>
-    // Apply a saved light/dark choice before first paint (the real setting lives in IndexedDB).
+    // Apply the saved light/dark and style choices before first paint (the real settings live in IndexedDB).
     try {
       var t = localStorage.getItem('timebox-theme');
       if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t;
+      if (localStorage.getItem('timebox-skin') === 'classic') document.documentElement.dataset.skin = 'classic';
     } catch (e) {}
   </script>
   <script type="module" src="js/main.js"></script>

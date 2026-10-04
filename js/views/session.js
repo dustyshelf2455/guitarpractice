@@ -3,7 +3,7 @@
 // Tile DOM nodes are created once and updated in place, so the clock refresh
 // is cheap and keyboard/screen-reader focus is never lost.
 
-import { el, icon, fmtClock, fmtDuration, fmtDate, mean } from '../util.js';
+import { el, icon, fmtClock, fmtDuration, fmtDate, mean, setDigits } from '../util.js';
 import { tileRemaining, sessionRemaining, masterState, completedCount, TILE_MS } from '../engine.js';
 import { ratingSheet, confirmSheet, iconButton } from './sheets.js';
 import { createFocus } from './focus.js';
@@ -68,6 +68,19 @@ export function sessionView(app, ctx) {
   let origin = null; // tile rect captured at tap time, for the grow animation
 
   const root = el('div', { class: 'screen session-screen' }, head, grid, bar, focus.root);
+
+  // List layout: six rows fill the space between header and toolbar; the rest scroll.
+  function sizeRows() {
+    if (app.settings.layout !== 'list') {
+      grid.style.removeProperty('--row-h');
+      return;
+    }
+    const cs = getComputedStyle(grid);
+    const h = grid.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+    const gap = parseFloat(cs.rowGap) || 8;
+    if (h > 0) grid.style.setProperty('--row-h', `${Math.floor((h - gap * 5) / 6)}px`);
+  }
+  if (globalThis.ResizeObserver) new ResizeObserver(sizeRows).observe(grid);
 
   function makeTile(i) {
     const area = el('span', { class: 'tile-area' });
@@ -208,6 +221,11 @@ export function sessionView(app, ctx) {
     const session = app.boardSession();
     const board = app.boardTiles();
     root.dataset.mode = mode;
+    const list = app.settings.layout === 'list';
+    if (root.classList.contains('layout-list') !== list) {
+      root.classList.toggle('layout-list', list);
+      requestAnimationFrame(sizeRows);
+    }
 
     // Header
     const done = session ? completedCount(session) : 0;
@@ -237,7 +255,7 @@ export function sessionView(app, ctx) {
       clock.hidden = false;
       doneSummary.hidden = true;
       const remaining = session ? sessionRemaining(session, now) : total * TILE_MS;
-      clock.textContent = fmtClock(remaining);
+      setDigits(clock, fmtClock(remaining));
       const ms = session ? masterState(session) : 'idle';
       masterBtn.hidden = ms === 'idle';
       masterBtn.className = `master-btn ${ms === 'running' ? 'is-running' : 'is-paused'}`;
@@ -340,7 +358,7 @@ export function sessionView(app, ctx) {
   function tick(now = app.clock()) {
     const s = app.active;
     if (!s || s.running == null) return;
-    clock.textContent = fmtClock(sessionRemaining(s, now));
+    setDigits(clock, fmtClock(sessionRemaining(s, now)));
     const i = s.running;
     const t = s.tiles[i];
     if (t.state === 'running') tiles[i].time.textContent = fmtClock(tileRemaining(t, now));

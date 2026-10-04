@@ -1,0 +1,312 @@
+/* Lounge: the default style. A reading room after dark: forest green and
+   parchment, brass fittings, a warm soft serif, faint paper grain, and
+   bookplate double rules. Structure lives in app.css; this file only
+   restyles, scoped to [data-skin="lounge"]. "Classic" turns it off. */
+
+@font-face {
+  font-family: 'Fraunces';
+  src: url('../fonts/fraunces-normal.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Fraunces';
+  src: url('../fonts/fraunces-italic.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* ------------------------------------------------------------- tokens (evening) */
+
+:root[data-skin="lounge"] {
+  color-scheme: dark;
+  --page: #121a16;
+  --surface: #1b2721;
+  --surface-2: #22302a;
+  --surface-3: #2d3c34;
+  --border: rgba(233, 220, 188, 0.11);
+  --border-strong: rgba(233, 220, 188, 0.24);
+  --text: #f0e7d2;
+  --text-2: #cbc2a8;
+  --muted: #959b8a;
+  --gridline: #26342d;
+  --axis: #3a4a41;
+  --invert-bg: #ecdfbf;
+  --invert-text: #172219;
+  --invert-muted: #5d5b45;
+  --focus: #d4a85c;
+  --good: #93b866;
+  --critical: #d26b4a;
+  --star: #dcae5c;
+  --track: #2b3a32;
+  --accent: #d4a85c;
+  --tile-rule: rgba(233, 220, 188, 0.09);
+  --lamp: rgba(212, 168, 92, 0.09);
+  --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.93 0 0 0 0 0.87 0 0 0 0 0.72 0 0 0 0.11 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
+
+  /* Area accents: earthy, and validated for colour-blind separation on this surface. */
+  --c0: #c96335; --c1: #3b8fd0; --c2: #6fa13a; --c3: #b15e95;
+  --c4: #bb8318; --c5: #2a9d8f; --c6: #8b80d6; --c7: #d07a7a;
+  --c-none: #6f7468;
+
+  --seq-0: #22302a; --seq-1: #2e4a31; --seq-2: #4b7238; --seq-3: #78a04a; --seq-4: #b7d48a;
+  --series: #8fb35b;
+  --series-partial: #4f6b3a;
+  --primary-bg: #d4a85c;
+  --primary-text: #17221a;
+  --font-display: 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+}
+
+/* ------------------------------------------------------------- tokens (daylight) */
+
+:root[data-skin="lounge"][data-theme="light"] {
+  color-scheme: light;
+  --page: #f1eadb;
+  --surface: #faf6ec;
+  --surface-2: #efe7d4;
+  --surface-3: #e3d8bf;
+  --border: rgba(70, 55, 30, 0.14);
+  --border-strong: rgba(70, 55, 30, 0.3);
+  --text: #1e2b23;
+  --text-2: #4b4a39;
+  --muted: #6e6a55;
+  --gridline: #e3dac6;
+  --axis: #c8bca2;
+  --invert-bg: #26392e;
+  --invert-text: #f3ead3;
+  --invert-muted: #b7b192;
+  --focus: #865c18;
+  --good: #4d7a30;
+  --critical: #b04f2e;
+  --star: #a8741c;
+  --track: #e2d8c1;
+  --accent: #865c18;
+  --tile-rule: rgba(70, 55, 30, 0.12);
+  --lamp: rgba(255, 250, 236, 0.85);
+  --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.32 0 0 0 0 0.26 0 0 0 0 0.16 0 0 0 0.09 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
+  --c0: #b5532a; --c1: #2a75b8; --c2: #5a8526; --c3: #9b4880;
+  --c4: #a87410; --c5: #1d7f74; --c6: #5f53b0; --c7: #b84f4f;
+  --c-none: #a39d86;
+  --seq-0: #e8dfca; --seq-1: #d3dfb4; --seq-2: #a3c071; --seq-3: #6c9440; --seq-4: #3e5f22;
+  --series: #5a8526;
+  --series-partial: #b5cc8c;
+  --primary-bg: #26392e;
+  --primary-text: #f3ead3;
+}
+@media (prefers-color-scheme: light) {
+  :root[data-skin="lounge"]:not([data-theme="dark"]) {
+    color-scheme: light;
+    --page: #f1eadb;
+    --surface: #faf6ec;
+    --surface-2: #efe7d4;
+    --surface-3: #e3d8bf;
+    --border: rgba(70, 55, 30, 0.14);
+    --border-strong: rgba(70, 55, 30, 0.3);
+    --text: #1e2b23;
+    --text-2: #4b4a39;
+    --muted: #6e6a55;
+    --gridline: #e3dac6;
+    --axis: #c8bca2;
+    --invert-bg: #26392e;
+    --invert-text: #f3ead3;
+    --invert-muted: #b7b192;
+    --focus: #865c18;
+    --good: #4d7a30;
+    --critical: #b04f2e;
+    --star: #a8741c;
+    --track: #e2d8c1;
+    --accent: #865c18;
+    --tile-rule: rgba(70, 55, 30, 0.12);
+    --lamp: rgba(255, 250, 236, 0.85);
+    --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.32 0 0 0 0 0.26 0 0 0 0 0.16 0 0 0 0.09 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
+    --c0: #b5532a; --c1: #2a75b8; --c2: #5a8526; --c3: #9b4880;
+    --c4: #a87410; --c5: #1d7f74; --c6: #5f53b0; --c7: #b84f4f;
+    --c-none: #a39d86;
+    --seq-0: #e8dfca; --seq-1: #d3dfb4; --seq-2: #a3c071; --seq-3: #6c9440; --seq-4: #3e5f22;
+    --series: #5a8526;
+    --series-partial: #b5cc8c;
+    --primary-bg: #26392e;
+    --primary-text: #f3ead3;
+  }
+}
+
+/* ------------------------------------------------------------- the room */
+
+[data-skin="lounge"] body {
+  background: radial-gradient(130% 60% at 50% -12%, var(--lamp), transparent 62%) no-repeat, var(--page);
+  background-attachment: fixed;
+}
+/* Paper grain, behind everything, never in the way of a tap. */
+[data-skin="lounge"] body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: -1;
+  background-image: var(--grain);
+  pointer-events: none;
+}
+
+/* Type: the soft serif for things you read at a glance; the system sans for small UI. */
+[data-skin="lounge"] .clock,
+[data-skin="lounge"] .focus-time,
+[data-skin="lounge"] .metro-bpm,
+[data-skin="lounge"] .stat-value {
+  font-family: var(--font-display);
+  font-weight: 450;
+  font-variation-settings: 'SOFT' 60, 'WONK' 0;
+  letter-spacing: 0;
+}
+[data-skin="lounge"] .dg { display: inline-block; width: 0.64em; text-align: center; }
+[data-skin="lounge"] .dg-sep { display: inline-block; width: 0.3em; text-align: center; }
+[data-skin="lounge"] .tile-text,
+[data-skin="lounge"] .focus-title,
+[data-skin="lounge"] .page-title,
+[data-skin="lounge"] .sheet-title,
+[data-skin="lounge"] .rating-item,
+[data-skin="lounge"] .chord-name,
+[data-skin="lounge"] .done-title {
+  font-family: var(--font-display);
+  font-variation-settings: 'SOFT' 100, 'WONK' 0;
+}
+[data-skin="lounge"] .tile-text { font-weight: 560; letter-spacing: 0.003em; }
+[data-skin="lounge"] .focus-title,
+[data-skin="lounge"] .page-title,
+[data-skin="lounge"] .sheet-title { font-weight: 600; }
+[data-skin="lounge"] .head-sub,
+[data-skin="lounge"] .done-detail {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 0.9375rem;
+  color: var(--text-2);
+}
+[data-skin="lounge"] .done-title { font-style: italic; font-weight: 500; font-size: 1.5rem; display: flex; align-items: center; gap: 8px; }
+
+/* A small sprig: the one ornament. */
+[data-skin="lounge"] .done-title::before,
+[data-skin="lounge"] .empty strong::before {
+  content: '';
+  display: inline-block;
+  width: 1.05em; height: 1.05em;
+  background: var(--accent);
+  -webkit-mask: var(--sprig) center / contain no-repeat;
+  mask: var(--sprig) center / contain no-repeat;
+}
+[data-skin="lounge"] .empty strong { display: flex; justify-content: center; align-items: center; gap: 6px; font-family: var(--font-display); font-size: 1.0625rem; }
+:root[data-skin="lounge"] {
+  --sprig: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M4.5 20.5C8 15.5 12 11 19.5 4' fill='none' stroke='black' stroke-width='1.4' stroke-linecap='round'/><path d='M8.2 15.6c-3-.2-4.6-2-4.9-4.5 2.8.2 4.5 2 4.9 4.5z'/><path d='M9.3 14.3c.1-3 2-4.8 4.5-5.2-.1 2.8-1.9 4.7-4.5 5.2z'/><path d='M12.6 10.6c-2.9-.4-4.4-2.3-4.5-4.8 2.7.4 4.3 2.2 4.5 4.8z'/><path d='M14.2 9.1c.3-2.9 2.3-4.6 4.8-4.8-.3 2.7-2.2 4.5-4.8 4.8z'/><circle cx='19.6' cy='4' r='1.2'/></svg>");
+}
+
+/* Area markers become little diamond labels. */
+[data-skin="lounge"] .dot,
+[data-skin="lounge"] .swatch {
+  border-radius: 1.5px;
+  transform: rotate(45deg) scale(0.9);
+}
+
+/* ------------------------------------------------------------- session */
+
+[data-skin="lounge"] .master-btn {
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--text);
+  border-radius: 999px;
+}
+[data-skin="lounge"] .master-btn.is-paused { background: var(--primary-bg); color: var(--primary-text); border-color: var(--primary-bg); }
+[data-skin="lounge"] .progress { height: 3px; background: var(--track); }
+[data-skin="lounge"] .progress-fill { background: linear-gradient(90deg, var(--good), var(--accent)); }
+
+/* Tiles: a bookplate — outer edge, a gap, then a hairline rule. */
+[data-skin="lounge"] .tile {
+  --tile-bg: var(--surface);
+  background: var(--tile-bg);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 3px var(--tile-bg), inset 0 0 0 4px var(--tile-rule), 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+[data-skin="lounge"] .tile[data-state="running"] {
+  --tile-bg: var(--invert-bg);
+  --tile-rule: color-mix(in srgb, var(--invert-text) 22%, transparent);
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 3px var(--tile-bg), inset 0 0 0 4px var(--tile-rule), 0 0 0 1px var(--accent), 0 6px 24px -6px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+[data-skin="lounge"] .tile[data-state="paused"] { --tile-bg: var(--surface-2); border: 2px dashed var(--accent); box-shadow: none; }
+[data-skin="lounge"] .tile[data-state="timeup"] { --tile-bg: var(--surface-2); border: 4px double var(--accent); box-shadow: none; }
+[data-skin="lounge"] .tile[data-state="timeup"] .tile-status { color: var(--accent); font-family: var(--font-display); font-style: italic; font-size: 0.9375rem; }
+[data-skin="lounge"] .tile[data-state="completed"] { --tile-bg: transparent; border-color: var(--border); box-shadow: none; }
+[data-skin="lounge"] .tile[data-state="completed"] .tile-text { font-weight: 450; }
+[data-skin="lounge"] .tile-finish { background: var(--primary-bg); color: var(--primary-text); }
+[data-skin="lounge"] .tile-time { font-variant-numeric: tabular-nums; }
+[data-skin="lounge"] .tile[data-state="running"] .tile-time { font-family: var(--font-display); font-weight: 600; font-variation-settings: 'SOFT' 60; }
+[data-skin="lounge"] .session-bar { border-top: 1px solid var(--border); padding-top: 4px; }
+
+/* ------------------------------------------------------------- focus */
+
+[data-skin="lounge"] .focus {
+  background:
+    radial-gradient(85% 50% at 50% 64%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 72%),
+    var(--grain),
+    var(--page);
+}
+[data-skin="lounge"] .focus-title { font-size: clamp(1.625rem, 7.2vw, 2.25rem); }
+[data-skin="lounge"] .focus.has-details .focus-title { font-size: clamp(1.375rem, 6vw, 1.875rem); }
+[data-skin="lounge"] .focus-time { font-weight: 400; font-variation-settings: 'SOFT' 30, 'WONK' 0; }
+[data-skin="lounge"] .focus-state { font-family: var(--font-display); font-style: italic; font-weight: 500; font-size: 1.0625rem; }
+[data-skin="lounge"] .ring-ticks { display: inline; }
+[data-skin="lounge"] .tick { stroke: var(--border-strong); stroke-width: 0.35; }
+[data-skin="lounge"] .tick.major { stroke: var(--text-2); stroke-width: 0.6; }
+[data-skin="lounge"] .ring-bg { stroke: var(--track); stroke-width: 2; }
+[data-skin="lounge"] .ring-fg { stroke: var(--accent); stroke-width: 2.5; }
+[data-skin="lounge"] .focus[data-state="paused"] .ring-fg { stroke: var(--muted); }
+[data-skin="lounge"] .focus[data-state="timeup"] .ring-bg { stroke: var(--accent); }
+[data-skin="lounge"] .focus[data-state="timeup"] .focus-state { color: var(--accent); }
+[data-skin="lounge"] .focus-actions .btn { border-radius: 999px; }
+[data-skin="lounge"] .focus-back { color: var(--text-2); }
+
+/* Diagrams: brass roots, serif chord names. */
+[data-skin="lounge"] .board-dot.root circle { fill: var(--accent); stroke: var(--accent); }
+[data-skin="lounge"] .board-dot.root text { fill: var(--primary-text); }
+[data-skin="lounge"] .board-nut { stroke: var(--text-2); }
+[data-skin="lounge"] .chord-name { font-weight: 600; }
+[data-skin="lounge"] .diagram-title { font-family: var(--font-display); font-style: italic; font-weight: 500; }
+
+/* ------------------------------------------------------------- pages, cards, sheets */
+
+[data-skin="lounge"] .page-head { background: transparent; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+[data-skin="lounge"] .page-head::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 100%;
+  background: color-mix(in srgb, var(--page) 82%, transparent); z-index: -1;
+}
+[data-skin="lounge"] .page-title { font-size: 1.5rem; }
+[data-skin="lounge"] .section-head { justify-content: flex-start; align-items: center; gap: 12px; }
+[data-skin="lounge"] .section-head::after {
+  content: ''; flex: 1; height: 4px;
+  border-top: 1px solid var(--border-strong);
+  border-bottom: 1px solid var(--border);
+}
+[data-skin="lounge"] .section-title {
+  font-family: var(--font-display);
+  font-size: 0.8125rem; letter-spacing: 0.16em; font-weight: 650;
+  color: var(--accent);
+}
+[data-skin="lounge"] .card {
+  border-color: var(--border-strong);
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 3px var(--surface), inset 0 0 0 4px var(--tile-rule);
+}
+[data-skin="lounge"] .btn { border-radius: 999px; }
+[data-skin="lounge"] .chip { border-color: var(--accent); }
+[data-skin="lounge"] .segmented { border-radius: 999px; }
+[data-skin="lounge"] .seg { border-radius: 999px; }
+[data-skin="lounge"] .seg[aria-checked="true"],
+[data-skin="lounge"] .seg[aria-current="page"] { box-shadow: 0 0 0 1px var(--accent); }
+
+[data-skin="lounge"] .sheet-panel {
+  border-color: var(--border-strong);
+  box-shadow: 0 -18px 50px rgba(0, 0, 0, 0.35), inset 0 3px 0 -2px var(--tile-rule);
+}
+[data-skin="lounge"] .sheet-grip { background: var(--accent); opacity: 0.55; }
+[data-skin="lounge"] .star { border-radius: 50%; }
+[data-skin="lounge"] .stars-scale { font-family: var(--font-display); font-style: italic; }
+[data-skin="lounge"] .stat-label { letter-spacing: 0.01em; }
+[data-skin="lounge"] .badge { border-color: var(--accent); color: var(--accent); }
+[data-skin="lounge"] .toast { border-radius: 999px; }

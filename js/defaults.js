@@ -155,6 +155,8 @@ export function defaultLibrary() {
 export function defaultSettings() {
   return {
     theme: 'auto', // 'auto' | 'dark' | 'light'
+    skin: 'lounge', // 'lounge' | 'classic'
+    layout: 'grid', // 'grid' | 'list'
     metronome: { bpm: 70, beats: 4, accent: true },
   };
 }

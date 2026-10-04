@@ -97,13 +97,19 @@ export function settingsView(app, ctx) {
   lib.append(el('div', { class: 'list' }, linkRow(ctx, '#/settings/areas', 'Areas and subtypes', 'Add, rename or regroup')));
 
   // Appearance
-  const themes = [['auto', 'Auto'], ['dark', 'Dark'], ['light', 'Light']];
-  const themeGroup = el('div', { class: 'segmented', role: 'radiogroup', 'aria-label': 'Theme' },
-    themes.map(([value, label]) => el('button', {
-      type: 'button', role: 'radio', class: 'seg', dataset: { key: `theme-${value}` },
-      'aria-checked': String(app.settings.theme === value),
-      onclick: () => app.updateSettings({ theme: value }),
-    }, label)));
+  const choice = (key, label, options) => el('div', { class: 'card-pad metro-row' },
+    el('span', { class: 'field-label', text: label }),
+    el('div', { class: 'segmented', role: 'radiogroup', 'aria-label': label },
+      options.map(([value, text]) => el('button', {
+        type: 'button', role: 'radio', class: 'seg', dataset: { key: `${key}-${value}` },
+        'aria-checked': String(app.settings[key] === value),
+        onclick: () => app.updateSettings({ [key]: value }),
+      }, text))));
+  const appearance = el('div', { class: 'card appearance' },
+    choice('skin', 'Style', [['lounge', 'Lounge'], ['classic', 'Classic']]),
+    choice('theme', 'Theme', [['auto', 'Auto'], ['dark', 'Dark'], ['light', 'Light']]),
+    choice('layout', 'Blocks', [['grid', 'Grid'], ['list', 'List']]),
+  );
 
   // Data
   const fileInput = el('input', {
@@ -123,7 +129,7 @@ export function settingsView(app, ctx) {
       balance,
     ),
     section('Library', lib),
-    section('Appearance', el('div', { class: 'card card-pad metro-row' }, el('span', { class: 'field-label', text: 'Theme' }), themeGroup)),
+    section('Appearance', appearance),
     section('Your data',
       el('p', { class: 'section-note', text: 'Everything is stored on this device only. Export a backup now and then.' }),
       el('div', { class: 'button-stack' },

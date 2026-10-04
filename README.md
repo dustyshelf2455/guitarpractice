@@ -28,13 +28,19 @@ Install it rather than using it in a browser tab. Installed, it opens full scree
 | Block hits 0:00 | Chimes and vibrates (vibration is Android only). Tap **Finish and rate**, choose stars, and you're back at the grid. |
 | **End** (bottom) | Ends the session. It is saved as partial if not every block is done, and discarded if none are. |
 | 🔗 on a block | Opens that item's link (backing track, tab, video). |
-| Metronome (bottom, or top right when full screen) | Click track with accents. It offers the tempo from the current block, e.g. "70 bpm". It keeps playing when the sheet is closed. |
+| Metronome (bottom, or top right when full screen) | A wooden click track with accents. It offers the tempo from the current block, e.g. "70 bpm". It keeps playing when the sheet is closed. |
 
 **Diagrams:** a block can show scale shapes, arpeggios or chord charts on its full-screen card. The starter library has them for its scales, chords, picking patterns and pentatonic or blues items. To add or change one, go to Settings → Library → a subtype → tap an item → **Diagrams**:
 
 - **Scale** or **Arpeggio**: pick the root, the scale (major, minor, pentatonics, blues, modes) or chord type, and the position ("open position" or a starting fret). The dots show note names or intervals. Roots are solid.
 - **Chords**: type names like `C G Am F`. It knows the common open shapes and plays any other chord as an E- or A-shape barre. Add `:E` or `:A` to pick the barre shape (`G:E`). Supported types: major, m, 7, maj7, m7, sus2, sus4, 5, plus open Cadd9.
 - When the item's text names a scale, arpeggio or chords (e.g. "B minor scale, 2nd position"), the editor suggests it, and new items get it automatically.
+
+**Appearance** (Settings → Appearance):
+
+- **Style:** *Lounge* (default) is forest green and parchment with brass accents, the Fraunces serif, faint paper grain and double-rule borders. *Classic* is the original plain high-contrast look.
+- **Theme:** Auto follows your phone's light/dark setting; Dark and Light force one.
+- **Blocks:** *Grid* shows all twelve at once (3×4). *List* shows full-width rows, six to a screen, and scrolls.
 
 **Which item comes up:** each block has a subtype (Warm-up, Scales, Songs, and so on). Within a subtype, the item you completed longest ago comes first, and items you've never done come before everything. Only completed blocks count, so anything you skip stays next in line. Today's plan is fixed the first time you open the app each day.
 
@@ -91,7 +97,9 @@ Other tools:
 
 ```
 index.html, manifest.webmanifest, sw.js   PWA shell
-css/app.css                               all styles (dark default, light theme)
+css/app.css                               structure and the Classic style
+css/lounge.css                            the Lounge style (default)
+fonts/                                    Fraunces (SIL Open Font License, see fonts/OFL.txt)
 js/engine.js     timer engine: pure, timestamp-based
 js/plan.js       daily plan, rotation, swap
 js/state.js      app model: actions, persistence, change events

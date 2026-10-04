@@ -106,7 +106,7 @@ export function weeklyChart(rows) {
   return el('div', {},
     chart,
     el('div', { class: 'legend' },
-      el('span', { class: 'legend-key' }, el('span', { class: 'legend-swatch', style: { background: 'var(--c0)' } }), 'Complete'),
+      el('span', { class: 'legend-key' }, el('span', { class: 'legend-swatch', style: { background: 'var(--series)' } }), 'Complete'),
       el('span', { class: 'legend-key' }, el('span', { class: 'legend-swatch', style: { background: 'var(--series-partial)' } }), 'Partial'),
     ),
     tableView('Sessions per week', ['Week of', 'Complete', 'Partial'], rows.map((r) => [fmtShortDate(r.week), r.complete, r.partial])),

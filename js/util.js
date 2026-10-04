@@ -169,6 +169,21 @@ function appendChildren(node, children) {
   }
 }
 
+/**
+ * Show a clock string with each digit in its own fixed-width slot, so
+ * proportional display fonts don't make the countdown jiggle.
+ */
+export function setDigits(node, text) {
+  if (node.dataset.text === text) return;
+  node.dataset.text = text;
+  node.replaceChildren(...[...text].map((ch) => {
+    const span = document.createElement('span');
+    span.className = /\d/.test(ch) ? 'dg' : 'dg-sep';
+    span.textContent = ch;
+    return span;
+  }));
+}
+
 // Icons: tiny inline SVG paths, stroked with currentColor.
 const ICONS = {
   pause: '<path d="M8 5v14M16 5v14"/>',

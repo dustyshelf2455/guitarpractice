@@ -2,12 +2,29 @@
 // tile and shrinks back into it. A big countdown ring is the main control:
 // tap it (or the button below) to pause and resume.
 
-import { el, svg, icon, fmtClock } from '../util.js';
+import { el, svg, icon, fmtClock, setDigits } from '../util.js';
 import { tileRemaining, sessionRemaining, completedCount, TILE_MS } from '../engine.js';
 import { iconButton } from './sheets.js';
 import { renderDiagrams } from '../diagrams.js';
 
 const R = 46;
+
+/** Sixty minute-style ticks inside the ring (only shown by some styles). */
+function dialTicks() {
+  const g = svg('g', { class: 'ring-ticks' });
+  for (let i = 0; i < 60; i++) {
+    const a = (i / 60) * Math.PI * 2;
+    const major = i % 5 === 0;
+    const r1 = major ? 39.2 : 40.8;
+    const r2 = 42.4;
+    g.append(svg('line', {
+      class: major ? 'tick major' : 'tick',
+      x1: (50 + r1 * Math.cos(a)).toFixed(2), y1: (50 + r1 * Math.sin(a)).toFixed(2),
+      x2: (50 + r2 * Math.cos(a)).toFixed(2), y2: (50 + r2 * Math.sin(a)).toFixed(2),
+    }));
+  }
+  return g;
+}
 const CIRCUMFERENCE = 2 * Math.PI * R;
 const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -41,6 +58,7 @@ export function createFocus(handlers) {
   // stays out of the accessibility tree and the tab order.
   const dial = el('button', { class: 'focus-dial', type: 'button', tabindex: '-1', 'aria-hidden': 'true', onclick: handlers.primary },
     svg('svg', { viewBox: '0 0 100 100', 'aria-hidden': 'true' },
+      dialTicks(),
       svg('circle', { class: 'ring-bg', cx: 50, cy: 50, r: R }),
       ring),
     el('span', { class: 'focus-readout' }, time, state),
@@ -152,7 +170,7 @@ export function createFocus(handlers) {
     }
 
     const remaining = tileRemaining(t, now);
-    time.textContent = t.state === 'completed' ? fmtClock(t.elapsed_seconds * 1000) : fmtClock(remaining);
+    setDigits(time, t.state === 'completed' ? fmtClock(t.elapsed_seconds * 1000) : fmtClock(remaining));
     state.textContent = { idle: 'Ready', running: '', paused: 'Paused', timeup: "Time's up", completed: 'Done' }[t.state] || '';
     setRing(t, now);
 
@@ -178,7 +196,7 @@ export function createFocus(handlers) {
   /** Once a second while running: only the moving parts. */
   function tick(t, session, now) {
     if (!t || t.state !== 'running') return;
-    time.textContent = fmtClock(tileRemaining(t, now));
+    setDigits(time, fmtClock(tileRemaining(t, now)));
     setRing(t, now);
     if (session) sessionInfo.textContent = `${fmtClock(sessionRemaining(session, now))} left · ${completedCount(session)} of ${session.tiles.length}`;
   }

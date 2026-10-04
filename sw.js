@@ -1,12 +1,15 @@
 // Service worker: precache the whole app so it works offline after first load.
 // Bump VERSION whenever any file changes, so phones pick up the new version.
 
-const VERSION = 'timebox-v3';
+const VERSION = 'timebox-v4';
 const ASSETS = [
   './',
   'index.html',
   'manifest.webmanifest',
   'css/app.css',
+  'css/lounge.css',
+  'fonts/fraunces-normal.woff2',
+  'fonts/fraunces-italic.woff2',
   'js/main.js',
   'js/util.js',
   'js/defaults.js',

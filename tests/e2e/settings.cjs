@@ -102,6 +102,27 @@ async function until(fn, ms = 3000) {
   await page.locator('.seg', { hasText: 'Auto' }).click();
   check(await until(async () => (await page.getAttribute('html', 'data-theme')) === null), 'auto theme clears override');
 
+  // Style and layout.
+  check((await page.getAttribute('html', 'data-skin')) === 'lounge', 'lounge style is the default');
+  await page.locator('.seg', { hasText: 'Classic' }).click();
+  check(await until(async () => (await page.getAttribute('html', 'data-skin')) === 'classic'), 'classic style can be chosen');
+  await page.locator('.seg', { hasText: 'Lounge' }).click();
+  check(await until(async () => (await page.getAttribute('html', 'data-skin')) === 'lounge'), 'and switched back');
+  await page.locator('.seg', { hasText: 'List' }).click();
+  await page.goto(BASE);
+  await page.waitForSelector('.layout-list .tile[data-state]');
+  const rows = await page.evaluate(() => {
+    const grid = document.querySelector('.grid');
+    const box = grid.getBoundingClientRect();
+    const tiles = [...grid.querySelectorAll('.tile')].map((t) => t.getBoundingClientRect());
+    return { full: tiles.filter((r) => r.bottom <= box.bottom + 1).length, scrolls: grid.scrollHeight > grid.clientHeight, width: tiles[0].width / box.width };
+  });
+  check(rows.full === 6 && rows.scrolls && rows.width > 0.9, `list layout shows six full-width rows and scrolls (${JSON.stringify(rows)})`);
+  await page.goto(`${BASE}#/settings`);
+  await page.waitForSelector('.page-title');
+  await page.locator('.seg', { hasText: 'Grid' }).click();
+  check(await until(() => app(() => window.timebox.app.settings.layout === 'grid')), 'grid layout restored');
+
   // Export.
   const [download] = await Promise.all([page.waitForEvent('download'), page.locator('button', { hasText: 'Export backup' }).click()]);
   const file = path.join(os.tmpdir(), `timebox-e2e-${Date.now()}.json`);

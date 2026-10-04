@@ -147,6 +147,81 @@ export function vibrate() {
   }
 }
 
+// ---- wooden click ----
+//
+// A wooden metronome "tock" is a short, heavily damped knock: a hollow body
+// resonance, a brighter wooden partial, and a tiny click where the stick lands.
+// Rendered once per sample rate into buffers, so every beat is identical and cheap.
+
+export async function renderClick(sampleRate, accent) {
+  const OAC = globalThis.OfflineAudioContext || globalThis.webkitOfflineAudioContext;
+  const length = Math.ceil(sampleRate * 0.12);
+  const oc = new OAC(1, length, sampleRate);
+  const out = oc.createGain();
+  out.gain.value = accent ? 1 : 0.7;
+  const soften = oc.createBiquadFilter();
+  soften.type = 'lowpass';
+  soften.frequency.value = 6500;
+  soften.Q.value = 0.5;
+  out.connect(soften).connect(oc.destination);
+
+  const pitch = accent ? 1.16 : 1; // the accented beat knocks a little higher
+  const mode = (freq, amp, decay) => {
+    const o = oc.createOscillator();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(freq * 1.06, 0); // wood settles slightly flat after the strike
+    o.frequency.exponentialRampToValueAtTime(freq, 0.012);
+    const g = oc.createGain();
+    g.gain.setValueAtTime(0.0001, 0);
+    g.gain.exponentialRampToValueAtTime(amp, 0.0012);
+    g.gain.exponentialRampToValueAtTime(0.0001, decay);
+    o.connect(g).connect(out);
+    o.start(0);
+    o.stop(decay + 0.01);
+  };
+  mode(1050 * pitch, 0.55, 0.055); // the block
+  mode(2580 * pitch, 0.18, 0.022); // bright wooden overtone
+  mode(380 * pitch, 0.32, 0.035); // hollow body
+
+  // The stick: a few milliseconds of band-passed noise.
+  const noise = oc.createBuffer(1, Math.ceil(sampleRate * 0.01), sampleRate);
+  const data = noise.getChannelData(0);
+  let seed = 12345;
+  for (let i = 0; i < data.length; i++) {
+    seed = (seed * 16807) % 2147483647;
+    data[i] = (seed / 2147483647) * 2 - 1;
+  }
+  const src = oc.createBufferSource();
+  src.buffer = noise;
+  const band = oc.createBiquadFilter();
+  band.type = 'bandpass';
+  band.frequency.value = 3200 * pitch;
+  band.Q.value = 0.9;
+  const ng = oc.createGain();
+  ng.gain.setValueAtTime(0.5, 0);
+  ng.gain.exponentialRampToValueAtTime(0.0001, 0.006);
+  src.connect(band).connect(ng).connect(out);
+  src.start(0);
+
+  return oc.startRendering();
+}
+
+let clicks = null; // { rate, normal, accent }
+
+async function clickBuffers(c) {
+  if (clicks && clicks.rate === c.sampleRate) return clicks;
+  const [normal, accent] = await Promise.all([renderClick(c.sampleRate, false), renderClick(c.sampleRate, true)]);
+  clicks = { rate: c.sampleRate, normal, accent };
+  return clicks;
+}
+
+function playBuffer(c, buffer, when) {
+  const src = c.createBufferSource();
+  src.buffer = buffer;
+  src.connect(master);
+  src.start(when);
+}
+
 // ---- metronome (lookahead scheduler, "a tale of two clocks") ----
 
 export const metronome = {
@@ -165,9 +240,13 @@ export const metronome = {
     if (c.state !== 'running') c.resume().catch(() => {});
     this.playing = true;
     this._beat = 0;
-    this._next = c.currentTime + 0.08;
-    this._timer = setInterval(() => this._schedule(), 25);
-    this._schedule();
+    this._next = c.currentTime + 0.1;
+    clickBuffers(c).then(() => {
+      if (!this.playing || this._timer) return;
+      this._next = Math.max(this._next, c.currentTime + 0.05);
+      this._timer = setInterval(() => this._schedule(), 25);
+      this._schedule();
+    });
   },
 
   stop() {
@@ -186,7 +265,7 @@ export const metronome = {
     while (this._next < c.currentTime + 0.12) {
       const beat = this._beat;
       const strong = this.accent && this.beats > 1 && beat % this.beats === 0;
-      tone(c, strong ? 1500 : 1000, this._next, 0.05, strong ? 0.6 : 0.4, master, 'square');
+      playBuffer(c, strong ? clicks.accent : clicks.normal, this._next);
       if (this.onBeat) {
         const delayMs = Math.max(0, (this._next - c.currentTime) * 1000);
         setTimeout(() => this.playing && this.onBeat && this.onBeat(beat), delayMs);

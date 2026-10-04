@@ -184,22 +184,30 @@ async function catchUp() {
   syncSideEffects();
 }
 
-// ---- theme ----
+// ---- theme & style ----
+
+const CHROME = {
+  lounge: { dark: '#121a16', light: '#f2ebdb' },
+  classic: { dark: '#0d0d0d', light: '#f9f9f7' },
+};
 
 function applyTheme() {
   const theme = app ? app.settings.theme : 'auto';
+  const skin = app && app.settings.skin === 'classic' ? 'classic' : 'lounge';
   const html = document.documentElement;
   if (theme === 'auto') delete html.dataset.theme;
   else html.dataset.theme = theme;
+  html.dataset.skin = skin;
   try {
     localStorage.setItem('timebox-theme', theme);
+    localStorage.setItem('timebox-skin', skin);
   } catch {
     /* private mode */
   }
   const dark = theme === 'dark' || (theme === 'auto' && !matchMedia('(prefers-color-scheme: light)').matches);
   for (const meta of document.querySelectorAll('meta[name="theme-color"]')) {
-    if (theme === 'auto') meta.content = meta.media.includes('light') ? '#f9f9f7' : '#0d0d0d';
-    else meta.content = dark ? '#0d0d0d' : '#f9f9f7';
+    const mode = theme === 'auto' ? (meta.media.includes('light') ? 'light' : 'dark') : dark ? 'dark' : 'light';
+    meta.content = CHROME[skin][mode];
   }
 }
 

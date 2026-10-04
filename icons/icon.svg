@@ -1,17 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="112" fill="#0d0d0d"/>
-  <g transform="translate(128 119)">
-    <rect x="0" y="0" width="76" height="58" rx="12" fill="#5a5955"/>
-    <rect x="90" y="0" width="76" height="58" rx="12" fill="#5a5955"/>
-    <rect x="180" y="0" width="76" height="58" rx="12" fill="#5a5955"/>
-    <rect x="0" y="72" width="76" height="58" rx="12" fill="#5a5955"/>
-    <rect x="90" y="72" width="76" height="58" rx="12" fill="#f4f3ee"/>
-    <rect x="180" y="72" width="76" height="58" rx="12" fill="#2c2c2a"/>
-    <rect x="0" y="144" width="76" height="58" rx="12" fill="#2c2c2a"/>
-    <rect x="90" y="144" width="76" height="58" rx="12" fill="#2c2c2a"/>
-    <rect x="180" y="144" width="76" height="58" rx="12" fill="#2c2c2a"/>
-    <rect x="0" y="216" width="76" height="58" rx="12" fill="#2c2c2a"/>
-    <rect x="90" y="216" width="76" height="58" rx="12" fill="#2c2c2a"/>
-    <rect x="180" y="216" width="76" height="58" rx="12" fill="#2c2c2a"/>
-  </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#17241d"/><rect x="40" y="40" width="432" height="432" rx="84" fill="none" stroke="#d4a85c" stroke-opacity="0.55" stroke-width="5"/><rect x="52" y="52" width="408" height="408" rx="74" fill="none" stroke="#d4a85c" stroke-opacity="0.22" stroke-width="2.5"/><g transform="translate(128 119)"><rect x="0" y="0" width="76" height="58" rx="12" fill="#4f6f42"/><rect x="90" y="0" width="76" height="58" rx="12" fill="#4f6f42"/><rect x="180" y="0" width="76" height="58" rx="12" fill="#4f6f42"/><rect x="0" y="72" width="76" height="58" rx="12" fill="#4f6f42"/><rect x="90" y="72" width="76" height="58" rx="12" fill="#ecdfbf" stroke="#d4a85c" stroke-width="5"/><rect x="180" y="72" width="76" height="58" rx="12" fill="#24362c" stroke="#3a5244" stroke-width="2"/><rect x="0" y="144" width="76" height="58" rx="12" fill="#24362c" stroke="#3a5244" stroke-width="2"/><rect x="90" y="144" width="76" height="58" rx="12" fill="#24362c" stroke="#3a5244" stroke-width="2"/><rect x="180" y="144" width="76" height="58" rx="12" fill="#24362c" stroke="#3a5244" stroke-width="2"/><rect x="0" y="216" width="76" height="58" rx="12" fill="#24362c" stroke="#3a5244" stroke-width="2"/><rect x="90" y="216" width="76" height="58" rx="12" fill="#24362c" stroke="#3a5244" stroke-width="2"/><rect x="180" y="216" width="76" height="58" rx="12" fill="#24362c" stroke="#3a5244" stroke-width="2"/></g></svg>

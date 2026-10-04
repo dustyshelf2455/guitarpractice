@@ -51,6 +51,27 @@ const check = (cond, msg) => {
     a.cancelChime();
     return out;
   });
+  // Metronome: wooden clicks from pre-rendered buffers, on tempo.
+  const m = await page.evaluate(async () => {
+    const a = await import('./js/audio.js');
+    const starts = [];
+    const orig = AudioBufferSourceNode.prototype.start;
+    AudioBufferSourceNode.prototype.start = function (when, ...rest) {
+      if (this.buffer && this.buffer.duration > 0.1 && this.buffer.duration < 0.2) starts.push(when);
+      return orig.call(this, when, ...rest);
+    };
+    a.metronome.setBpm(120);
+    a.metronome.beats = 4;
+    a.metronome.accent = true;
+    a.metronome.start();
+    await new Promise((res) => setTimeout(res, 1600));
+    a.metronome.stop();
+    const gaps = starts.slice(1).map((t, i) => t - starts[i]);
+    return { clicks: starts.length, gaps };
+  });
+  check(m.clicks >= 3, `metronome schedules wooden clicks (${m.clicks})`);
+  check(m.gaps.every((g) => Math.abs(g - 0.5) < 0.001), `clicks are exactly 0.5 s apart at 120 bpm (${m.gaps.map((g) => g.toFixed(3)).join(', ')})`);
+
   check(r.running, 'audio context running after unlock');
   check(r.rangCounted, 'a chime that rang counts as played (no double chime)');
   check(r.stopsAfterRing === 0, 'cancelling after it started does not cut it off');

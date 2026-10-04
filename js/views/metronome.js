@@ -2,7 +2,7 @@
 // button shows the tempo while it plays. If the current block mentions a tempo
 // ("70 bpm") the metronome offers it.
 
-import { el, icon, parseBpm } from '../util.js';
+import { el, icon, parseBpm, setDigits } from '../util.js';
 import { metronome, unlockAudio } from '../audio.js';
 import { openSheet } from './sheets.js';
 
@@ -74,7 +74,7 @@ export function openMetronomeSheet(app, { onChange }) {
   }
 
   function render() {
-    bpmValue.textContent = String(metronome.bpm);
+    setDigits(bpmValue, String(metronome.bpm));
     slider.value = String(metronome.bpm);
     playBtn.replaceChildren(icon(metronome.playing ? 'pause' : 'play'), metronome.playing ? 'Stop' : 'Start');
     playBtn.setAttribute('aria-pressed', String(metronome.playing));

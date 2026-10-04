@@ -6,14 +6,11 @@ It is a Progressive Web App: plain HTML, CSS and JavaScript, no build step, no d
 
 ## Put it on your phone
 
-The app is served by GitHub Pages from this repository (it is public, so Pages is free).
+The app is live at **https://dustyshelf2455.github.io/guitarpractice/**, served by GitHub Pages (Settings → Pages → Deploy from a branch → `claude/relaxed-ride-7bhyk8`, `/ (root)`). Every push to that branch redeploys it within a minute or two. If you later move the code to `main`, switch the Pages branch to `main` too.
 
-1. On GitHub, open **Settings → Pages**.
-2. Under **Build and deployment**, choose **Deploy from a branch**, pick the branch that holds this code (e.g. `main`, or `claude/relaxed-ride-7bhyk8` before it is merged) and the **/ (root)** folder, then **Save**.
-3. After a minute the app is live at **https://dustyshelf2455.github.io/guitarpractice/**.
-4. Install it:
-   - **iPhone (Safari):** open the link, tap **Share → Add to Home Screen**.
-   - **Android (Chrome):** open the link, tap **⋮ → Install app** (or the install banner).
+Install it:
+- **iPhone (Safari):** open the link, tap **Share → Add to Home Screen**.
+- **Android (Chrome):** open the link, tap **⋮ → Install app** (or the install banner).
 
 Install it rather than using it in a browser tab. Installed, it opens full screen, and Safari will not clear its data. Safari can delete data for websites you haven't visited in 7 days, but not for home-screen apps.
 

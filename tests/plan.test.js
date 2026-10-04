@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { defaultLibrary } from '../js/defaults.js';
 import {
   generatePlan, rotationOrder, swapCandidate, applySwap, reconcilePlan,
-  markCompleted, snapshotEntry, refreshIdleTiles, activeItems,
+  markCompleted, snapshotEntry, refreshIdleTiles, activeItems, lockedItem,
 } from '../js/plan.js';
 import { createSession, startTile } from '../js/engine.js';
 
@@ -158,6 +158,28 @@ test('idle tiles pick up library edits, started tiles keep their snapshot', () =
   refreshIdleTiles(lib, s, plan);
   assert.equal(s.tiles[0].item_text, 'Spider walk, frets 1-4, all strings');
   assert.equal(s.tiles[1].item_text, 'Renamed picking');
+});
+
+test('a locked slot keeps its item every day; other slots pick around it; no swaps', () => {
+  const lib = defaultLibrary();
+  lib.slots[5].lock = 'songs-8'; // slot 6: Blaze Foley - Cold Cold World
+  for (const date of ['2026-10-03', '2026-10-04', '2026-10-05']) {
+    const plan = generatePlan(lib, date);
+    assert.equal(plan.entries[5].item_id, 'songs-8', date);
+    assert.equal(plan.entries.filter((e) => e.item_id === 'songs-8').length, 1, 'not repeated in another song slot');
+    for (const e of plan.entries) if (e.item_id) markCompleted(lib, e.item_id, Date.parse(date));
+  }
+  const plan = generatePlan(lib, '2026-10-06');
+  assert.equal(swapCandidate(lib, plan, 'slot-6'), null, 'a locked block cannot be re-rolled');
+  assert.ok(swapCandidate(lib, plan, 'slot-5'), 'its neighbours still can');
+  assert.equal(applySwap(lib, plan, 'slot-6'), null);
+  // Reconcile puts the locked item back even if the plan says otherwise.
+  plan.entries[5].item_id = 'songs-1';
+  assert.equal(reconcilePlan(lib, plan).entries[5].item_id, 'songs-8');
+  // A lock whose item is archived, or no longer fits the slot, no longer applies.
+  lib.items.find((i) => i.id === 'songs-8').archived = true;
+  assert.equal(lockedItem(lib, lib.slots[5]), null);
+  assert.notEqual(generatePlan(lib, '2026-10-07').entries[5].item_id, 'songs-8');
 });
 
 test('starter library matches the spec', () => {

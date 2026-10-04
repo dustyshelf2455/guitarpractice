@@ -161,6 +161,46 @@ test('older sessions cannot be reopened', async () => {
   assert.equal(await app.reopenTile(old.id, 0), false);
 });
 
+test('locking a block: it stays on the board every day until unlocked, and cannot be re-rolled', async () => {
+  const { make, clock } = setup();
+  let app = await make();
+  const songId = app.boardTiles()[6].item_id;
+  assert.ok(app.canLock(6) && !app.isLocked(6));
+  assert.ok(app.canSwap(6));
+  assert.ok(await app.setLocked(6, true));
+  assert.ok(app.isLocked(6));
+  assert.equal(app.canSwap(6), false, 'no re-roll on a locked block');
+  assert.equal(await app.swap(6), false);
+
+  // Practise it today (session, completion, end), then next days it is still there.
+  await app.tapTile(6);
+  clock.now += TILE_MS + 1000;
+  await app.tick();
+  await app.tapTile(6);
+  await app.endSession();
+  for (const day of [4, 5, 6]) {
+    clock.now = at(2026, 10, day, 18);
+    app = await make();
+    assert.equal(app.boardTiles()[6].item_id, songId, `day ${day}: locked song still on the board`);
+    assert.ok(app.isLocked(6));
+  }
+  // The lock survives export and import.
+  const file = JSON.stringify(buildExport(app.snapshot()));
+  assert.equal(parseFile(file).data.library.slots[6].lock, songId);
+
+  // Changing the slot's subtype, or archiving the item, releases the lock.
+  await app.setLocked(6, false);
+  assert.equal(app.isLocked(6), false);
+  assert.ok(app.canSwap(6), 're-roll is back');
+  await app.setLocked(6, true);
+  assert.equal(await app.setItemArchived(songId, true), true, 'archiving reports the released lock');
+  assert.equal(app.library.slots[6].lock, undefined);
+  await app.setItemArchived(songId, false);
+  await app.setLocked(6, true);
+  await app.setSlotSubtype(6, 'warmup');
+  assert.equal(app.library.slots[6].lock, undefined);
+});
+
 test('master pause and resume through the app', async () => {
   const { make, clock } = setup();
   const app = await make();

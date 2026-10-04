@@ -6,6 +6,7 @@ import { buildExport, parseFile, planImport } from '../transfer.js';
 import { openSheet, confirmSheet, toast, iconButton } from './sheets.js';
 import { page, section, swatch, linkRow, emptyState } from './common.js';
 import { diagramEditor } from './diagram-editor.js';
+import { lockedItem } from '../plan.js';
 
 const APP_VERSION = '1.0.0';
 
@@ -41,18 +42,29 @@ export function settingsView(app, ctx) {
   app.library.slots.forEach((slot, i) => {
     const sub = app.subtype(slot.subtype_id);
     const area = sub && sub.area_id ? app.area(sub.area_id) : null;
+    // A locked slot keeps its item every day; unlock it before changing what it practises.
+    const lockedTo = lockedItem(app.library, slot);
     const select = el('select', {
       class: 'input',
       'aria-label': `Slot ${i + 1}`,
       dataset: { key: `slot-${i}` },
+      disabled: !!lockedTo,
       onchange: (e) => app.setSlotSubtype(i, e.target.value),
     }, subtypeOptions(app, slot.subtype_id));
+    const lockLine = lockedTo ? el('span', { class: 'slot-lock' },
+      icon('lock'), el('span', { class: 'slot-lock-text', text: `Locked: ${lockedTo.text}` }),
+      el('button', {
+        class: 'text-btn', type: 'button', dataset: { key: `slot-unlock-${i}` },
+        'aria-label': `Unlock slot ${i + 1}`,
+        onclick: () => app.unlockSlot(i),
+      }, 'Unlock')) : null;
     slotList.append(el('li', {},
       el('div', { class: 'row slot-row' },
         el('span', { class: 'slot-num', text: String(i + 1) }),
         el('span', { class: 'row-main' },
           el('span', { class: 'slot-area' }, swatch(area ? area.color : null), area ? area.name : 'Other'),
           select,
+          lockLine,
         ),
         el('span', { class: 'row-actions' },
           iconButton('up', `Move slot ${i + 1} up`, () => app.moveSlot(i, -1), '', { disabled: i === 0, dataset: { key: `slot-up-${i}` } }),
@@ -111,6 +123,18 @@ export function settingsView(app, ctx) {
     choice('layout', 'Blocks', [['grid', 'Grid'], ['list', 'List']]),
   );
 
+  // Metronome: starts and stops with each block (on by default).
+  const auto = app.settings.metronome?.auto !== false;
+  const metroCard = el('div', { class: 'card' },
+    el('div', { class: 'card-pad metro-row' },
+      el('span', { class: 'field-label', text: 'Start with each block' }),
+      el('div', { class: 'segmented', role: 'radiogroup', 'aria-label': 'Start the metronome with each block' },
+        [[true, 'On'], [false, 'Off']].map(([value, text]) => el('button', {
+          type: 'button', role: 'radio', class: 'seg', dataset: { key: `metro-auto-${value}` },
+          'aria-checked': String(auto === value),
+          onclick: () => app.updateSettings({ metronome: { ...app.settings.metronome, auto: value } }),
+        }, text)))));
+
   // Data
   const fileInput = el('input', {
     type: 'file', accept: 'application/json,.json', hidden: true,
@@ -129,6 +153,7 @@ export function settingsView(app, ctx) {
       balance,
     ),
     section('Library', lib),
+    section('Metronome', el('p', { class: 'section-note', text: 'Begin or Resume a block and the metronome starts; Pause and it stops. It uses the tempo you last chose, or the block\'s own ("70 bpm") when it names one.' }), metroCard),
     section('Appearance', appearance),
     section('Your data',
       el('p', { class: 'section-note', text: 'Everything is stored on this device only. Export a backup now and then.' }),
@@ -299,8 +324,8 @@ export function editItemSheet(app, item, { fromBlock = false } = {}) {
         class: 'text-btn', type: 'button',
         onclick: async () => {
           sheet.close();
-          await app.setItemArchived(item.id, true);
-          toast(`Archived “${item.text}”. History is kept.`);
+          const unlocked = await app.setItemArchived(item.id, true);
+          toast(`Archived “${item.text}”. History is kept.${unlocked ? ' Its block is unlocked.' : ''}`);
         },
       }, 'Archive this item'),
     ],

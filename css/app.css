@@ -270,6 +270,15 @@ h1, h2, h3, p { margin: 0; }
   font-size: 0.6875rem; font-weight: 700;
 }
 
+/* Locked: an inner rule in the accent colour and a small padlock; it keeps its slot every day. */
+.tile.is-locked::after {
+  content: ''; position: absolute; inset: 0.1875rem; z-index: 0;
+  border: 1.5px solid var(--accent, var(--text-2)); border-radius: calc(var(--radius) - 0.1875rem);
+  pointer-events: none;
+}
+.tile-lock { width: 0.8125rem; height: 0.8125rem; color: var(--accent, var(--text)); }
+.tile-lock svg { stroke-width: 2.4; }
+
 /* Running: inverted, unmistakable from arm's length. */
 .tile[data-state="running"] { background: var(--invert-bg); border-color: var(--invert-bg); color: var(--invert-text); }
 .tile[data-state="running"] .tile-meta,
@@ -490,6 +499,12 @@ h1, h2, h3, p { margin: 0; }
 .focus[data-state="timeup"] .ring-bg { stroke: var(--text); }
 .focus-actions { flex: 1; display: flex; flex-direction: column; gap: 0.5rem; padding: 0; }
 .focus-actions .btn { width: 100%; min-height: 3.5rem; font-size: 1.0625rem; border-radius: 1rem; }
+.focus-actions .focus-reroll { min-height: 3rem; }
+.focus-lock[aria-pressed="true"] { border-color: var(--accent, var(--text)); color: var(--text); background: color-mix(in srgb, var(--accent, var(--text)) 14%, transparent); }
+.focus-lock { gap: 0.375rem; }
+.focus-lock .lock-icon { display: inline-grid; }
+.focus-session[hidden] + .focus-metro { margin-left: auto; }
+.focus-lock .icon { width: 1rem; height: 1rem; }
 
 @media (max-height: 600px) {
   .focus-dial { width: 6.5rem; }
@@ -593,6 +608,10 @@ h1, h2, h3, p { margin: 0; }
 
 .diagram-editor > * + * { margin-top: 0.625rem; }
 .diagram-item-actions { display: flex; gap: 0.75rem; }
+.slot-lock { display: flex; align-items: center; gap: 0.375rem; margin-top: 0.375rem; font-size: 0.8125rem; color: var(--text-2); }
+.slot-lock .icon { width: 0.875rem; height: 0.875rem; color: var(--accent, var(--text)); }
+.slot-lock-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.slot-lock .text-btn { min-height: 2rem; padding: 0 0.25rem; font-size: 0.8125rem; }
 .diagram-builder > * + .diagram-field, .diagram-builder > * + .field-hint { margin-top: 0.75rem !important; }
 .diagram-builder textarea.input { min-height: 7rem; resize: vertical; line-height: 1.4; }
 .tab-input { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre; overflow-x: auto; }
@@ -672,6 +691,10 @@ dialog.sheet::backdrop { background: rgba(0, 0, 0, 0.55); }
 .star.on svg { fill: currentColor; }
 .stars-scale { display: flex; justify-content: space-between; font-size: 0.8125rem; color: var(--muted); margin-top: 0.375rem !important; padding: 0 0.25rem; }
 .rating-skip { display: block; margin: 0.25rem auto 0; }
+.rating-lock-row { margin-top: 1rem !important; padding-top: 1rem; border-top: 1px solid var(--border); text-align: center; }
+.rating-lock-row .field-hint { margin-top: 0.5rem; }
+.rating-lock .icon { width: 1rem; height: 1rem; }
+.rating-lock[aria-pressed="true"] { border-color: var(--accent, var(--text)); background: color-mix(in srgb, var(--accent, var(--text)) 14%, transparent); }
 .reopen { margin-top: 1.25rem !important; padding-top: 1rem; border-top: 1px solid var(--border); text-align: center; }
 .reopen-label { font-size: 0.8125rem; color: var(--muted) !important; }
 .reopen-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; margin-top: 0.625rem; }

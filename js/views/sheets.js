@@ -46,9 +46,10 @@ const RATING_WORDS = ['', 'Rough', 'Shaky', 'OK', 'Good', 'Nailed it'];
 /**
  * Star rating sheet. onRate(n) on a star; onDismiss() if closed without choosing.
  * With `reopen` ({ remainingMs, onReopen(restart) }) it also offers to continue
- * the block or do it over, for a block finished by mistake.
+ * the block or do it over, for a block finished by mistake. With `lock`
+ * ({ locked, onToggle(next) }) it offers to lock the block to the board.
  */
-export function ratingSheet({ tile, onRate, onDismiss, reopen }) {
+export function ratingSheet({ tile, onRate, onDismiss, reopen, lock }) {
   const current = tile.rating;
   const meta = [tile.subtype_name, tile.area_name].filter(Boolean).join(' · ');
   const caption = el('div', { class: 'stars-scale', 'aria-hidden': 'true' },
@@ -71,6 +72,23 @@ export function ratingSheet({ tile, onRate, onDismiss, reopen }) {
   function preview(n) {
     [...stars.children].forEach((b, i) => b.classList.toggle('on', i < n));
   }
+  let lockBtn = null;
+  if (lock) {
+    let locked = lock.locked;
+    const paint = () => {
+      lockBtn.replaceChildren(icon(locked ? 'lock' : 'unlock'), locked ? 'Locked to your board · Unlock' : 'Lock it to your board');
+      lockBtn.setAttribute('aria-pressed', String(locked));
+    };
+    lockBtn = el('button', {
+      class: 'btn btn-small rating-lock', type: 'button',
+      onclick: async () => {
+        locked = !locked;
+        paint();
+        await lock.onToggle(locked);
+      },
+    });
+    paint();
+  }
   sheet = openSheet({
     title: current ? 'Change rating' : 'How did it go?',
     className: 'rating-sheet',
@@ -85,6 +103,9 @@ export function ratingSheet({ tile, onRate, onDismiss, reopen }) {
         text: current ? 'Keep current rating' : 'Skip rating',
         onclick: () => sheet.close(undefined),
       }),
+      lockBtn ? el('div', { class: 'rating-lock-row' },
+        lockBtn,
+        el('p', { class: 'field-hint', text: 'A locked block keeps this item every day until you unlock it.' })) : null,
       reopen ? el('div', { class: 'reopen' },
         el('p', { class: 'reopen-label', text: 'Not finished after all?' }),
         el('div', { class: 'reopen-actions' },

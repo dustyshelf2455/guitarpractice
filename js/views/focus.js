@@ -28,7 +28,7 @@ const CIRCUMFERENCE = 2 * Math.PI * R;
 const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /**
- * handlers: { collapse(), primary(), finish(), openMetronome(), edit() }
+ * handlers: { collapse(), primary(), finish(), reroll(), lock(), openMetronome(), edit() }
  * Returns { root, show(fromRect, fromBg), hide(toRect, toBg), update(tile, session, now), tick(tile, session, now) }
  */
 export function createFocus(handlers) {
@@ -49,7 +49,11 @@ export function createFocus(handlers) {
   const link = el('a', { class: 'chip focus-link', target: '_blank', rel: 'noopener noreferrer' }, icon('link'), linkText);
   const editText = el('span');
   const editBtn = el('button', { class: 'chip focus-edit', type: 'button', onclick: () => handlers.edit() }, icon('edit'), editText);
-  const chips = el('div', { class: 'focus-chips' }, link, editBtn);
+  // Lock: this slot keeps this item every day until unlocked.
+  const lockText = el('span');
+  const lockIcon = el('span', { class: 'lock-icon' });
+  const lockBtn = el('button', { class: 'chip focus-lock', type: 'button', onclick: () => handlers.lock() }, lockIcon, lockText);
+  const chips = el('div', { class: 'focus-chips' }, link, editBtn, lockBtn);
   // Your own notes for this item (tap to edit).
   const notes = el('button', { class: 'focus-notes', type: 'button', hidden: true, onclick: () => handlers.edit() });
 
@@ -76,7 +80,9 @@ export function createFocus(handlers) {
 
   const primary = el('button', { class: 'btn btn-primary focus-primary', type: 'button', onclick: handlers.primary });
   const finish = el('button', { class: 'btn focus-finish', type: 'button', onclick: handlers.finish }, icon('check'), 'Finish');
-  const actions = el('div', { class: 'focus-actions' }, primary, finish);
+  // Before it starts: not in the mood for this one? Another from the same list.
+  const reroll = el('button', { class: 'btn focus-reroll', type: 'button', onclick: handlers.reroll }, icon('dice'), 'Re-roll');
+  const actions = el('div', { class: 'focus-actions' }, primary, finish, reroll);
 
   // Layout: header; the exercise and its diagrams fill the middle; a compact
   // dock at the bottom holds the dial and the buttons, within thumb reach.
@@ -158,8 +164,11 @@ export function createFocus(handlers) {
     root.classList.toggle('has-details', !!nodes);
   }
 
-  /** `item` is the library item behind the block (null for an empty slot). */
-  function update(t, session, color, areaName, now, item) {
+  /**
+   * `item` is the library item behind the block (null for an empty slot);
+   * `opts`: { canReroll, locked, canLock }.
+   */
+  function update(t, session, color, areaName, now, item, opts = {}) {
     if (!t) return;
     setDetails(item ? item.diagrams : [], t.item_text);
     const noteText = item && item.notes ? item.notes : '';
@@ -169,6 +178,18 @@ export function createFocus(handlers) {
     editBtn.hidden = !item;
     editText.textContent = noteText ? 'Edit' : 'Add notes';
     root.classList.toggle('has-notes', !!noteText);
+    lockBtn.hidden = !opts.locked && !opts.canLock;
+    if (lockBtn.dataset.locked !== String(!!opts.locked)) {
+      lockBtn.dataset.locked = String(!!opts.locked);
+      lockIcon.replaceChildren(icon(opts.locked ? 'lock' : 'unlock'));
+      lockText.textContent = opts.locked ? 'Locked' : 'Lock';
+      lockBtn.setAttribute('aria-pressed', String(!!opts.locked));
+      lockBtn.setAttribute('aria-label', opts.locked
+        ? 'Locked: this block keeps this item every day. Tap to unlock.'
+        : 'Lock: keep this item in this block every day until you unlock it');
+    }
+    root.classList.toggle('is-locked', !!opts.locked);
+    reroll.hidden = !(t.state === 'idle' && opts.canReroll);
     root.dataset.state = t.state;
     root.dataset.color = color == null ? 'none' : String(color);
     area.textContent = areaName;
@@ -195,7 +216,7 @@ export function createFocus(handlers) {
     setRing(t, now);
 
     const label = {
-      idle: ['play', 'Start'],
+      idle: ['play', 'Begin'],
       running: ['pause', 'Pause'],
       paused: ['play', 'Resume'],
       timeup: ['check', 'Finish and rate'],
@@ -206,6 +227,7 @@ export function createFocus(handlers) {
     finish.hidden = !(t.state === 'paused' && TILE_MS - remaining >= 1000);
     timer.setAttribute('aria-label', `${fmtClock(remaining)} left${state.textContent ? `, ${state.textContent}` : ''}`);
 
+    sessionInfo.hidden = !session; // nothing to show before the session starts
     if (session) {
       const done = completedCount(session);
       const left = session.status === 'active' ? `${fmtClock(sessionRemaining(session, now))} left · ` : '';

@@ -93,7 +93,9 @@ export function normaliseLibrary(lib) {
     archived: !!it.archived,
     last_completed_at: isNum(it.last_completed_at) ? it.last_completed_at : null,
   }));
-  out.slots = out.slots.map((s) => ({ slot_id: s.slot_id, subtype_id: s.subtype_id }));
+  out.slots = out.slots.map((s) => ({
+    slot_id: s.slot_id, subtype_id: s.subtype_id, ...(typeof s.lock === 'string' && s.lock ? { lock: s.lock } : {}),
+  }));
   return out;
 }
 

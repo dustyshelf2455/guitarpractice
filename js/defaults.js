@@ -331,7 +331,7 @@ export function defaultSettings() {
     theme: 'auto', // 'auto' | 'dark' | 'light'
     skin: 'lounge', // 'lounge' | 'classic'
     layout: 'grid', // 'grid' | 'list'
-    metronome: { bpm: 70, beats: 4, accent: true },
+    metronome: { bpm: 70, beats: 4, accent: true, auto: true }, // auto: starts and stops with each block
   };
 }
 

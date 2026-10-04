@@ -20,8 +20,11 @@ Install it rather than using it in a browser tab. Installed, it opens full scree
 
 | You do | It does |
 |---|---|
-| Tap a block | Starts its 5:00 countdown and opens it **full screen**: the item and its diagram fill the screen, with a compact countdown dial and the buttons at the bottom (on a phone held sideways, down the right). Starting a block pauses any other running block. |
-| Tap the ring or **Pause** | Pauses the block. Tap again to resume. **Finish** appears while paused, to complete it early. |
+| Tap a block | Opens it **full screen**, ready: the item and its diagram fill the screen, with a compact countdown dial and the buttons at the bottom (on a phone held sideways, down the right). Nothing starts yet. |
+| **Begin** | Starts the block's 5:00 countdown, and the metronome. Beginning a block pauses any other running block. |
+| 🎲 **Re-roll** (under Begin, or on the block in the grid) | Not in the mood for this one? Shows another item from the same list (the one done longest ago first); tap as often as you like, it cycles round. Only before you begin, and not on a locked block. The new item stays for this session. |
+| **Lock** on a full-screen block (or in its rating sheet) | Keeps this item in this block every day, through new plans, until you unlock it: for the song you're focusing on this week. A locked block has a brass inner border and a padlock, and can't be re-rolled. Unlock the same way, or in Settings → Practice slots. |
+| Tap the ring or **Pause** | Pauses the block and the metronome. Tap again to resume both. **Finish** appears while paused, to complete it early. |
 | **All blocks** (top left), or the back gesture | Returns to the grid and stops the metronome. The block keeps running, and tapping it reopens full screen. |
 | **Pause / Resume** (top of grid) | Pauses or resumes the whole session. Resume reopens the block full screen. |
 | ⇄ on a block | Swaps in the next item from that block's list. Tap again to keep cycling. Only on blocks you haven't started. |
@@ -30,7 +33,7 @@ Install it rather than using it in a browser tab. Installed, it opens full scree
 | **End** (bottom) | Ends the session. It is saved as partial if not every block is done, and discarded if none are. |
 | 🔗 on a block | Opens that item's link (backing track, tab, YouTube lesson). |
 | **Edit** / **Add notes** on a full-screen block | Opens the item: its notes, its link, and its diagrams (paste a tab or a chord sheet right there). Your notes show under the diagrams. |
-| Metronome (bottom, or top right when full screen) | A wooden click track with accents. While it plays, a glow swings across the top of the screen in time, landing on each click (handy with the phone on silent). It offers the tempo from the current block, e.g. "70 bpm". It keeps playing when the sheet is closed, and shows its tempo at the top of a full-screen block. It stops when you go back to the grid. |
+| Metronome (bottom, or top right when full screen) | A wooden click track with accents. It starts by itself when you Begin or Resume a block and stops when you pause, finish or go back to the grid (turn that off in Settings → Metronome). Its tempo is the one you last chose, carried from block to block, except on a block that names its own ("70 bpm"); resuming a block keeps whatever tempo it had. While it plays, a glow swings across the top of the screen in time (handy with the phone on silent), and it shows its tempo at the top of a full-screen block. |
 
 **Notes and links:** every item can have notes (anything to remember: where you got to, the capo, what to watch) and a link (a YouTube lesson, a backing track, a tab). Add them from the full-screen block (**Edit**), or in Settings → Library → a subtype → tap an item.
 
@@ -77,6 +80,7 @@ Install it rather than using it in a browser tab. Installed, it opens full scree
 - The 45-character item limit is a soft warning, not a hard stop.
 - "Reset library to defaults" keeps all session history.
 - Requested extras: an optional link per library item, and the built-in metronome.
+- A lock belongs to the block's slot. Changing that slot's subtype in Settings, or archiving the item, releases it.
 - Licks have their own subtype (under Improvisation) and the 12th slot, which used to be a second Backing track. An installed app switches that slot only if the slots were never changed; either way it can be changed back in Settings → Slots. "Riffs and licks" is now just "Riffs".
 - A pasted chord sheet keeps chords and section names only, never lyrics.
 
@@ -97,6 +101,7 @@ End-to-end tests drive headless Chromium with a fake clock (Playwright installed
 
 ```sh
 NODE_PATH=$(npm root -g) node tests/e2e/smoke.cjs      # session flow, reload, full 60-minute run
+NODE_PATH=$(npm root -g) node tests/e2e/blocks.cjs     # Begin, re-roll, locking a block across days
 NODE_PATH=$(npm root -g) node tests/e2e/settings.cjs   # library, slots, theme, export/import, reset
 NODE_PATH=$(npm root -g) node tests/e2e/offline.cjs    # service worker and offline reload
 NODE_PATH=$(npm root -g) node tests/e2e/audio.cjs      # chime scheduling against the real audio clock

@@ -25,7 +25,8 @@ const check = (cond, msg) => {
 
   // Start a block, go offline, reload: the app and the running session come back.
   await page.locator('.tile-main').nth(0).click();
-  await page.waitForSelector('.tile[data-state="running"]');
+  await page.locator('.focus-primary').click(); // Begin
+  await page.waitForSelector('.tile[data-state="running"]', { state: 'attached' });
   await context.setOffline(true);
   await page.reload();
   await page.waitForSelector('.tile[data-state]', { timeout: 5000 });

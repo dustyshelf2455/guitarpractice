@@ -37,10 +37,24 @@ function pickForSlot(library, subtypeId, used) {
   return pick;
 }
 
+/**
+ * The item a slot is locked to, if the lock still applies (the item exists, is
+ * active and still belongs to the slot's subtype). A locked slot shows that item
+ * every day until it is unlocked.
+ */
+export function lockedItem(library, slot) {
+  if (!slot || !slot.lock) return null;
+  const item = library.items.find((it) => it.id === slot.lock);
+  return item && !item.archived && item.subtype_id === slot.subtype_id ? item : null;
+}
+
 export function generatePlan(library, date) {
+  // Locked slots first, so other slots of the same subtype pick around them.
+  const locked = library.slots.map((slot) => lockedItem(library, slot));
   const used = new Map();
-  const entries = library.slots.map((slot) => {
-    const pick = pickForSlot(library, slot.subtype_id, used);
+  for (const it of locked) if (it) used.set(it.id, (used.get(it.id) || 0) + 1);
+  const entries = library.slots.map((slot, i) => {
+    const pick = locked[i] || pickForSlot(library, slot.subtype_id, used);
     return { slot_id: slot.slot_id, subtype_id: slot.subtype_id, item_id: pick ? pick.id : null };
   });
   return { date, entries, swap_seen: {} };
@@ -55,6 +69,8 @@ export function reconcilePlan(library, plan) {
   const byId = new Map(library.items.map((it) => [it.id, it]));
   const old = new Map(plan.entries.map((e) => [e.slot_id, e]));
   const keep = library.slots.map((slot) => {
+    const lock = lockedItem(library, slot);
+    if (lock) return { slot_id: slot.slot_id, subtype_id: slot.subtype_id, item_id: lock.id };
     const e = old.get(slot.slot_id);
     const item = e && e.item_id ? byId.get(e.item_id) : null;
     const ok = e && e.subtype_id === slot.subtype_id && item && !item.archived && item.subtype_id === slot.subtype_id;
@@ -84,6 +100,7 @@ export function reconcilePlan(library, plan) {
 export function swapCandidate(library, plan, slotId) {
   const entry = plan.entries.find((e) => e.slot_id === slotId);
   if (!entry) return null;
+  if (lockedItem(library, library.slots.find((s) => s.slot_id === slotId))) return null; // locked: no re-roll
   const others = new Set(plan.entries.filter((e) => e !== entry).map((e) => e.item_id));
   const cands = rotationOrder(activeItems(library, entry.subtype_id))
     .filter((it) => it.id !== entry.item_id && !others.has(it.id));

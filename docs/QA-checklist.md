@@ -44,6 +44,14 @@ Note the iOS and Android versions you test on. ✅ = works, ❌ = broken (note w
 - [ ] Metronome on in a full-screen block: at 0:00 the chime plays and the click carries on at half volume. Going back to the grid stops it.
 - [ ] After turning the metronome off and on again (from a block), it clicks.
 
+## Begin, re-roll, lock
+
+- [ ] Tap a block: it opens full screen showing 5:00 and **Begin**; the clock doesn't move until you tap Begin.
+- [ ] Begin: the metronome starts (ringer switch on). Pause: it stops. Resume: it starts again at the same tempo.
+- [ ] Change the tempo in the metronome sheet, finish, open another block and Begin: it uses your new tempo. A block that says "70 bpm" uses 70.
+- [ ] Re-roll a block a few times before beginning; go back to the grid and reload: the block keeps the last one.
+- [ ] Lock a song: brass inner border and padlock on its tile. Next day it's still there in the same block.
+
 ## Licks, songs, strumming
 
 - [ ] The last block of the day is a lick, with its tab, note names and chord boxes, and practice notes underneath.

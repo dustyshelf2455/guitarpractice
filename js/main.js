@@ -3,7 +3,7 @@
 import { App } from './state.js';
 import { openStore, requestPersistence } from './store.js';
 import { TILE_MS, tileElapsed, sessionElapsed } from './engine.js';
-import { el } from './util.js';
+import { el, parseBpm } from './util.js';
 import {
   unlockAudio, resumeAudio, freshAudio, playChime, vibrate, scheduleChime, cancelChime, chimeWasScheduledFor, metronome,
 } from './audio.js';
@@ -164,9 +164,47 @@ metronome.onBeat((beat) => {
   strumTimers = Array.from({ length: per }, (_, k) => setTimeout(() => metronome.playing && lightStrum({ i: first + k }), k * step));
 });
 
+// ---- the metronome follows the block: Begin or Resume starts it, Pause stops it ----
+
+let followed = null; // the block the metronome started with, while it runs full screen
+let lastTempoBlock = null; // the block whose tempo is in use (kept when that block resumes)
+let followReady = false; // nothing starts by itself when the page loads
+
+function followBlock() {
+  const s = app.active;
+  const index = sessionRoute(location.hash || '#/')?.focus ?? null;
+  const t = s && index != null ? s.tiles[index] : null;
+  const key = t ? `${s.id}:${index}` : null;
+  const runningInView = !!t && t.state === 'running';
+  const auto = app.settings.metronome?.auto !== false;
+  if (!followReady) {
+    followReady = true;
+    followed = runningInView ? key : null;
+    return;
+  }
+  if (runningInView && followed !== key) {
+    followed = key;
+    if (!auto) return;
+    // A new block: its own tempo ("70 bpm") if it names one, otherwise the one you last chose.
+    if (key !== lastTempoBlock) {
+      const m = app.settings.metronome;
+      metronome.setBpm(parseBpm(t.item_text) ?? m.bpm);
+      metronome.beats = m.beats;
+      metronome.accent = m.accent;
+      lastTempoBlock = key;
+    }
+    if (!metronome.playing) metronome.start();
+  } else if (!runningInView && followed) {
+    followed = null;
+    // Paused, finished or left: stop. At time-up it plays on, quieter (see handleEvents).
+    if (auto && !(t && t.state === 'timeup')) metronome.stop();
+  }
+}
+
 // ---- side effects that follow the session state ----
 
 function syncSideEffects() {
+  followBlock();
   const s = app.active;
   const running = s && s.running != null ? s.tiles[s.running] : null;
   if (running && running.state === 'running') {

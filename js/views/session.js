@@ -63,6 +63,13 @@ export function sessionView(app, ctx) {
     collapse: () => ctx.back('#/'),
     primary: onFocusPrimary,
     finish: () => onFinish(focusIndex),
+    reroll: () => focusIndex != null && onSwap(focusIndex),
+    lock: async () => {
+      const i = focusIndex;
+      if (i == null) return;
+      const next = !app.isLocked(i);
+      if (await app.setLocked(i, next)) announce(next ? 'Locked to your board' : 'Unlocked');
+    },
     openMetronome: () => openMetronome(),
     edit: () => {
       const t = focusIndex != null ? app.boardTiles()[focusIndex] : null;
@@ -95,37 +102,38 @@ export function sessionView(app, ctx) {
     const hint = el('span', { class: 'tile-hint', text: 'Add items in Settings' });
     const time = el('span', { class: 'tile-time' });
     const status = el('span', { class: 'tile-status' });
+    const lockMark = icon('lock', 'tile-lock');
+    lockMark.hidden = true;
     const main = el('button', { class: 'tile-main', type: 'button', onclick: () => onTap(i) },
-      el('span', { class: 'tile-meta' }, el('span', { class: 'dot', 'aria-hidden': 'true' }), area),
+      el('span', { class: 'tile-meta' }, el('span', { class: 'dot', 'aria-hidden': 'true' }), area, lockMark),
       sub, text, hint,
       el('span', { class: 'tile-foot' }, time, status),
     );
     const swap = el('button', {
       class: 'tile-action tile-swap',
       type: 'button',
-      'aria-label': 'Swap for another item',
-      title: 'Swap',
+      'aria-label': 'Re-roll: another item from the same list',
+      title: 'Re-roll',
       onclick: () => onSwap(i),
-    }, icon('swap'));
+    }, icon('dice'));
     const finish = el('button', { class: 'tile-finish', type: 'button', onclick: () => onFinish(i) }, 'Finish');
     const link = el('a', { class: 'tile-link', target: '_blank', rel: 'noopener noreferrer' }, icon('link'));
     const li = el('li', { class: 'tile' }, main, swap, finish, link);
-    return { li, main, area, sub, text, hint, time, status, swap, finish, link };
+    return { li, main, area, sub, text, hint, time, status, swap, finish, link, lockMark };
   }
 
   // ---- actions ----
 
   async function onTap(i) {
-    // The running block opens full screen; starting or resuming one does too.
-    if (app.mode === 'active' && app.active.tiles[i].state === 'running') {
+    // A block opens full screen; nothing starts until Begin (or Resume) is tapped there.
+    const t = app.boardTiles()[i];
+    if (!t) return;
+    if (app.mode !== 'done' && ['idle', 'paused', 'running'].includes(t.state)) {
       openFocus(i);
       return;
     }
-    const before = app.boardTiles()[i]?.state;
-    if (before === 'idle' || before === 'paused') ctx.refreshAudio?.();
-    const r = await app.tapTile(i);
-    if (r.action === 'started' || r.action === 'resumed') openFocus(i);
-    else if (r.action === 'completed' || r.action === 'rate') rate(r.session, r.index);
+    const r = await app.tapTile(i); // time's up: complete and rate; done: rate
+    if (r.action === 'completed' || r.action === 'rate') rate(r.session, r.index);
   }
 
   async function onFinish(i) {
@@ -152,9 +160,19 @@ export function sessionView(app, ctx) {
         if (await app.reopenTile(session.id, index, { restart }) && focusIndex !== index) openFocus(index);
       },
     } : null;
+    // Lock it to its slot (the board of the session in view only).
+    const onBoard = session === app.boardSession();
+    const lock = onBoard && (app.isLocked(index) || app.canLock(index)) ? {
+      locked: app.isLocked(index),
+      onToggle: async (next) => {
+        await app.setLocked(index, next);
+        announce(next ? `Locked: ${tile.item_text} stays on your board` : 'Unlocked');
+      },
+    } : null;
     ratingSheet({
       tile,
       reopen,
+      lock,
       onRate: async (n) => {
         await app.rateTile(session.id, index, n);
         done();
@@ -171,10 +189,10 @@ export function sessionView(app, ctx) {
 
   async function onFocusPrimary() {
     const i = focusIndex;
-    if (i == null || !app.active) return;
-    const st = app.active.tiles[i].state;
-    if (st === 'idle' || st === 'paused') ctx.refreshAudio?.();
-    const r = await app.tapTile(i); // start / pause / resume, or complete when time is up
+    if (i == null || app.mode === 'done') return;
+    const st = app.boardTiles()[i]?.state;
+    if (st === 'idle' || st === 'paused') ctx.refreshAudio?.(); // inside the tap, for iOS audio
+    const r = await app.tapTile(i); // begin / pause / resume, or complete when time is up
     if (r.action === 'completed') rate(r.session, r.index);
     else if (r.action === 'paused') announce('Paused');
   }
@@ -182,7 +200,7 @@ export function sessionView(app, ctx) {
   /** Show the focus view for block i, or the grid when i is null (driven by the route). */
   function setFocus(i) {
     if (i != null) {
-      const t = app.active ? app.active.tiles[i] : null;
+      const t = app.mode === 'done' ? null : app.boardTiles()[i];
       if (!t || t.state === 'completed') {
         if (focusIndex == null) ctx.replace('#/');
         return;
@@ -206,7 +224,7 @@ export function sessionView(app, ctx) {
   }
 
   async function onSwap(i) {
-    if (await app.swap(i)) announce(`Swapped to ${app.boardTiles()[i].item_text}`);
+    if (await app.swap(i)) announce(`Re-rolled: ${app.boardTiles()[i].item_text}`);
   }
 
   async function onMaster() {
@@ -214,6 +232,7 @@ export function sessionView(app, ctx) {
       await app.newSession();
       return;
     }
+    if (app.active && masterState(app.active) === 'paused') ctx.refreshAudio?.(); // inside the tap, for iOS audio
     const state = await app.masterToggle();
     if (state === 'paused') announce('Paused');
     else if (state === 'running') openFocus(app.active.running);
@@ -308,7 +327,11 @@ export function sessionView(app, ctx) {
       }
       const area = t.area_id ? app.area(t.area_id) : null;
       const item = t.item_id ? app.item(t.item_id) : null;
-      focus.update(t, session, area ? area.color : null, t.area_id ? (area ? area.name : t.area_name) : 'Other', now, item);
+      focus.update(t, session, area ? area.color : null, t.area_id ? (area ? area.name : t.area_name) : 'Other', now, item, {
+        canReroll: app.canSwap(focusIndex),
+        locked: app.isLocked(focusIndex),
+        canLock: app.canLock(focusIndex),
+      });
     }
   }
 
@@ -357,11 +380,14 @@ export function sessionView(app, ctx) {
     v.li.classList.toggle('has-finish', canFinish);
     v.li.classList.toggle('has-link', !!url);
     v.li.classList.toggle('has-swap', canSwap);
+    const locked = app.isLocked(i);
+    v.li.classList.toggle('is-locked', locked);
+    v.lockMark.hidden = !locked;
 
     const action = {
-      idle: mode === 'done' ? '' : 'Tap to start.',
+      idle: mode === 'done' ? '' : 'Tap to open it, then Begin.',
       running: 'Tap to open full screen.',
-      paused: 'Tap to resume full screen.',
+      paused: 'Tap to open it, then Resume.',
       timeup: 'Tap to complete and rate.',
       completed: 'Tap to change the rating or reopen it.',
     }[state];
@@ -372,6 +398,7 @@ export function sessionView(app, ctx) {
       `Block ${i + 1}: ${t.item_text}`,
       [v.area.textContent, t.subtype_name].filter(Boolean).join(', '),
       STATE_LABEL[state],
+      app.isLocked(i) ? 'Locked to your board' : null,
       timeText,
       action,
     ].filter(Boolean).join('. '));

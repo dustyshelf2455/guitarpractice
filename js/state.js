@@ -314,10 +314,52 @@ export class App {
     this.emit('change');
   }
 
+  // ---------------------------------------------------------------- locks
+
+  /** The library slot behind board tile i. */
+  slotOf(i) {
+    const t = this.boardTiles()[i];
+    return t ? this.library.slots.find((s) => s.slot_id === t.slot_id) || null : null;
+  }
+
+  /** Is block i locked: its slot keeps this item every day until unlocked? */
+  isLocked(i) {
+    const t = this.boardTiles()[i];
+    const slot = this.slotOf(i);
+    return !!(t && slot && t.item_id && slot.lock === t.item_id && P.lockedItem(this.library, slot));
+  }
+
+  /** A block can be locked when it has an item that still fits its slot. */
+  canLock(i) {
+    const t = this.boardTiles()[i];
+    const slot = this.slotOf(i);
+    const item = t && t.item_id ? this.item(t.item_id) : null;
+    return !!(slot && item && !item.archived && item.subtype_id === slot.subtype_id);
+  }
+
+  async setLocked(i, locked) {
+    const slot = this.slotOf(i);
+    if (!slot) return false;
+    if (locked) {
+      if (!this.canLock(i)) return false;
+      slot.lock = this.boardTiles()[i].item_id;
+    } else delete slot.lock;
+    await this.libraryChanged();
+    return true;
+  }
+
+  /** Unlock a slot from Settings (by slot position). */
+  async unlockSlot(index) {
+    const slot = this.library.slots[index];
+    if (!slot || !slot.lock) return;
+    delete slot.lock;
+    await this.libraryChanged();
+  }
+
   canSwap(i) {
     const tiles = this.boardTiles();
     const t = tiles[i];
-    if (!t || t.state !== 'idle' || this.mode === 'done') return false;
+    if (!t || t.state !== 'idle' || this.mode === 'done' || this.isLocked(i)) return false;
     const plan = this.currentPlan;
     return !!(plan && P.swapCandidate(this.library, plan, t.slot_id));
   }
@@ -430,8 +472,16 @@ export class App {
     await this.libraryChanged();
   }
 
+  /** Archive (or restore) an item. Archiving releases any slot locked to it; returns true if one was. */
   async setItemArchived(id, archived) {
+    let unlocked = false;
+    if (archived) {
+      for (const slot of this.library.slots) {
+        if (slot.lock === id) { delete slot.lock; unlocked = true; }
+      }
+    }
     await this.updateItem(id, { archived });
+    return unlocked;
   }
 
   async addArea(name) {
@@ -484,7 +534,9 @@ export class App {
   }
 
   async setSlotSubtype(index, subtypeId) {
-    this.library.slots[index].subtype_id = subtypeId;
+    const slot = this.library.slots[index];
+    if (slot.subtype_id !== subtypeId) delete slot.lock; // a lock only means something within its subtype
+    slot.subtype_id = subtypeId;
     await this.libraryChanged();
   }
 

@@ -61,7 +61,7 @@ export function openMetronomeSheet(app, { onChange }) {
   function save() {
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
-      app.updateSettings({ metronome: { bpm: metronome.bpm, beats: metronome.beats, accent: metronome.accent } });
+      app.updateSettings({ metronome: { ...app.settings.metronome, bpm: metronome.bpm, beats: metronome.beats, accent: metronome.accent } });
     }, 400);
   }
 

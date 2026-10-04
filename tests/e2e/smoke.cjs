@@ -67,11 +67,15 @@ function check(cond, msg) {
   const after = await text(tile(4).locator('.tile-text'), '__never__', 300);
   check(before !== after, `swap changed tile 5 (${before} -> ${after})`);
 
-  // Tap tile 1: it starts and opens full screen.
+  // Tap tile 1: it opens full screen, ready; Begin starts it.
   const item1 = await tile(0).locator('.tile-text').textContent();
   await tap(0);
-  check(await stateIs(0, 'running'), 'tile 1 running');
   check(await focusOpen(), 'tapping a block opens it full screen');
+  check((await focusState('idle')) === 'idle' && (await state(0)) === 'idle', 'opening a block does not start it');
+  check((await page.locator('.focus-primary').textContent()).includes('Begin'), 'primary button says Begin');
+  check(await page.locator('.focus-reroll').isVisible(), 'a block not yet begun can be re-rolled');
+  await primary();
+  check(await stateIs(0, 'running'), 'Begin: tile 1 running');
   check(page.url().endsWith('#/block/0'), 'focus view has its own route (back gesture closes it)');
   check((await page.locator('.focus-title').textContent()) === item1, 'focus view shows the item');
   await page.clock.runFor(61_100); // the display refreshes just after each second boundary
@@ -93,6 +97,8 @@ function check(cond, msg) {
   await back();
   await focusOpen(false);
   await tap(1);
+  await focusOpen();
+  await primary();
   check(await stateIs(0, 'paused') && await stateIs(1, 'running'), 'starting tile 2 pauses tile 1');
   check(await focusOpen() && page.url().endsWith('#/block/1'), 'tile 2 opens full screen');
   await page.clock.runFor(5 * MIN + 1000);
@@ -114,6 +120,7 @@ function check(cond, msg) {
   // Pause in focus, then resume from the grid's master button (which reopens focus).
   await tap(2);
   await focusOpen();
+  await primary(); // Begin
   check(await page.locator('.focus .board-v').isVisible(), 'scale block shows its fretboard, upright in portrait');
   check(!(await page.locator('.focus .board-h').isVisible()), 'the sideways neck is hidden in portrait');
   check((await page.locator('.focus .board-v .board-dot.root').count()) === 2, 'C major open position: two root Cs');
@@ -172,17 +179,18 @@ function check(cond, msg) {
   check((await focusState('running')) === 'running', 'do it over: running again, still full screen');
   check((await text(page.locator('.focus-time'), '5:00')) === '5:00', 'do it over starts from 5:00');
 
-  // The metronome plays on in the block, drops to half volume at time-up, and stops on the grid.
-  await page.locator('.focus-metro').click();
-  await page.waitForSelector('dialog.metro-sheet[open]');
-  await page.locator('.metro-play').click();
-  await page.keyboard.press('Escape');
+  // The metronome follows the block: Do it over began it; Pause stops it, Resume starts it again.
   const metro = () => page.evaluate(async () => {
     const { metronome } = await import('./js/audio.js');
-    return { playing: metronome.playing, level: metronome.level };
+    return { playing: metronome.playing, level: metronome.level, bpm: metronome.bpm };
   });
-  check((await metro()).playing, 'metronome started from the block');
-  check((await text(page.locator('.focus-metro-bpm'), '__never__', 200)).length > 0, 'block header shows the tempo');
+  const playing = (want) => settle(async () => (await metro()).playing, want);
+  check(await playing(true), 'metronome started with the block');
+  check((await text(page.locator('.focus-metro-bpm'), '70')) === '70', 'block header shows the tempo');
+  await primary(); // pause
+  check(!(await playing(false)), 'Pause stops the metronome');
+  await primary(); // resume
+  check(await playing(true), 'Resume starts it again');
   await page.clock.runFor(5 * MIN + 1000);
   await focusState('timeup');
   { const m = await settle(async () => (await metro()).level, 0.5); check(m === 0.5, `metronome at half volume at time-up (${m})`); }
@@ -196,6 +204,25 @@ function check(cond, msg) {
   await page.locator('dialog.rating-sheet .rating-skip').click();
   await page.waitForSelector('dialog.rating-sheet', { state: 'detached' });
   check(await stateIs(0, 'completed'), 'block 1 finished again');
+
+  // Tempo: the one you last chose carries from block to block, unless a block names its own.
+  await page.evaluate(() => window.timebox.app.updateSettings({ metronome: { ...window.timebox.app.settings.metronome, bpm: 92 } }));
+  await tap(3);
+  await focusOpen();
+  await primary();
+  check((await settle(async () => (await metro()).bpm, 92)) === 92, 'a block without a tempo uses the last one chosen (92)');
+  await back();
+  await focusOpen(false);
+  check(!(await playing(false)), 'stopped on the grid');
+  const strumText = await tile(8).locator('.tile-text').textContent();
+  await tap(8);
+  await focusOpen();
+  await primary();
+  check((await settle(async () => (await metro()).bpm, 70)) === 70, `a block that names its tempo uses it (${strumText})`);
+  await primary(); // pause
+  await back();
+  await focusOpen(false);
+  check(await stateIs(3, 'paused'), 'beginning another block paused the first');
 
   // Metronome sheet opens and closes.
   await page.locator('.metro-btn').click();
@@ -227,6 +254,8 @@ function check(cond, msg) {
   await page.waitForSelector('.page-title');
 
   // A full 12-block session from a fresh plan, with a reload halfway through.
+  // (Metronome off for this run: under the fake clock every click would be simulated.)
+  await page.evaluate(() => window.timebox.app.updateSettings({ metronome: { ...window.timebox.app.settings.metronome, auto: false } }));
   await page.goto(BASE);
   await page.waitForSelector('[data-mode="done"]');
   await page.locator('.master-btn').click(); // New
@@ -234,6 +263,7 @@ function check(cond, msg) {
   for (let i = 0; i < 12; i++) {
     await tap(i);
     await focusOpen();
+    await primary(); // Begin
     if (i === 3) {
       check((await page.locator('.focus .chord').count()) === 5, 'chord block shows five chord boxes');
       await shot('10-focus-chords');

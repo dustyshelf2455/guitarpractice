@@ -268,7 +268,8 @@ export function sessionView(app, ctx) {
         return;
       }
       const area = t.area_id ? app.area(t.area_id) : null;
-      focus.update(t, session, area ? area.color : null, t.area_id ? (area ? area.name : t.area_name) : 'Other', now);
+      const item = t.item_id ? app.item(t.item_id) : null;
+      focus.update(t, session, area ? area.color : null, t.area_id ? (area ? area.name : t.area_name) : 'Other', now, item ? item.diagrams : []);
     }
   }
 

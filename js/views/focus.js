@@ -5,6 +5,7 @@
 import { el, svg, icon, fmtClock } from '../util.js';
 import { tileRemaining, sessionRemaining, completedCount, TILE_MS } from '../engine.js';
 import { iconButton } from './sheets.js';
+import { renderDiagrams } from '../diagrams.js';
 
 const R = 46;
 const CIRCUMFERENCE = 2 * Math.PI * R;
@@ -46,8 +47,9 @@ export function createFocus(handlers) {
   );
   const timer = el('div', { class: 'focus-timer', role: 'timer', 'aria-live': 'off' }, dial);
 
-  // Room for per-item detail later (scale shapes, chord charts).
+  // Scale shapes and chord charts for the item (see js/diagrams.js).
   const details = el('div', { class: 'focus-details', hidden: true });
+  let detailsKey = '';
 
   const primary = el('button', { class: 'btn btn-primary focus-primary', type: 'button', onclick: handlers.primary });
   const finish = el('button', { class: 'btn focus-finish', type: 'button', onclick: handlers.finish }, icon('check'), 'Finish');
@@ -55,7 +57,7 @@ export function createFocus(handlers) {
 
   const inner = el('div', { class: 'focus-inner' },
     head,
-    el('div', { class: 'focus-body' }, meta, title, link, timer, details),
+    el('div', { class: 'focus-body' }, meta, title, link, details, timer),
     actions,
   );
   const root = el('section', { class: 'focus', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'focus-title', hidden: true }, inner);
@@ -117,8 +119,19 @@ export function createFocus(handlers) {
     ring.setAttribute('stroke-dashoffset', ((elapsed / TILE_MS) * CIRCUMFERENCE).toFixed(2));
   }
 
-  function update(t, session, color, areaName, now) {
+  function setDetails(diagrams, itemText) {
+    const key = JSON.stringify([diagrams || [], itemText]);
+    if (key === detailsKey) return;
+    detailsKey = key;
+    const nodes = renderDiagrams(diagrams, itemText);
+    details.replaceChildren(...(nodes || []));
+    details.hidden = !nodes;
+    root.classList.toggle('has-details', !!nodes);
+  }
+
+  function update(t, session, color, areaName, now, diagrams) {
     if (!t) return;
+    setDetails(diagrams, t.item_text);
     root.dataset.state = t.state;
     root.dataset.color = color == null ? 'none' : String(color);
     area.textContent = areaName;

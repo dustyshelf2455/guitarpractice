@@ -391,6 +391,60 @@ h1, h2, h3, p { margin: 0; }
   .focus-timer { padding: 8px 0; }
 }
 
+/* ------------------------------------------------------------- diagrams */
+
+.diagram { margin: 0; width: 100%; }
+.diagram + .diagram { margin-top: 14px; }
+.diagram-title { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 4px 10px; font-size: 0.875rem; font-weight: 600; color: var(--text-2); margin-bottom: 6px; }
+.diagram-notes { font-weight: 500; color: var(--muted); letter-spacing: 0.02em; }
+.board { display: block; width: 100%; height: auto; max-width: 420px; margin: 0 auto; }
+.board-string { stroke: var(--muted); stroke-width: 1; }
+.board-fret { stroke: var(--axis); stroke-width: 1.5; }
+.board-nut { stroke: var(--text-2); stroke-width: 4; stroke-linecap: round; }
+.board-label { fill: var(--muted); font-size: 10px; font-family: var(--font); }
+.board-dot circle { fill: var(--surface-3); stroke: var(--text-2); stroke-width: 1.2; }
+.board-dot text { fill: var(--text); font-size: 8.5px; font-weight: 700; font-family: var(--font); }
+.board-dot.root circle { fill: var(--text); stroke: var(--text); }
+.board-dot.root text { fill: var(--page); }
+
+.chord-row { display: flex; justify-content: center; gap: 6px; }
+.chord { margin: 0; display: flex; flex-direction: column; align-items: center; flex: 0 1 110px; min-width: 0; }
+.chord-name { font-size: 1.0625rem; font-weight: 700; color: var(--text); line-height: 1.2; }
+.chordbox { display: block; width: 100%; height: auto; }
+.chord-shape { font-size: 0.75rem; color: var(--muted); margin-top: -2px; }
+.chord-row { align-items: flex-start; }
+.chordbox .board-nut { stroke-width: 3.5; }
+.chord-dot, .chord-barre { fill: var(--text); }
+.chord-finger { fill: var(--page); font-size: 6.5px; font-weight: 700; font-family: var(--font); }
+.chord-mark { fill: var(--muted); font-size: 9px; font-family: var(--font); }
+.chord-open { fill: none; stroke: var(--text-2); stroke-width: 1.2; }
+
+.diagram-editor > * + * { margin-top: 10px; }
+.diagram-item { padding: 10px 12px 12px; border-radius: 12px; background: var(--surface-2); }
+.diagram-item-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.diagram-item-head .text-btn { min-height: 36px; padding: 0 4px; font-size: 0.875rem; }
+.diagram-item-title { font-size: 0.875rem; font-weight: 600; color: var(--text-2); }
+.diagram-item .diagram-title { display: none; }
+.diagram-suggest { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: 12px; border: 1px dashed var(--border-strong); font-size: 0.875rem; color: var(--text-2); }
+.diagram-suggest strong { color: var(--text); font-weight: 600; }
+.diagram-builder { padding: 12px; border-radius: 12px; background: var(--surface-2); }
+.diagram-builder > * + * { margin-top: 12px; }
+.diagram-builder .segmented { background: var(--surface); }
+.diagram-grid { display: grid; grid-template-columns: 1fr 1.6fr; gap: 10px; }
+.diagram-grid .diagram-field:last-child { grid-column: 1 / -1; }
+.diagram-field { margin: 0 !important; }
+.diagram-builder .input { background: var(--surface); }
+.diagram-preview:empty { display: none; }
+.diagram-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.diagram-add .icon, .diagram-suggest .icon { width: 16px; height: 16px; }
+
+/* Focus view with diagrams: the ring gives up some room. */
+.focus.has-details .focus-details { margin-top: 14px; }
+.focus.has-details .focus-timer { padding: 12px 0 4px; }
+.focus.has-details .focus-dial { width: min(52vw, 27dvh, 240px); }
+.focus.has-details .focus-time { font-size: clamp(2.5rem, 12vw, 3.75rem); }
+.focus.has-details .focus-title { font-size: clamp(1.25rem, 5.6vw, 1.75rem); }
+
 /* ------------------------------------------------------------- sheets */
 
 dialog.sheet {

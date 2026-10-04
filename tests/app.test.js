@@ -261,3 +261,17 @@ test('imported links are sanitised: no javascript: URLs', () => {
   assert.deepEqual(parsed.errors, []);
   assert.equal(parsed.data.library.items[0].url, '');
 });
+
+test('an installed v1 app gets starter diagrams on upgrade, and keeps them', async () => {
+  const { defaultLibrary } = await import('../js/defaults.js');
+  const store = memoryStore();
+  const v1 = defaultLibrary();
+  for (const it of v1.items) delete it.diagrams;
+  await store.putMany({ meta: { schema_version: 1, library: v1, settings: { theme: 'dark' } } });
+  const app = new App(store, () => at(2026, 10, 4, 9));
+  await app.load();
+  assert.equal(app.item('chords-1').diagrams[0].chords.length, 5);
+  assert.equal(await store.get('meta', 'schema_version'), 2);
+  assert.equal((await store.get('meta', 'library')).items.find((i) => i.id === 'scales-1').diagrams.length, 1, 'migrated library saved');
+  assert.equal(app.settings.theme, 'dark', 'settings untouched');
+});

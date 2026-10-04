@@ -114,6 +114,8 @@ function check(cond, msg) {
   // Pause in focus, then resume from the grid's master button (which reopens focus).
   await tap(2);
   await focusOpen();
+  check(await page.locator('.focus .board').isVisible(), 'scale block shows its fretboard diagram');
+  check((await page.locator('.focus .board-dot.root').count()) === 2, 'C major open position: two root Cs');
   await page.clock.runFor(30_000);
   await primary();
   check(await stateIs(2, 'paused'), 'Pause in focus pauses tile 3');
@@ -185,6 +187,10 @@ function check(cond, msg) {
   for (let i = 0; i < 12; i++) {
     await tap(i);
     await focusOpen();
+    if (i === 3) {
+      check((await page.locator('.focus .chord').count()) === 5, 'chord block shows five chord boxes');
+      await shot('10-focus-chords');
+    }
     await page.clock.runFor(5 * MIN);
     if (i === 6) {
       await page.reload();

@@ -30,6 +30,12 @@ Install it rather than using it in a browser tab. Installed, it opens full scree
 | 🔗 on a block | Opens that item's link (backing track, tab, video). |
 | Metronome (bottom, or top right when full screen) | Click track with accents. It offers the tempo from the current block, e.g. "70 bpm". It keeps playing when the sheet is closed. |
 
+**Diagrams:** a block can show scale shapes, arpeggios or chord charts on its full-screen card. The starter library has them for its scales, chords, picking patterns and pentatonic or blues items. To add or change one, go to Settings → Library → a subtype → tap an item → **Diagrams**:
+
+- **Scale** or **Arpeggio**: pick the root, the scale (major, minor, pentatonics, blues, modes) or chord type, and the position ("open position" or a starting fret). The dots show note names or intervals. Roots are solid.
+- **Chords**: type names like `C G Am F`. It knows the common open shapes and plays any other chord as an E- or A-shape barre. Add `:E` or `:A` to pick the barre shape (`G:E`). Supported types: major, m, 7, maj7, m7, sus2, sus4, 5, plus open Cadd9.
+- When the item's text names a scale, arpeggio or chords (e.g. "B minor scale, 2nd position"), the editor suggests it, and new items get it automatically.
+
 **Which item comes up:** each block has a subtype (Warm-up, Scales, Songs, and so on). Within a subtype, the item you completed longest ago comes first, and items you've never done come before everything. Only completed blocks count, so anything you skip stays next in line. Today's plan is fixed the first time you open the app each day.
 
 **Settings:** choose what each of the 12 slots practises and in what order. Edit the library (add, edit, reorder, add links, archive). Add areas and subtypes. Pick the theme. Export or import a backup, and reset the library to defaults. Archived items leave the rotation but keep their history.
@@ -93,6 +99,8 @@ js/store.js      IndexedDB (localStorage fallback)
 js/stats.js      statistics (pure)
 js/transfer.js   export, import validation, merge/replace
 js/charts.js     hand-rolled SVG charts
+js/music.js      music theory: spelled scales, arpeggios, positions, chord shapes
+js/diagrams.js   fretboard and chord-box SVG
 js/audio.js      chime, audio unlock, metronome
 js/views/        session, settings, stats, sheets, metronome
 tests/           unit tests (node --test) and e2e scripts

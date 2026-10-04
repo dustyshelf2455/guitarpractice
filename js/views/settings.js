@@ -5,6 +5,7 @@ import { ITEM_SOFT_LIMIT } from '../defaults.js';
 import { buildExport, parseFile, planImport } from '../transfer.js';
 import { openSheet, confirmSheet, toast, iconButton } from './sheets.js';
 import { page, section, swatch, linkRow, emptyState } from './common.js';
+import { diagramEditor } from './diagram-editor.js';
 
 const APP_VERSION = '1.0.0';
 
@@ -165,7 +166,8 @@ export function subtypeEditorView(app, ctx, subtypeId) {
         el('span', { class: 'row-title' }, it.text, it.url ? el('span', { class: 'sr-only', text: ' (has link)' }) : null),
         el('span', { class: 'row-sub' },
           it.url ? [icon('link'), ' '] : null,
-          it.last_completed_at ? `Last done ${fmtDate(localDate(it.last_completed_at))}` : 'Not done yet'),
+          [it.diagrams && it.diagrams.length ? 'Diagram' : null,
+            it.last_completed_at ? `Last done ${fmtDate(localDate(it.last_completed_at))}` : 'Not done yet'].filter(Boolean).join(' · ')),
         ),
         el('span', { class: 'row-actions' },
           iconButton('up', `Move ${it.text} up`, () => app.moveItem(it.id, -1), '', { disabled: i === 0, dataset: { key: `up-${it.id}` } }),
@@ -260,18 +262,22 @@ function editItemSheet(app, item) {
     class: 'input', type: 'url', value: item.url || '', placeholder: 'https://… (backing track, tab, video)',
     inputmode: 'url', autocapitalize: 'off', autocomplete: 'off', spellcheck: 'false',
   });
+  const diagrams = diagramEditor(item.diagrams, () => text.value);
+  text.addEventListener('change', () => diagrams.refresh());
   let sheet;
   const save = async () => {
     const value = text.value.trim();
     if (!value) return;
     sheet.close();
-    await app.updateItem(item.id, { text: value, url: url.value });
+    await app.updateItem(item.id, { text: value, url: url.value, diagrams: diagrams.value() });
   };
   sheet = openSheet({
     title: 'Edit item',
+    className: 'item-sheet',
     content: [
       el('label', { class: 'field' }, el('span', { class: 'field-label', text: 'What to practise' }), text, hint),
       el('label', { class: 'field' }, el('span', { class: 'field-label', text: 'Link (optional)' }), url),
+      el('div', { class: 'field' }, diagrams.node),
       el('div', { class: 'sheet-actions' },
         el('button', { class: 'btn', type: 'button', onclick: () => sheet.close() }, 'Cancel'),
         el('button', { class: 'btn btn-primary', type: 'button', onclick: save }, 'Save'),

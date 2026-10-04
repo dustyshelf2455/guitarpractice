@@ -42,6 +42,28 @@ async function until(fn, ms = 3000) {
   check(await until(async () => (await page.locator('.row-title', { hasText: 'B minor scale' }).count()) === 1), 'item added to Scales');
   check(await until(async () => (await page.evaluate(() => document.activeElement?.dataset?.key)) === 'add-item'), 'focus stays in the add field for the next item');
 
+  // A new item that names a scale gets its diagram automatically.
+  await page.fill('input[placeholder="Add an item…"]', 'B minor scale, 2nd position');
+  await page.keyboard.press('Enter');
+  check(await until(() => app(() => {
+    const it = window.timebox.app.library.items.find((i) => i.text === 'B minor scale, 2nd position');
+    return it && it.diagrams.length === 1 && it.diagrams[0].scale === 'natural_minor' && it.diagrams[0].position === 2;
+  })), 'new scale item gets a suggested diagram');
+
+  // Build a chord diagram in the editor.
+  await page.locator('.row-link', { hasText: 'A minor pentatonic' }).first().click();
+  await page.waitForSelector('dialog[open] .diagram-editor');
+  check(await page.locator('dialog[open] .diagram-item .board').isVisible(), 'editor previews the existing diagram');
+  await page.locator('dialog[open] .diagram-add').click();
+  await page.locator('dialog[open] .seg', { hasText: 'Chords' }).click();
+  await page.fill('dialog[open] .diagram-builder input', 'Am Dm7 E7 Xq');
+  check(await until(async () => /Don't know: Xq/.test(await page.locator('dialog[open] .diagram-builder .field-hint').textContent())), 'unknown chord names are flagged');
+  await page.fill('dialog[open] .diagram-builder input', 'Am Dm7 E7');
+  check(await until(async () => (await page.locator('dialog[open] .diagram-preview .chord').count()) === 3), 'live preview of three chord boxes');
+  await page.locator('dialog[open] .diagram-builder .btn-primary').click();
+  await page.locator('dialog[open] .sheet-actions .btn-primary').click();
+  check(await until(() => app(() => window.timebox.app.item('scales-5').diagrams.length === 2)), 'chord diagram saved alongside the scale');
+
   // Edit the first item: add a link.
   await page.locator('.row-link', { hasText: 'C major scale' }).click();
   await page.waitForSelector('dialog[open] input[type=url]');
@@ -85,7 +107,7 @@ async function until(fn, ms = 3000) {
   const file = path.join(os.tmpdir(), `timebox-e2e-${Date.now()}.json`);
   await download.saveAs(file);
   const data = JSON.parse(fs.readFileSync(file, 'utf8'));
-  check(data.app === 'timebox' && data.library.items.length === 51, `export has the library (${data.library.items.length} items)`);
+  check(data.app === 'timebox' && data.library.items.length === 52, `export has the library (${data.library.items.length} items)`);
 
   // Reset to defaults.
   await page.locator('button', { hasText: 'Reset library' }).click();
@@ -96,7 +118,7 @@ async function until(fn, ms = 3000) {
   await page.setInputFiles('input[type=file]', file);
   await page.waitForSelector('dialog[open] .import-summary');
   const summary = await page.locator('dialog[open] .import-summary').textContent();
-  check(/Add 1 library item/.test(summary), `merge summary shown before confirming (${summary.slice(0, 60)}…)`);
+  check(/Add 2 library items/.test(summary), `merge summary shown before confirming (${summary.slice(0, 60)}…)`);
   await page.locator('dialog[open] .btn-primary').click();
   check(await until(() => app(() => window.timebox.app.library.items.some((i) => i.text.startsWith('B minor')))), 'merge added the item');
   check(await app(() => window.timebox.app.library.slots[11].subtype_id === 'backing'), 'merge kept local slots');

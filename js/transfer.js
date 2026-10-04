@@ -1,7 +1,8 @@
 // Export / import: schema validation, migration, merge and replace planning.
 // Everything here is pure so it can be tested without a browser.
 
-import { SCHEMA_VERSION, SLOT_COUNT, defaultSettings } from './defaults.js';
+import { SCHEMA_VERSION, SLOT_COUNT, defaultSettings, STARTER_DIAGRAMS, starterText } from './defaults.js';
+import { normaliseDiagram } from './music.js';
 import { endSession, completedCount } from './engine.js';
 import { safeUrl, clone } from './util.js';
 
@@ -10,10 +11,19 @@ const isStr = (v) => typeof v === 'string';
 const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
 const optNum = (v) => v == null || isNum(v);
 
-/** Upgrade older data to the current schema. v1 is the first version. */
+/** Upgrade older data to the current schema, one version at a time. */
 export function migrate(data) {
   const out = clone(data);
-  // Future migrations go here, e.g. if (out.schema_version < 2) { ...; out.schema_version = 2; }
+  let v = out.schema_version || 1;
+  if (v < 2) {
+    // v2: items carry diagrams. Starter items still worded as shipped get theirs.
+    for (const it of out.library?.items || []) {
+      if (Array.isArray(it.diagrams) && it.diagrams.length) continue;
+      const starter = STARTER_DIAGRAMS[it.id];
+      it.diagrams = starter && starterText(it.id) === it.text ? clone(starter) : [];
+    }
+    v = 2;
+  }
   out.schema_version = SCHEMA_VERSION;
   return out;
 }
@@ -39,6 +49,7 @@ export function normaliseLibrary(lib) {
     subtype_id: it.subtype_id,
     text: String(it.text).slice(0, 200),
     url: safeUrl(it.url),
+    diagrams: (Array.isArray(it.diagrams) ? it.diagrams : []).map(normaliseDiagram).filter(Boolean).slice(0, 6),
     order: isNum(it.order) ? it.order : i,
     archived: !!it.archived,
     last_completed_at: isNum(it.last_completed_at) ? it.last_completed_at : null,

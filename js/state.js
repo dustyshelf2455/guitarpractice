@@ -6,6 +6,7 @@ import * as P from './plan.js';
 import { defaultLibrary, defaultSettings, SCHEMA_VERSION, AREA_COLOR_COUNT } from './defaults.js';
 import { localDate, uid, clone, safeUrl } from './util.js';
 import { migrate, normaliseLibrary } from './transfer.js';
+import { normaliseDiagram, suggestDiagram } from './music.js';
 
 export class App {
   constructor(store, clock = () => Date.now()) {
@@ -348,7 +349,13 @@ export class App {
   async addItem(subtypeId, text, url = '') {
     const items = this.itemsOf(subtypeId);
     const order = items.length ? Math.max(...this.library.items.filter((i) => i.subtype_id === subtypeId).map((i) => i.order)) + 1 : 0;
-    const item = { id: uid('i-'), subtype_id: subtypeId, text: text.trim(), url: safeUrl(url), order, archived: false, last_completed_at: null };
+    // A new item that names a scale, arpeggio or chords gets that diagram straight away.
+    const suggested = suggestDiagram(text);
+    const item = {
+      id: uid('i-'), subtype_id: subtypeId, text: text.trim(), url: safeUrl(url),
+      diagrams: suggested ? [normaliseDiagram(suggested)].filter(Boolean) : [],
+      order, archived: false, last_completed_at: null,
+    };
     this.library.items.push(item);
     await this.libraryChanged();
     return item;
@@ -360,6 +367,7 @@ export class App {
     Object.assign(item, patch);
     item.text = String(item.text).trim();
     item.url = safeUrl(item.url);
+    item.diagrams = (item.diagrams || []).map(normaliseDiagram).filter(Boolean);
     await this.libraryChanged();
   }
 

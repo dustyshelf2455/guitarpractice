@@ -254,6 +254,7 @@
 [data-skin="lounge"] .focus[data-state="timeup"] .focus-track-fill { background: var(--accent); }
 [data-skin="lounge"] .focus[data-state="timeup"] .focus-state { color: var(--accent); }
 [data-skin="lounge"] .focus-actions .btn { border-radius: 62.4375rem; }
+[data-skin="lounge"] .focus-actions .btn:not(.btn-primary) { border-color: color-mix(in srgb, var(--accent) 70%, transparent); }
 [data-skin="lounge"] .focus-back { color: var(--text-2); }
 [data-skin="lounge"] .focus-notes {
   background: color-mix(in srgb, var(--surface) 70%, transparent);

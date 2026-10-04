@@ -55,10 +55,19 @@ export function createFocus(handlers) {
   let detailsKey = '';
 
   const primary = el('button', { class: 'btn btn-primary focus-primary', type: 'button', onclick: handlers.primary });
-  const finish = el('button', { class: 'btn focus-finish', type: 'button', onclick: handlers.finish }, icon('check'), 'Finish');
+  const finish = el('button', { class: 'btn focus-finish', type: 'button', onclick: handlers.finish }, icon('check'), el('span', { class: 'btn-label' }, 'Finish'));
   // Before it starts: not in the mood for this one? Another from the same list.
-  const reroll = el('button', { class: 'btn focus-reroll', type: 'button', onclick: handlers.reroll }, icon('dice'), 'Re-roll');
+  const reroll = el('button', { class: 'btn focus-reroll', type: 'button', onclick: handlers.reroll }, icon('dice'), el('span', { class: 'btn-label' }, 'Re-roll'));
   const actions = el('div', { class: 'focus-actions' }, primary, finish, reroll);
+  // When the labels don't all fit beside the clock, the secondary button drops
+  // to just its icon rather than cutting a word short.
+  function fitActions() {
+    if (root.hidden) return;
+    actions.classList.remove('is-compact');
+    const cut = [...actions.querySelectorAll('.btn-label')].some((l) => l.offsetParent && l.scrollWidth > l.clientWidth + 0.5);
+    actions.classList.toggle('is-compact', cut);
+  }
+  if (globalThis.ResizeObserver) new ResizeObserver(fitActions).observe(actions);
 
   // Layout: header; the exercise and its diagrams fill the middle; a compact
   // strip at the bottom holds the clock and the buttons, within thumb reach.
@@ -206,9 +215,10 @@ export function createFocus(handlers) {
       timeup: ['check', 'Finish and rate'],
       completed: ['check', 'Done'],
     }[t.state];
-    primary.replaceChildren(icon(label[0]), label[1]);
+    primary.replaceChildren(icon(label[0]), el('span', { class: 'btn-label' }, label[1]));
     primary.disabled = t.state === 'completed';
     finish.hidden = !(t.state === 'paused' && TILE_MS - remaining >= 1000);
+    fitActions();
     timer.setAttribute('aria-label', `${fmtClock(remaining)} left${state.textContent ? `, ${state.textContent}` : ''}`);
 
     sessionInfo.hidden = !session; // nothing to show before the session starts

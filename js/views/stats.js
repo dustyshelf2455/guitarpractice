@@ -66,12 +66,12 @@ export function statsView(app, ctx) {
       stat('Current streak', String(current), current === 1 ? 'day' : 'days', current ? null : days.has(today) ? null : 'Practise today to start one'),
       stat('Longest streak', String(longest), longest === 1 ? 'day' : 'days'),
     ),
-    el('div', { class: 'card card-pad', style: { marginTop: '8px' } },
-      el('h3', { class: 'stat-label', style: { marginBottom: '10px' }, text: 'Sessions per week' }),
+    el('div', { class: 'card card-pad', style: { marginTop: '0.5rem' } },
+      el('h3', { class: 'stat-label', style: { marginBottom: '0.625rem' }, text: 'Sessions per week' }),
       weeklyChart(S.weeklySessions(sessions, today)),
     ),
-    el('div', { class: 'card card-pad', style: { marginTop: '8px' } },
-      el('h3', { class: 'stat-label', style: { marginBottom: '10px' }, text: 'Practice calendar' }),
+    el('div', { class: 'card card-pad', style: { marginTop: '0.5rem' } },
+      el('h3', { class: 'stat-label', style: { marginBottom: '0.625rem' }, text: 'Practice calendar' }),
       heatmapChart(S.heatmap(sessions, today), today),
     ),
   );
@@ -79,7 +79,7 @@ export function statsView(app, ctx) {
   if (!sessions.length) {
     const root = page(ctx, { title: 'Stats', parent: '#/' },
       tabs(ctx, 'stats'),
-      el('div', { class: 'card', style: { marginTop: '16px' } },
+      el('div', { class: 'card', style: { marginTop: '1rem' } },
         emptyState('No sessions yet', 'Complete a block and your stats start here. A day counts toward your streak once any block is done.')),
       consistency,
     );
@@ -87,8 +87,8 @@ export function statsView(app, ctx) {
   }
 
   const lineChart = ratingChart(series);
-  const ratingCard = el('div', { class: 'card card-pad', style: { marginTop: '8px' } },
-    el('h3', { class: 'stat-label', style: { marginBottom: '10px' }, text: 'Average rating per session' }),
+  const ratingCard = el('div', { class: 'card card-pad', style: { marginTop: '0.5rem' } },
+    el('h3', { class: 'stat-label', style: { marginBottom: '0.625rem' }, text: 'Average rating per session' }),
     lineChart || el('p', { class: 'section-note', style: { margin: 0 }, text: series.length
       ? `${series.length} rated session${series.length === 1 ? '' : 's'} so far. The trend appears after 3.`
       : 'Rate blocks as you finish them to see a trend here.' }),
@@ -163,7 +163,7 @@ export function areaView(app, ctx, areaKey) {
   icon('chevron', 'chev'))));
 
   const root = page(ctx, { title: area.name, parent: '#/stats' },
-    el('div', { class: 'stat-grid', style: { marginTop: '8px' } },
+    el('div', { class: 'stat-grid', style: { marginTop: '0.5rem' } },
       stat('Practice time', fmtDuration(area.seconds), null, `${pct(area.share)} of all practice`),
       stat('Average rating', area.avgRating == null ? '–' : fmtRating(area.avgRating), area.avgRating == null ? null : 'of 5', `${pct(area.completionRate)} of blocks completed`),
     ),
@@ -193,7 +193,7 @@ export function subtypeStatsView(app, ctx, subKey) {
     : el('div', { class: 'card' }, emptyState('No items logged', 'Blocks here had no library item.'));
 
   const root = page(ctx, { title: sub.name, parent: `#/stats/area/${encodeURIComponent(areaKey)}` },
-    el('div', { class: 'stat-grid', style: { marginTop: '8px' } },
+    el('div', { class: 'stat-grid', style: { marginTop: '0.5rem' } },
       stat('Practice time', fmtDuration(sub.seconds), null, `${sub.appearances} block${sub.appearances === 1 ? '' : 's'}`),
       stat('Average rating', sub.avgRating == null ? '–' : fmtRating(sub.avgRating), sub.avgRating == null ? null : 'of 5', `${pct(sub.completionRate)} completed`),
     ),
@@ -243,11 +243,11 @@ export function sessionDetailView(app, ctx, id) {
     ));
   });
   const root = page(ctx, { title: fmtDate(s.date, app.today), parent: '#/history' },
-    el('div', { class: 'stat-grid', style: { marginTop: '8px' } },
+    el('div', { class: 'stat-grid', style: { marginTop: '0.5rem' } },
       stat('Time', fmtDuration(s.total_active_seconds), null, `Started ${fmtTimeOfDay(s.started_at)}`),
       stat('Blocks', `${done}/${s.tiles.length}`, null, s.status === 'complete' ? 'Complete session' : 'Partial session'),
     ),
-    avg != null ? el('p', { class: 'section-note', style: { marginTop: '10px' }, text: `Average rating ★ ${fmtRating(avg)}` }) : null,
+    avg != null ? el('p', { class: 'section-note', style: { marginTop: '0.625rem' }, text: `Average rating ★ ${fmtRating(avg)}` }) : null,
     section('Blocks', el('ol', { class: 'card list' }, rows)),
   );
   return { root, title: fmtDate(s.date, app.today) };

@@ -70,6 +70,7 @@ async function until(fn, ms = 3000) {
   await page.fill('dialog[open] input[type=url]', 'example.com/c-major');
   await page.locator('dialog[open] .btn-primary').click();
   check(await until(() => app(() => window.timebox.app.item('scales-1').url === 'https://example.com/c-major')), 'link saved and normalised to https');
+  await page.waitForTimeout(150); // let the IndexedDB write commit before reloading
 
   // The tile on the session screen shows the link.
   await page.goto(BASE);
@@ -83,6 +84,7 @@ async function until(fn, ms = 3000) {
   await page.locator('.row-link', { hasText: 'Spider walk' }).click();
   await page.locator('dialog[open] .text-btn', { hasText: 'Archive' }).click();
   check(await until(async () => (await page.locator('details, .section-title', { hasText: 'Archived (1)' }).count()) > 0), 'archived item listed under Archived');
+  await page.waitForTimeout(150);
   await page.goto(BASE);
   await page.waitForSelector('.tile[data-state]');
   check(!(await page.locator('.tile').nth(0).locator('.tile-text').textContent()).includes('Spider walk'), 'archived item replaced on today\'s plan');
@@ -109,6 +111,8 @@ async function until(fn, ms = 3000) {
   await page.locator('.seg', { hasText: 'Lounge' }).click();
   check(await until(async () => (await page.getAttribute('html', 'data-skin')) === 'lounge'), 'and switched back');
   await page.locator('.seg', { hasText: 'List' }).click();
+  await until(() => app(() => window.timebox.app.settings.layout === 'list'));
+  await page.waitForTimeout(100);
   await page.goto(BASE);
   await page.waitForSelector('.layout-list .tile[data-state]');
   const rows = await page.evaluate(() => {
@@ -128,12 +132,12 @@ async function until(fn, ms = 3000) {
   const file = path.join(os.tmpdir(), `timebox-e2e-${Date.now()}.json`);
   await download.saveAs(file);
   const data = JSON.parse(fs.readFileSync(file, 'utf8'));
-  check(data.app === 'timebox' && data.library.items.length === 52, `export has the library (${data.library.items.length} items)`);
+  check(data.app === 'timebox' && data.library.items.length === 58, `export has the library (${data.library.items.length} items)`);
 
   // Reset to defaults.
   await page.locator('button', { hasText: 'Reset library' }).click();
   await page.locator('dialog[open] .btn-danger').click();
-  check(await until(() => app(() => window.timebox.app.library.items.length === 50 && window.timebox.app.library.slots[11].subtype_id === 'backing')), 'reset restores starter library and slots');
+  check(await until(() => app(() => window.timebox.app.library.items.length === 56 && window.timebox.app.library.slots[11].subtype_id === 'backing')), 'reset restores starter library and slots');
 
   // Import (merge) brings the added item back without touching slots.
   await page.setInputFiles('input[type=file]', file);

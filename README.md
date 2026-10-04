@@ -28,7 +28,7 @@ Install it rather than using it in a browser tab. Installed, it opens full scree
 | Block hits 0:00 | Chimes and vibrates (vibration is Android only). Tap **Finish and rate**, choose stars, and you're back at the grid. |
 | **End** (bottom) | Ends the session. It is saved as partial if not every block is done, and discarded if none are. |
 | 🔗 on a block | Opens that item's link (backing track, tab, video). |
-| Metronome (bottom, or top right when full screen) | A wooden click track with accents. It offers the tempo from the current block, e.g. "70 bpm". It keeps playing when the sheet is closed. |
+| Metronome (bottom, or top right when full screen) | A wooden click track with accents. While it plays, a glow swings across the top of the screen in time, landing on each click (handy with the phone on silent). It offers the tempo from the current block, e.g. "70 bpm". It keeps playing when the sheet is closed. |
 
 **Diagrams:** a block can show scale shapes, arpeggios or chord charts on its full-screen card. The starter library has them for its scales, chords, picking patterns and pentatonic or blues items. To add or change one, go to Settings → Library → a subtype → tap an item → **Diagrams**:
 
@@ -41,6 +41,8 @@ Install it rather than using it in a browser tab. Installed, it opens full scree
 - **Style:** *Lounge* (default) is forest green and parchment with brass accents, the Fraunces serif, faint paper grain and double-rule borders. *Classic* is the original plain high-contrast look.
 - **Theme:** Auto follows your phone's light/dark setting; Dark and Light force one.
 - **Blocks:** *Grid* shows all twelve at once (3×4). *List* shows full-width rows, six to a screen, and scrolls.
+
+**iPad:** on a tablet (sized for the 13" iPad Pro) the whole interface scales up about 1.6× for easy reading. In landscape the grid is 4×3, and a full-screen block puts its diagram beside the dial.
 
 **Which item comes up:** each block has a subtype (Warm-up, Scales, Songs, and so on). Within a subtype, the item you completed longest ago comes first, and items you've never done come before everything. Only completed blocks count, so anything you skip stays next in line. Today's plan is fixed the first time you open the app each day.
 

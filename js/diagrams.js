@@ -4,7 +4,7 @@
 
 import { el, svg } from './util.js';
 import {
-  scaleTones, arpeggioTones, fretboardNotes, chordShape, describeDiagram, pretty, STRING_NAMES,
+  scaleTones, arpeggioTones, fretboardNotes, chordShape, describeDiagram, pretty, STRING_NAMES, runNotes, runWindow,
 } from './music.js';
 
 const plain = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9#♯♭]+/g, ' ').trim();
@@ -13,6 +13,7 @@ const plain = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9#♯♭]+/g,
 export function renderDiagram(d, itemText = '') {
   if (!d) return null;
   if (d.type === 'chords') return chordsDiagram(d);
+  if (d.type === 'run') return runDiagram(d);
   const toneList = d.type === 'scale' ? scaleTones(d.root, d.scale) : arpeggioTones(d.root, d.quality);
   if (!toneList.length) return null;
   const title = describeDiagram(d);
@@ -21,7 +22,17 @@ export function renderDiagram(d, itemText = '') {
     el('figcaption', { class: 'diagram-title' },
       repeat ? null : title.replace(/^./, (c) => c.toUpperCase()),
       el('span', { class: 'diagram-notes', text: toneList.map((t) => pretty(d.labels === 'intervals' ? t.interval : t.name)).join(' ') })),
-    fretboard(toneList, d.position, d.labels, title));
+    fretboard(fretboardNotes(toneList, d.position), (n) => (d.labels === 'intervals' ? n.interval : pretty(n.name)), title));
+}
+
+/** A walk-up or bass run: numbered in playing order; the note it lands on is solid. */
+function runDiagram(d) {
+  const notes = runNotes(d);
+  const title = describeDiagram(d);
+  return el('figure', { class: 'diagram diagram-board diagram-run' },
+    el('figcaption', { class: 'diagram-title' },
+      el('span', { class: 'diagram-notes', text: notes.map((n) => pretty(n.name)).join(' → ') })),
+    fretboard({ notes: notes.map((n) => ({ ...n, root: n.last })), window: runWindow(d) }, (n) => String(n.order), title));
 }
 
 export function renderDiagrams(list, itemText = '') {
@@ -31,8 +42,7 @@ export function renderDiagrams(list, itemText = '') {
 
 // ------------------------------------------------------------------ fretboard
 
-function fretboard(toneList, position, labels, title) {
-  const { notes, window: [lo, hi] } = fretboardNotes(toneList, position);
+function fretboard({ notes, window: [lo, hi] }, labelOf, title) {
   const open = lo === 0;
   const first = open ? 1 : lo;
   const cols = hi - first + 1;
@@ -66,7 +76,7 @@ function fretboard(toneList, position, labels, title) {
   }
   // Notes.
   for (const n of notes) {
-    const label = labels === 'intervals' ? n.interval : pretty(n.name);
+    const label = labelOf(n);
     g.append(svg('g', { class: n.root ? 'board-dot root' : 'board-dot' },
       svg('circle', { cx: x(n.fret), cy: y(n.string), r }),
       svg('text', { x: x(n.fret), y: y(n.string) + 3.3, 'text-anchor': 'middle', text: label })));

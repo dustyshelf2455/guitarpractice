@@ -115,6 +115,8 @@ export function sessionView(app, ctx) {
       openFocus(i);
       return;
     }
+    const before = app.boardTiles()[i]?.state;
+    if (before === 'idle' || before === 'paused') ctx.refreshAudio?.();
     const r = await app.tapTile(i);
     if (r.action === 'started' || r.action === 'resumed') openFocus(i);
     else if (r.action === 'completed' || r.action === 'rate') rate(r.session, r.index);
@@ -153,6 +155,8 @@ export function sessionView(app, ctx) {
   async function onFocusPrimary() {
     const i = focusIndex;
     if (i == null || !app.active) return;
+    const st = app.active.tiles[i].state;
+    if (st === 'idle' || st === 'paused') ctx.refreshAudio?.();
     const r = await app.tapTile(i); // start / pause / resume, or complete when time is up
     if (r.action === 'completed') rate(r.session, r.index);
     else if (r.action === 'paused') announce('Paused');

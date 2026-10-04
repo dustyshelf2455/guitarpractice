@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  scaleTones, arpeggioTones, fretboardNotes, chordShape, parseChord, chordTokens,
+  scaleTones, arpeggioTones, fretboardNotes, chordShape, parseChord, chordTokens, runNotes, runWindow,
   suggestDiagram, normaliseDiagram, describeDiagram, pretty, STRING_NAMES,
 } from '../js/music.js';
-import { defaultLibrary, STARTER_DIAGRAMS } from '../js/defaults.js';
+import { defaultLibrary, STARTER_DIAGRAMS, SCHEMA_VERSION } from '../js/defaults.js';
 import { migrate, parseFile } from '../js/transfer.js';
 
 const names = (list) => list.map((t) => t.name).join(' ');
@@ -115,7 +115,7 @@ test('v1 -> v2 migration adds diagrams only to untouched starter items', () => {
   lib.items.push({ id: 'i-custom', subtype_id: 'scales', text: 'B minor scale', order: 9, archived: false, last_completed_at: null });
   const out = migrate({ schema_version: 1, library: lib, settings: {}, sessions: [], plans: [] });
   const item = (id) => out.library.items.find((i) => i.id === id);
-  assert.equal(out.schema_version, 2);
+  assert.equal(out.schema_version, SCHEMA_VERSION);
   assert.deepEqual(item('scales-1').diagrams, STARTER_DIAGRAMS['scales-1']);
   assert.deepEqual(item('scales-2').diagrams, [], 'edited starter item left alone');
   assert.deepEqual(item('i-custom').diagrams, []);
@@ -130,4 +130,34 @@ test('diagrams round-trip through export/import and junk is dropped', () => {
   assert.deepEqual(parsed.errors, []);
   assert.deepEqual(parsed.data.library.items[0].diagrams, [{ type: 'chords', chords: ['G'] }]);
   assert.deepEqual(parsed.data.library.items.find((i) => i.id === 'scales-1').diagrams, STARTER_DIAGRAMS['scales-1']);
+});
+
+test('walk-up runs: notes in playing order, open-position window', () => {
+  const g2c = STARTER_DIAGRAMS['chords-8'][0];
+  assert.deepEqual(runNotes(g2c).map((n) => n.name), ['G', 'A', 'B', 'C']);
+  assert.deepEqual(runWindow(g2c), [0, 3]);
+  assert.equal(runNotes(g2c).at(-1).last, true);
+  assert.deepEqual(runNotes(STARTER_DIAGRAMS['chords-12'][0]).map((n) => n.name), ['D', 'E', 'F#', 'G']);
+  assert.deepEqual(runWindow(STARTER_DIAGRAMS['chords-12'][0]), [0, 4]);
+  assert.equal(describeDiagram(STARTER_DIAGRAMS['chords-11'][0]), 'Bass run: D → C → B → A → G');
+  assert.equal(normaliseDiagram({ type: 'run', notes: [[0, 3]] }), null, 'a run needs two notes');
+  assert.deepEqual(normaliseDiagram({ type: 'run', notes: [[0, 3], [9, 1], [1, 0]] }), { type: 'run', notes: [[0, 3], [1, 0]] });
+});
+
+test('v2 -> v3 migration adds the walk-ups to Chords and arpeggios, once', () => {
+  const lib = defaultLibrary();
+  lib.items = lib.items.filter((i) => !/^chords-(8|9|1[0-3])$/.test(i.id)); // a v2 library
+  lib.items.push({ id: 'i-mine', subtype_id: 'chords', text: 'My own chord drill', order: 20, archived: false, last_completed_at: 5, diagrams: [] });
+  const out = migrate({ schema_version: 2, library: lib, settings: {}, sessions: [], plans: [] });
+  const added = out.library.items.filter((i) => /^chords-(8|9|1[0-3])$/.test(i.id));
+  assert.equal(added.length, 6);
+  assert.ok(added.every((i) => i.order > 20 && i.subtype_id === 'chords' && i.last_completed_at === null));
+  assert.equal(added[0].text, 'Walk-up G to C: G-A-B-C');
+  assert.equal(added[0].diagrams[0].type, 'run');
+  const again = migrate({ ...out, schema_version: 2 });
+  assert.equal(again.library.items.filter((i) => i.id === 'chords-8').length, 1, 'never duplicated');
+  const noChords = defaultLibrary();
+  noChords.subtypes = noChords.subtypes.filter((st) => st.id !== 'chords');
+  noChords.items = noChords.items.filter((i) => i.subtype_id !== 'chords');
+  assert.ok(!migrate({ schema_version: 2, library: noChords }).library.items.some((i) => i.id === 'chords-8'), 'skipped if the subtype is gone');
 });

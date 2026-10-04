@@ -5,7 +5,7 @@ import { openStore, requestPersistence } from './store.js';
 import { TILE_MS, tileElapsed, sessionElapsed } from './engine.js';
 import { el } from './util.js';
 import {
-  unlockAudio, resumeAudio, playChime, vibrate, scheduleChime, cancelChime, chimeWasScheduledFor, metronome,
+  unlockAudio, resumeAudio, freshAudio, playChime, vibrate, scheduleChime, cancelChime, chimeWasScheduledFor, metronome,
 } from './audio.js';
 import { setWakeLock } from './wakelock.js';
 import { sessionView } from './views/session.js';
@@ -46,6 +46,10 @@ const ctx = {
     location.replace(hash);
   },
   openMetronome: () => openMetronomeSheet(app, { onChange: syncSideEffects }),
+  /** Called inside the tap that starts a block: a fresh audio engine so its chime will sound. */
+  refreshAudio: () => {
+    if (!metronome.playing) freshAudio();
+  },
   announce,
   get app() {
     return app;
@@ -116,6 +120,29 @@ function rerender() {
     window.scrollTo(0, y);
   }
 }
+
+// ---- metronome pulse: a pendulum glow across the top of the screen ----
+
+const glow = el('span', { class: 'beat-glow' });
+const bob = el('span', { class: 'beat-bob' }, glow);
+const rail = el('div', { class: 'beat-rail', 'aria-hidden': 'true' }, bob);
+document.body.append(rail);
+const stillMotion = matchMedia('(prefers-reduced-motion: reduce)');
+
+metronome.onBeat((beat, strong) => {
+  const beatMs = 60000 / metronome.bpm;
+  // A tick lands as the bob reaches one end; it then swings to the other end for the next.
+  if (!stillMotion.matches) {
+    const travel = Math.max(0, rail.clientWidth - bob.offsetWidth);
+    const from = beat % 2 === 0 ? 0 : travel;
+    bob.animate([{ transform: `translateX(${from}px)` }, { transform: `translateX(${travel - from}px)` }],
+      { duration: beatMs, easing: 'cubic-bezier(0.37, 0, 0.63, 1)', fill: 'forwards' });
+  }
+  glow.animate([
+    { opacity: 1, transform: strong ? 'scale(1.35, 2.2)' : 'scale(1.1, 1.5)', filter: 'brightness(1.25)' },
+    { opacity: 0.6, transform: 'none', filter: 'none' },
+  ], { duration: Math.min(beatMs * 0.75, 480), easing: 'ease-out' });
+});
 
 // ---- side effects that follow the session state ----
 

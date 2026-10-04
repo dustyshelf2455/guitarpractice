@@ -3,7 +3,7 @@
 // ("70 bpm") the metronome offers it.
 
 import { el, icon, parseBpm, setDigits } from '../util.js';
-import { metronome, unlockAudio } from '../audio.js';
+import { metronome, freshAudio } from '../audio.js';
 import { openSheet } from './sheets.js';
 
 export function openMetronomeSheet(app, { onChange }) {
@@ -66,9 +66,11 @@ export function openMetronomeSheet(app, { onChange }) {
   }
 
   function toggle() {
-    unlockAudio();
     if (metronome.playing) metronome.stop();
-    else metronome.start();
+    else {
+      freshAudio(); // inside the tap: guarantees sound on iOS even after a long pause
+      metronome.start();
+    }
     render();
     onChange();
   }
@@ -84,13 +86,12 @@ export function openMetronomeSheet(app, { onChange }) {
     }
   }
 
-  metronome.onBeat = (beat) => {
-    const strong = metronome.accent && metronome.beats > 1 && beat % metronome.beats === 0;
+  const stopListening = metronome.onBeat((beat, strong) => {
     pulse.classList.remove('beat', 'strong');
     void pulse.offsetWidth; // restart the flash
     pulse.classList.add('beat');
     if (strong) pulse.classList.add('strong');
-  };
+  });
 
   render();
   return openSheet({
@@ -108,7 +109,7 @@ export function openMetronomeSheet(app, { onChange }) {
       playBtn,
     ],
     onClose: () => {
-      metronome.onBeat = null;
+      stopListening();
       onChange();
     },
   });

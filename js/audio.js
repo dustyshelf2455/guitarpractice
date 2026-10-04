@@ -19,19 +19,49 @@ function context() {
   return ctx;
 }
 
+// A silent buffer played inside a gesture fully unlocks iOS Safari.
+function prime(c) {
+  const src = c.createBufferSource();
+  src.buffer = c.createBuffer(1, 1, 22050);
+  src.connect(c.destination);
+  src.start(0);
+}
+
 /** Call from a user gesture. Safe to call often. */
 export function unlockAudio() {
   const c = context();
   if (!c) return;
-  if (c.state !== 'running') c.resume().catch(() => {});
-  // A silent buffer played inside the gesture fully unlocks iOS Safari.
-  if (!unlockAudio.done) {
-    const src = c.createBufferSource();
-    src.buffer = c.createBuffer(1, 1, 22050);
-    src.connect(c.destination);
-    src.start(0);
+  if (c.state !== 'running') {
+    c.resume().catch(() => {});
+    prime(c);
+  } else if (!unlockAudio.done) {
+    prime(c);
     unlockAudio.done = true;
   }
+}
+
+/**
+ * Start over with a new audio engine. Call from a user gesture (starting the
+ * metronome or a block). iOS can leave a page's audio context "running" but
+ * silent after it has been idle or interrupted by another app; a fresh one,
+ * created inside a tap, always plays. Any scheduled chime is dropped, and the
+ * caller reschedules it.
+ */
+export function freshAudio() {
+  const old = ctx;
+  ctx = null;
+  master = null;
+  clicks = null;
+  scheduled = null;
+  unlockAudio.done = false;
+  const c = context();
+  if (c) {
+    prime(c);
+    unlockAudio.done = true;
+    if (c.state !== 'running') c.resume().catch(() => {});
+  }
+  if (old && old.state !== 'closed') old.close().catch(() => {});
+  return c;
 }
 
 export function audioRunning() {
@@ -229,7 +259,7 @@ export const metronome = {
   bpm: 70,
   beats: 4, // 0 = no accent grouping
   accent: true,
-  onBeat: null, // (beatIndex) => void, called close to when each click sounds
+  listeners: new Set(), // (beatIndex, strong) => void, called close to when each click sounds
   _timer: null,
   _next: 0,
   _beat: 0,
@@ -259,6 +289,12 @@ export const metronome = {
     this.bpm = Math.max(30, Math.min(260, Math.round(bpm)));
   },
 
+  /** Listen for beats; returns a function that stops listening. */
+  onBeat(fn) {
+    this.listeners.add(fn);
+    return () => this.listeners.delete(fn);
+  },
+
   _schedule() {
     const c = ctx;
     if (!c || !this.playing) return;
@@ -266,9 +302,12 @@ export const metronome = {
       const beat = this._beat;
       const strong = this.accent && this.beats > 1 && beat % this.beats === 0;
       playBuffer(c, strong ? clicks.accent : clicks.normal, this._next);
-      if (this.onBeat) {
+      if (this.listeners.size) {
         const delayMs = Math.max(0, (this._next - c.currentTime) * 1000);
-        setTimeout(() => this.playing && this.onBeat && this.onBeat(beat), delayMs);
+        setTimeout(() => {
+          if (!this.playing) return;
+          for (const fn of this.listeners) fn(beat, strong);
+        }, delayMs);
       }
       this._next += 60 / this.bpm;
       this._beat = beat + 1;

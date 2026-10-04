@@ -229,7 +229,7 @@ export function subtypeEditorView(app, ctx, subtypeId) {
         el('div', { class: 'add-row' }, addInput, el('button', { class: 'btn', type: 'button', 'aria-label': 'Add item', onclick: add }, icon('plus'))),
         el('div', { style: { padding: '0 12px 12px' } }, addHint),
       ),
-      el('p', { class: 'section-note', style: { marginTop: '10px' }, text: 'Blocks rotate through items: whichever was completed longest ago comes up next. Tap an item to edit it or add a link.' }),
+      el('p', { class: 'section-note', style: { marginTop: '0.625rem' }, text: 'Blocks rotate through items: whichever was completed longest ago comes up next. Tap an item to edit it or add a link.' }),
     ),
     archived.length ? section(`Archived (${archived.length})`,
       el('ol', { class: 'list card' }, archived.map((it) => el('li', {},
@@ -345,7 +345,7 @@ export function areasView(app, ctx) {
   const root = page(ctx, { title: 'Areas and subtypes', parent: '#/settings' },
     section('Areas',
       areaList,
-      el('div', { class: 'card add-row', style: { marginTop: '10px', borderTop: '1px solid var(--border)' } },
+      el('div', { class: 'card add-row', style: { marginTop: '0.625rem', borderTop: '1px solid var(--border)' } },
         newArea, el('button', { class: 'btn', type: 'button', 'aria-label': 'Add area', onclick: addArea }, icon('plus'))),
     ),
     section('New subtype',
@@ -354,7 +354,7 @@ export function areasView(app, ctx) {
         el('label', { class: 'field' }, el('span', { class: 'field-label', text: 'Area' }), subArea),
         el('div', { class: 'field' }, el('button', { class: 'btn btn-primary btn-block', type: 'button', onclick: addSub }, 'Add subtype')),
       ),
-      el('p', { class: 'section-note', style: { marginTop: '10px' }, text: 'To use a new subtype, assign it to a slot under Practice slots.' }),
+      el('p', { class: 'section-note', style: { marginTop: '0.625rem' }, text: 'To use a new subtype, assign it to a slot under Practice slots.' }),
     ),
   );
   return { root, title: 'Areas and subtypes' };

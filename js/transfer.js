@@ -1,7 +1,7 @@
 // Export / import: schema validation, migration, merge and replace planning.
 // Everything here is pure so it can be tested without a browser.
 
-import { SCHEMA_VERSION, SLOT_COUNT, defaultSettings, STARTER_DIAGRAMS, starterText } from './defaults.js';
+import { SCHEMA_VERSION, SLOT_COUNT, defaultSettings, STARTER_DIAGRAMS, starterText, starterItem, ADDED_ITEMS } from './defaults.js';
 import { normaliseDiagram } from './music.js';
 import { endSession, completedCount } from './engine.js';
 import { safeUrl, clone } from './util.js';
@@ -23,6 +23,21 @@ export function migrate(data) {
       it.diagrams = starter && starterText(it.id) === it.text ? clone(starter) : [];
     }
     v = 2;
+  }
+  // v3+: new starter items join existing libraries (after the user's own items in that subtype).
+  for (const [version, ids] of ADDED_ITEMS) {
+    if (v >= version) continue;
+    const lib = out.library;
+    if (lib && Array.isArray(lib.items) && Array.isArray(lib.subtypes)) {
+      for (const id of ids) {
+        const item = starterItem(id);
+        if (!item || lib.items.some((it) => it.id === id) || !lib.subtypes.some((st) => st.id === item.subtype_id)) continue;
+        const orders = lib.items.filter((it) => it.subtype_id === item.subtype_id).map((it) => it.order ?? 0);
+        item.order = orders.length ? Math.max(...orders) + 1 : 0;
+        lib.items.push(item);
+      }
+    }
+    v = version;
   }
   out.schema_version = SCHEMA_VERSION;
   return out;

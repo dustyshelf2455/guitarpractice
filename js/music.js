@@ -5,6 +5,7 @@
 //   { type: 'scale',    root: 'C', scale: 'major',  position: 'open' | 1..12, labels: 'notes' | 'intervals' }
 //   { type: 'arpeggio', root: 'C', quality: 'major', position: 'open' | 1..12, labels: 'notes' | 'intervals' }
 //   { type: 'chords',   chords: ['C', 'G', 'Am', 'F:E'] }   ':E' / ':A' asks for that barre shape
+//   { type: 'run',      notes: [[string, fret], ...] }      a bass run / walk-up, in playing order
 
 const LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 const NATURAL = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
@@ -262,6 +263,25 @@ export function chordTokens(text) {
     .filter((s) => /[A-Za-z0-9]/.test(s));
 }
 
+// ------------------------------------------------------------------ runs (walk-ups, bass runs)
+
+const SHARP_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+/** The notes of a run in order: [{ string, fret, name, order, last }]. */
+export function runNotes(d) {
+  return d.notes.map(([string, fret], i) => ({
+    string, fret, name: SHARP_NAMES[(TUNING[string] + fret) % 12], order: i + 1, last: i === d.notes.length - 1,
+  }));
+}
+
+/** Fret window that shows every note of a run (open position when it uses open strings). */
+export function runWindow(d) {
+  const frets = d.notes.map(([, f]) => f);
+  const lo = Math.min(...frets);
+  const hi = Math.max(...frets);
+  return lo === 0 || lo <= 1 ? [0, Math.max(3, hi)] : [lo, Math.max(lo + 3, hi)];
+}
+
 // ------------------------------------------------------------------ validation & description
 
 const POSITIONS = new Set(['open', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
@@ -281,6 +301,13 @@ export function normaliseDiagram(d) {
     const chords = d.chords.map(String).filter((t) => chordShape(t)).slice(0, 8);
     return chords.length ? { type: 'chords', chords } : null;
   }
+  if (d.type === 'run' && Array.isArray(d.notes)) {
+    const notes = d.notes
+      .filter((n) => Array.isArray(n) && Number.isInteger(n[0]) && Number.isInteger(n[1]) && n[0] >= 0 && n[0] <= 5 && n[1] >= 0 && n[1] <= 15)
+      .map(([string, fret]) => [string, fret])
+      .slice(0, 12);
+    return notes.length >= 2 ? { type: 'run', notes } : null;
+  }
   return null;
 }
 
@@ -298,6 +325,7 @@ export function describeDiagram(d) {
   if (d.type === 'scale') return `${pretty(d.root)} ${SCALES[d.scale].name.toLowerCase()} scale, ${positionLabel(d.position)}`;
   if (d.type === 'arpeggio') return `${pretty(d.root)} ${ARPEGGIOS[d.quality].name.toLowerCase()} arpeggio, ${positionLabel(d.position)}`;
   if (d.type === 'chords') return `Chords: ${d.chords.map((c) => pretty(chordShape(c).label)).join(', ')}`;
+  if (d.type === 'run') return `Bass run: ${runNotes(d).map((n) => pretty(n.name)).join(' → ')}`;
   return '';
 }
 

@@ -179,7 +179,7 @@
   font-size: 0.9375rem;
   color: var(--text-2);
 }
-[data-skin="lounge"] .done-title { font-style: italic; font-weight: 500; font-size: 1.5rem; display: flex; align-items: center; gap: 8px; }
+[data-skin="lounge"] .done-title { font-style: italic; font-weight: 500; font-size: 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
 
 /* A small sprig: the one ornament. */
 [data-skin="lounge"] .done-title::before,
@@ -191,7 +191,7 @@
   -webkit-mask: var(--sprig) center / contain no-repeat;
   mask: var(--sprig) center / contain no-repeat;
 }
-[data-skin="lounge"] .empty strong { display: flex; justify-content: center; align-items: center; gap: 6px; font-family: var(--font-display); font-size: 1.0625rem; }
+[data-skin="lounge"] .empty strong { display: flex; justify-content: center; align-items: center; gap: 0.375rem; font-family: var(--font-display); font-size: 1.0625rem; }
 :root[data-skin="lounge"] {
   --sprig: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M4.5 20.5C8 15.5 12 11 19.5 4' fill='none' stroke='black' stroke-width='1.4' stroke-linecap='round'/><path d='M8.2 15.6c-3-.2-4.6-2-4.9-4.5 2.8.2 4.5 2 4.9 4.5z'/><path d='M9.3 14.3c.1-3 2-4.8 4.5-5.2-.1 2.8-1.9 4.7-4.5 5.2z'/><path d='M12.6 10.6c-2.9-.4-4.4-2.3-4.5-4.8 2.7.4 4.3 2.2 4.5 4.8z'/><path d='M14.2 9.1c.3-2.9 2.3-4.6 4.8-4.8-.3 2.7-2.2 4.5-4.8 4.8z'/><circle cx='19.6' cy='4' r='1.2'/></svg>");
 }
@@ -209,10 +209,10 @@
   background: transparent;
   border: 1px solid var(--accent);
   color: var(--text);
-  border-radius: 999px;
+  border-radius: 62.4375rem;
 }
 [data-skin="lounge"] .master-btn.is-paused { background: var(--primary-bg); color: var(--primary-text); border-color: var(--primary-bg); }
-[data-skin="lounge"] .progress { height: 3px; background: var(--track); }
+[data-skin="lounge"] .progress { height: 0.1875rem; background: var(--track); }
 [data-skin="lounge"] .progress-fill { background: linear-gradient(90deg, var(--good), var(--accent)); }
 
 /* Tiles: a bookplate — outer edge, a gap, then a hairline rule. */
@@ -220,14 +220,14 @@
   --tile-bg: var(--surface);
   background: var(--tile-bg);
   border: 1px solid var(--border-strong);
-  border-radius: 12px;
-  box-shadow: inset 0 0 0 3px var(--tile-bg), inset 0 0 0 4px var(--tile-rule), 0 1px 2px rgba(0, 0, 0, 0.18);
+  border-radius: 0.75rem;
+  box-shadow: inset 0 0 0 0.1875rem var(--tile-bg), inset 0 0 0 0.25rem var(--tile-rule), 0 1px 2px rgba(0, 0, 0, 0.18);
 }
 [data-skin="lounge"] .tile[data-state="running"] {
   --tile-bg: var(--invert-bg);
   --tile-rule: color-mix(in srgb, var(--invert-text) 22%, transparent);
   border-color: var(--accent);
-  box-shadow: inset 0 0 0 3px var(--tile-bg), inset 0 0 0 4px var(--tile-rule), 0 0 0 1px var(--accent), 0 6px 24px -6px color-mix(in srgb, var(--accent) 45%, transparent);
+  box-shadow: inset 0 0 0 0.1875rem var(--tile-bg), inset 0 0 0 0.25rem var(--tile-rule), 0 0 0 1px var(--accent), 0 0.375rem 1.5rem -6px color-mix(in srgb, var(--accent) 45%, transparent);
 }
 [data-skin="lounge"] .tile[data-state="paused"] { --tile-bg: var(--surface-2); border: 2px dashed var(--accent); box-shadow: none; }
 [data-skin="lounge"] .tile[data-state="timeup"] { --tile-bg: var(--surface-2); border: 4px double var(--accent); box-shadow: none; }
@@ -237,7 +237,7 @@
 [data-skin="lounge"] .tile-finish { background: var(--primary-bg); color: var(--primary-text); }
 [data-skin="lounge"] .tile-time { font-variant-numeric: tabular-nums; }
 [data-skin="lounge"] .tile[data-state="running"] .tile-time { font-family: var(--font-display); font-weight: 600; font-variation-settings: 'SOFT' 60; }
-[data-skin="lounge"] .session-bar { border-top: 1px solid var(--border); padding-top: 4px; }
+[data-skin="lounge"] .session-bar { border-top: 1px solid var(--border); padding-top: 0.25rem; }
 
 /* ------------------------------------------------------------- focus */
 
@@ -259,7 +259,7 @@
 [data-skin="lounge"] .focus[data-state="paused"] .ring-fg { stroke: var(--muted); }
 [data-skin="lounge"] .focus[data-state="timeup"] .ring-bg { stroke: var(--accent); }
 [data-skin="lounge"] .focus[data-state="timeup"] .focus-state { color: var(--accent); }
-[data-skin="lounge"] .focus-actions .btn { border-radius: 999px; }
+[data-skin="lounge"] .focus-actions .btn { border-radius: 62.4375rem; }
 [data-skin="lounge"] .focus-back { color: var(--text-2); }
 
 /* Diagrams: brass roots, serif chord names. */
@@ -277,9 +277,9 @@
   background: color-mix(in srgb, var(--page) 82%, transparent); z-index: -1;
 }
 [data-skin="lounge"] .page-title { font-size: 1.5rem; }
-[data-skin="lounge"] .section-head { justify-content: flex-start; align-items: center; gap: 12px; }
+[data-skin="lounge"] .section-head { justify-content: flex-start; align-items: center; gap: 0.75rem; }
 [data-skin="lounge"] .section-head::after {
-  content: ''; flex: 1; height: 4px;
+  content: ''; flex: 1; height: 0.25rem;
   border-top: 1px solid var(--border-strong);
   border-bottom: 1px solid var(--border);
 }
@@ -290,23 +290,23 @@
 }
 [data-skin="lounge"] .card {
   border-color: var(--border-strong);
-  border-radius: 14px;
-  box-shadow: inset 0 0 0 3px var(--surface), inset 0 0 0 4px var(--tile-rule);
+  border-radius: 0.875rem;
+  box-shadow: inset 0 0 0 0.1875rem var(--surface), inset 0 0 0 0.25rem var(--tile-rule);
 }
-[data-skin="lounge"] .btn { border-radius: 999px; }
+[data-skin="lounge"] .btn { border-radius: 62.4375rem; }
 [data-skin="lounge"] .chip { border-color: var(--accent); }
-[data-skin="lounge"] .segmented { border-radius: 999px; }
-[data-skin="lounge"] .seg { border-radius: 999px; }
+[data-skin="lounge"] .segmented { border-radius: 62.4375rem; }
+[data-skin="lounge"] .seg { border-radius: 62.4375rem; }
 [data-skin="lounge"] .seg[aria-checked="true"],
 [data-skin="lounge"] .seg[aria-current="page"] { box-shadow: 0 0 0 1px var(--accent); }
 
 [data-skin="lounge"] .sheet-panel {
   border-color: var(--border-strong);
-  box-shadow: 0 -18px 50px rgba(0, 0, 0, 0.35), inset 0 3px 0 -2px var(--tile-rule);
+  box-shadow: 0 -18px 3.125rem rgba(0, 0, 0, 0.35), inset 0 0.1875rem 0 -2px var(--tile-rule);
 }
 [data-skin="lounge"] .sheet-grip { background: var(--accent); opacity: 0.55; }
 [data-skin="lounge"] .star { border-radius: 50%; }
 [data-skin="lounge"] .stars-scale { font-family: var(--font-display); font-style: italic; }
 [data-skin="lounge"] .stat-label { letter-spacing: 0.01em; }
 [data-skin="lounge"] .badge { border-color: var(--accent); color: var(--accent); }
-[data-skin="lounge"] .toast { border-radius: 999px; }
+[data-skin="lounge"] .toast { border-radius: 62.4375rem; }

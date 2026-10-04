@@ -1,7 +1,7 @@
 // Default areas, subtypes, starter library and slot template.
 // Ids are stable so "Reset to defaults" and import/merge behave predictably.
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 export const SLOT_COUNT = 12;
 
 const AREAS = [
@@ -54,6 +54,13 @@ const LIBRARY = {
     'Build a major triad (1-3-5)',
     'Seventh chords: A7, D7, E7',
     'Barre shapes: E shape and A shape',
+    // Walk-ups and walk-downs linking G, C and D (bluegrass and Americana rhythm).
+    'Walk-up G to C: G-A-B-C',
+    'Walk-down C to G: C-B-A-G',
+    'Walk-up G to D: G-A-B-C-D',
+    'Walk-down D to G: D-C-B-A-G',
+    'Walk-up D to G: D-E-F#-G',
+    'Walk-ups in G-C-G-D-G, 70 bpm',
   ],
   songs: [
     'Lefty - Long Black Veil',
@@ -96,6 +103,8 @@ const LIBRARY = {
 const chords = (...list) => [{ type: 'chords', chords: list }];
 const scale = (root, kind, position) => [{ type: 'scale', root, scale: kind, position, labels: 'notes' }];
 const arpeggio = (root, quality, position, labels = 'notes') => [{ type: 'arpeggio', root, quality, position, labels }];
+// A run: [string, fret] in playing order (strings 0 = low E ... 5 = high e), then the two chords it links.
+const run = (notes, from, to) => [{ type: 'run', notes }, { type: 'chords', chords: [from, to] }];
 
 export const STARTER_DIAGRAMS = {
   'picking-1': chords('G', 'C', 'D'),
@@ -115,10 +124,31 @@ export const STARTER_DIAGRAMS = {
   'chords-5': arpeggio('C', 'major', 'open', 'intervals'),
   'chords-6': chords('A7', 'D7', 'E7'),
   'chords-7': chords('G:E', 'C:A'),
+  'chords-8': run([[0, 3], [1, 0], [1, 2], [1, 3]], 'G', 'C'), // G A B -> C
+  'chords-9': run([[1, 3], [1, 2], [1, 0], [0, 3]], 'C', 'G'), // C B A -> G
+  'chords-10': run([[0, 3], [1, 0], [1, 2], [1, 3], [2, 0]], 'G', 'D'), // G A B C -> D
+  'chords-11': run([[2, 0], [1, 3], [1, 2], [1, 0], [0, 3]], 'D', 'G'), // D C B A -> G
+  'chords-12': run([[2, 0], [2, 2], [2, 4], [3, 0]], 'D', 'G'), // D E F# -> G
+  'chords-13': chords('G', 'C', 'D'),
   'riffs-1': scale('A', 'minor_pentatonic', 5),
   'backing-1': scale('A', 'minor_pentatonic', 5),
   'backing-4': scale('A', 'blues', 5),
 };
+
+/** Starter items added in a later schema version: [version, ids]. */
+export const ADDED_ITEMS = [[3, ['chords-8', 'chords-9', 'chords-10', 'chords-11', 'chords-12', 'chords-13']]];
+
+/** A starter item as shipped, by id (used to add new starter items to existing libraries). */
+export function starterItem(id) {
+  const m = /^(.+)-(\d+)$/.exec(id);
+  const text = starterText(id);
+  if (!m || !text) return null;
+  return {
+    id, subtype_id: m[1], text, url: '',
+    diagrams: structuredClone(STARTER_DIAGRAMS[id] || []),
+    order: Number(m[2]) - 1, archived: false, last_completed_at: null,
+  };
+}
 
 /** Starter text by item id, so migrations can tell untouched starter items apart. */
 export function starterText(id) {

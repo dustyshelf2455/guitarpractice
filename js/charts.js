@@ -161,7 +161,7 @@ export function heatmapChart(days, today) {
     ...[0, 1, 2, 3, 4].map((l) => el('span', { class: 'legend-swatch', style: { background: `var(--seq-${l})` } })),
     el('span', { text: 'More' }),
   );
-  legend.style.gap = '4px';
+  legend.style.gap = '0.25rem';
   legend.style.alignItems = 'center';
   const practiced = days.filter((d) => d.seconds > 0);
   return el('div', {},

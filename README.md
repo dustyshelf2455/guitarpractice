@@ -6,7 +6,7 @@ It is a Progressive Web App: plain HTML, CSS and JavaScript, no build step, no d
 
 ## Put it on your phone
 
-The app is live at **https://dustyshelf2455.github.io/guitarpractice/**, served by GitHub Pages (Settings → Pages → Deploy from a branch → `claude/relaxed-ride-7bhyk8`, `/ (root)`). Every push to that branch redeploys it within a minute or two. If you later move the code to `main`, switch the Pages branch to `main` too.
+The app is live at **https://dustyshelf2455.github.io/guitarpractice/**, served by GitHub Pages (Settings → Pages → Deploy from a branch → `main`, `/ (root)`). Every push to `main` redeploys it within a minute or two.
 
 Install it:
 - **iPhone (Safari):** open the link, tap **Share → Add to Home Screen**.

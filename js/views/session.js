@@ -7,6 +7,7 @@ import { el, icon, fmtClock, fmtDuration, fmtDate, mean, setDigits } from '../ut
 import { tileRemaining, sessionRemaining, masterState, completedCount, TILE_MS } from '../engine.js';
 import { ratingSheet, confirmSheet, iconButton } from './sheets.js';
 import { createFocus } from './focus.js';
+import { editItemSheet } from './settings.js';
 
 const STATE_LABEL = {
   idle: 'Not started',
@@ -63,6 +64,11 @@ export function sessionView(app, ctx) {
     primary: onFocusPrimary,
     finish: () => onFinish(focusIndex),
     openMetronome: () => openMetronome(),
+    edit: () => {
+      const t = focusIndex != null ? app.boardTiles()[focusIndex] : null;
+      const item = t && t.item_id ? app.item(t.item_id) : null;
+      if (item) editItemSheet(app, item, { fromBlock: true });
+    },
   });
   let focusIndex = null;
   let origin = null; // tile rect captured at tap time, for the grow animation
@@ -302,7 +308,7 @@ export function sessionView(app, ctx) {
       }
       const area = t.area_id ? app.area(t.area_id) : null;
       const item = t.item_id ? app.item(t.item_id) : null;
-      focus.update(t, session, area ? area.color : null, t.area_id ? (area ? area.name : t.area_name) : 'Other', now, item ? item.diagrams : []);
+      focus.update(t, session, area ? area.color : null, t.area_id ? (area ? area.name : t.area_name) : 'Other', now, item);
     }
   }
 
@@ -340,13 +346,16 @@ export function sessionView(app, ctx) {
     v.swap.hidden = !canSwap;
     v.finish.hidden = !canFinish;
     v.finish.setAttribute('aria-label', `Finish ${t.item_text} early`);
-    v.link.hidden = !t.url;
-    if (t.url) {
-      v.link.href = t.url;
+    // Links come from the library, so one added mid-session shows straight away.
+    const item = t.item_id ? app.item(t.item_id) : null;
+    const url = item ? item.url : t.url;
+    v.link.hidden = !url;
+    if (url) {
+      v.link.href = url;
       v.link.setAttribute('aria-label', `Open link for ${t.item_text}`);
     }
     v.li.classList.toggle('has-finish', canFinish);
-    v.li.classList.toggle('has-link', !!t.url);
+    v.li.classList.toggle('has-link', !!url);
     v.li.classList.toggle('has-swap', canSwap);
 
     const action = {
@@ -354,7 +363,7 @@ export function sessionView(app, ctx) {
       running: 'Tap to open full screen.',
       paused: 'Tap to resume full screen.',
       timeup: 'Tap to complete and rate.',
-      completed: 'Tap to change rating.',
+      completed: 'Tap to change the rating or reopen it.',
     }[state];
     const timeText = state === 'completed'
       ? `${fmtDuration(t.elapsed_seconds)} practised${t.rating ? `, rated ${t.rating} of 5` : ', not rated'}`

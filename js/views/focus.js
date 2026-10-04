@@ -28,7 +28,7 @@ const CIRCUMFERENCE = 2 * Math.PI * R;
 const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /**
- * handlers: { collapse(), primary(), finish(), openMetronome() }
+ * handlers: { collapse(), primary(), finish(), openMetronome(), edit() }
  * Returns { root, show(fromRect, fromBg), hide(toRect, toBg), update(tile, session, now), tick(tile, session, now) }
  */
 export function createFocus(handlers) {
@@ -47,6 +47,11 @@ export function createFocus(handlers) {
   const title = el('h2', { class: 'focus-title', id: 'focus-title' });
   const linkText = el('span');
   const link = el('a', { class: 'chip focus-link', target: '_blank', rel: 'noopener noreferrer' }, icon('link'), linkText);
+  const editText = el('span');
+  const editBtn = el('button', { class: 'chip focus-edit', type: 'button', onclick: () => handlers.edit() }, icon('edit'), editText);
+  const chips = el('div', { class: 'focus-chips' }, link, editBtn);
+  // Your own notes for this item (tap to edit).
+  const notes = el('button', { class: 'focus-notes', type: 'button', hidden: true, onclick: () => handlers.edit() });
 
   const ring = svg('circle', {
     class: 'ring-fg', cx: 50, cy: 50, r: R,
@@ -78,8 +83,9 @@ export function createFocus(handlers) {
   const inner = el('div', { class: 'focus-inner' },
     head,
     el('div', { class: 'focus-body' },
-      el('div', { class: 'focus-hero' }, meta, title, link),
-      details),
+      el('div', { class: 'focus-hero' }, meta, title, chips),
+      details,
+      notes),
     el('div', { class: 'focus-dock' }, timer, actions),
   );
   const root = el('section', { class: 'focus', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'focus-title', hidden: true }, inner);
@@ -152,21 +158,30 @@ export function createFocus(handlers) {
     root.classList.toggle('has-details', !!nodes);
   }
 
-  function update(t, session, color, areaName, now, diagrams) {
+  /** `item` is the library item behind the block (null for an empty slot). */
+  function update(t, session, color, areaName, now, item) {
     if (!t) return;
-    setDetails(diagrams, t.item_text);
+    setDetails(item ? item.diagrams : [], t.item_text);
+    const noteText = item && item.notes ? item.notes : '';
+    if (notes.textContent !== noteText) notes.textContent = noteText;
+    notes.hidden = !noteText;
+    notes.setAttribute('aria-label', `Your notes: ${noteText}. Tap to edit.`);
+    editBtn.hidden = !item;
+    editText.textContent = noteText ? 'Edit' : 'Add notes';
+    root.classList.toggle('has-notes', !!noteText);
     root.dataset.state = t.state;
     root.dataset.color = color == null ? 'none' : String(color);
     area.textContent = areaName;
     sub.textContent = t.subtype_name ? `· ${t.subtype_name}` : '';
     title.textContent = t.item_text;
 
-    link.hidden = !t.url;
-    if (t.url) {
-      link.href = t.url;
+    const url = item ? item.url : t.url;
+    link.hidden = !url;
+    if (url) {
+      link.href = url;
       let host = 'Open link';
       try {
-        host = new URL(t.url).hostname.replace(/^www\./, '');
+        host = new URL(url).hostname.replace(/^www\./, '');
       } catch {
         /* keep default */
       }

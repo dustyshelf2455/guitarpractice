@@ -1,7 +1,10 @@
 // Export / import: schema validation, migration, merge and replace planning.
 // Everything here is pure so it can be tested without a browser.
 
-import { SCHEMA_VERSION, SLOT_COUNT, defaultSettings, STARTER_DIAGRAMS, starterText, starterItem, ADDED_ITEMS } from './defaults.js';
+import {
+  SCHEMA_VERSION, SLOT_COUNT, defaultSettings, STARTER_DIAGRAMS, STARTER_NOTES, starterText, starterItem, ADDED_ITEMS,
+  NOTES_LIMIT, SLOTS_V3,
+} from './defaults.js';
 import { normaliseDiagram } from './music.js';
 import { endSession, completedCount } from './engine.js';
 import { safeUrl, clone } from './util.js';
@@ -23,6 +26,26 @@ export function migrate(data) {
       it.diagrams = starter && starterText(it.id) === it.text ? clone(starter) : [];
     }
     v = 2;
+  }
+  if (v < 4 && out.library && Array.isArray(out.library.subtypes) && Array.isArray(out.library.items)) {
+    const lib = out.library;
+    // v4: licks get their own subtype under Improvisation; "Riffs and licks" becomes "Riffs".
+    if (!lib.subtypes.some((st) => st.id === 'licks')) {
+      const area = (lib.areas || []).some((a) => a.id === 'improvisation') ? 'improvisation' : null;
+      const order = Math.max(-1, ...lib.subtypes.map((st) => st.order ?? 0)) + 1;
+      lib.subtypes.push({ id: 'licks', name: 'Licks', area_id: area, order, archived: false });
+    }
+    const riffs = lib.subtypes.find((st) => st.id === 'riffs');
+    if (riffs && riffs.name === 'Riffs and licks') riffs.name = 'Riffs';
+    // The last slot practises a lick, if the slots are still as shipped.
+    const slots = Array.isArray(lib.slots) ? lib.slots : [];
+    if (slots.length === SLOTS_V3.length && slots.every((s, i) => s.subtype_id === SLOTS_V3[i])) slots[11].subtype_id = 'licks';
+    // Starter items still worded as shipped get the new strumming patterns, chord charts and notes.
+    for (const it of lib.items) {
+      if (starterText(it.id) !== it.text) continue;
+      if (STARTER_DIAGRAMS[it.id] && !(Array.isArray(it.diagrams) && it.diagrams.length)) it.diagrams = clone(STARTER_DIAGRAMS[it.id]);
+      if (STARTER_NOTES[it.id] && !it.notes) it.notes = STARTER_NOTES[it.id];
+    }
   }
   // v3+: new starter items join existing libraries (after the user's own items in that subtype).
   for (const [version, ids] of ADDED_ITEMS) {
@@ -64,6 +87,7 @@ export function normaliseLibrary(lib) {
     subtype_id: it.subtype_id,
     text: String(it.text).slice(0, 200),
     url: safeUrl(it.url),
+    notes: typeof it.notes === 'string' ? it.notes.slice(0, NOTES_LIMIT) : '',
     diagrams: (Array.isArray(it.diagrams) ? it.diagrams : []).map(normaliseDiagram).filter(Boolean).slice(0, 6),
     order: isNum(it.order) ? it.order : i,
     archived: !!it.archived,

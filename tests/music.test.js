@@ -86,7 +86,8 @@ test('suggestions read scales, arpeggios and chords from item text', () => {
   assert.equal(d('Crosspick D: 654, 543, 432, 321 and back'), 'Chords: D');
   assert.equal(d('Solo over a minor blues'), null, '"a" is not the note A');
   assert.equal(d('Elvis Costello - Alison'), null);
-  assert.equal(d('Down strums on every beat, 70 bpm'), null);
+  assert.equal(d('Down strums on every beat, 70 bpm'), 'Strumming: ↓ ↓ ↓ ↓');
+  assert.equal(d('Strum D DU UDU, 80 bpm'), 'Strumming: ↓ · ↓ ↑ · ↑ ↓ ↑');
 });
 
 test('normaliseDiagram rejects junk and keeps valid data', () => {
@@ -142,6 +143,38 @@ test('walk-up runs: notes in playing order, open-position window', () => {
   assert.equal(describeDiagram(STARTER_DIAGRAMS['chords-11'][0]), 'Bass run: D → C → B → A → G');
   assert.equal(normaliseDiagram({ type: 'run', notes: [[0, 3]] }), null, 'a run needs two notes');
   assert.deepEqual(normaliseDiagram({ type: 'run', notes: [[0, 3], [9, 1], [1, 0]] }), { type: 'run', notes: [[0, 3], [1, 0]] });
+});
+
+test('v3 -> v4 migration: Licks subtype and slot, strumming patterns, notes, untouched items only', () => {
+  const lib = defaultLibrary();
+  // What a v3 install has: no Licks, the old slot list and names, no strum diagrams or notes.
+  lib.subtypes = lib.subtypes.filter((st) => st.id !== 'licks');
+  lib.subtypes.find((st) => st.id === 'riffs').name = 'Riffs and licks';
+  lib.items = lib.items.filter((i) => i.subtype_id !== 'licks' && i.id !== 'strumming-7');
+  for (const it of lib.items) {
+    delete it.notes;
+    if (/^(strumming|songs)-/.test(it.id)) it.diagrams = [];
+  }
+  lib.slots[11].subtype_id = 'backing';
+  lib.items.find((i) => i.id === 'strumming-2').text = 'My own pattern'; // edited by the user
+  const out = migrate({ schema_version: 3, library: lib, settings: {}, sessions: [], plans: [] }).library;
+  const item = (id) => out.items.find((i) => i.id === id);
+  assert.ok(out.subtypes.some((st) => st.id === 'licks' && st.area_id === 'improvisation'));
+  assert.equal(out.subtypes.find((st) => st.id === 'riffs').name, 'Riffs');
+  assert.equal(out.slots[11].subtype_id, 'licks');
+  assert.deepEqual(item('strumming-1').diagrams, [{ type: 'strum', pattern: 'DDDD' }]);
+  assert.deepEqual(item('strumming-2').diagrams, [], 'edited item left alone');
+  assert.ok(item('strumming-7').notes.startsWith('Make up a strumming pattern'));
+  assert.ok(item('licks-1').diagrams.some((d) => d.type === 'tab'));
+  assert.equal(item('songs-9').diagrams[0].type, 'progression');
+
+  const custom = defaultLibrary();
+  custom.slots[11].subtype_id = 'songs';
+  custom.subtypes = custom.subtypes.filter((st) => st.id !== 'licks');
+  custom.items = custom.items.filter((i) => i.subtype_id !== 'licks');
+  const kept = migrate({ schema_version: 3, library: custom }).library;
+  assert.equal(kept.slots[11].subtype_id, 'songs', 'customised slots are never changed');
+  assert.ok(kept.items.some((i) => i.subtype_id === 'licks'), 'the licks are still added');
 });
 
 test('v2 -> v3 migration adds the walk-ups to Chords and arpeggios, once', () => {

@@ -44,6 +44,14 @@ Note the iOS and Android versions you test on. ✅ = works, ❌ = broken (note w
 - [ ] Metronome on in a full-screen block: at 0:00 the chime plays and the click carries on at half volume. Going back to the grid stops it.
 - [ ] After turning the metronome off and on again (from a block), it clicks.
 
+## Licks, songs, strumming
+
+- [ ] The last block of the day is a lick, with its tab, note names and chord boxes, and practice notes underneath.
+- [ ] On a strumming block, start the metronome: each arrow lights in time with the clicks (downs on the numbers, ups on the "&").
+- [ ] On a song block, tap **Add notes**, type a note, save: it shows under the chords straight away.
+- [ ] In Ultimate Guitar, copy a whole chord sheet; in Timebox, Edit a song → Add a diagram → Song chord chart → paste. Only chords and section names remain.
+- [ ] Paste a tab for a lick (Edit → Add a diagram → Tab): the preview matches.
+
 ## Data
 
 - [ ] Complete a few blocks with ratings, close the app, reopen: everything is still there.

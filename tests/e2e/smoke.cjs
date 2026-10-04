@@ -238,6 +238,21 @@ function check(cond, msg) {
       check((await page.locator('.focus .chord').count()) === 5, 'chord block shows five chord boxes');
       await shot('10-focus-chords');
     }
+    if (i === 8) {
+      check((await page.locator('.focus .diagram-strum .strum-slot').count()) >= 4, 'strumming block shows its pattern as arrows');
+      await shot('11-focus-strum');
+    }
+    if (i === 11) {
+      check(await page.locator('.focus .diagram-tab .tab').isVisible(), 'lick block shows its tab');
+      check((await page.locator('.focus-title').textContent()).includes('G run'), 'the last slot is a lick');
+      await page.locator('.focus-edit').click();
+      await page.waitForSelector('dialog.item-sheet[open]');
+      check(!(await page.locator('dialog.item-sheet .text-btn', { hasText: 'Archive' }).count()), 'no archiving from a running block');
+      await page.fill('dialog.item-sheet textarea.notes-input', 'Got it at 80 bpm.');
+      await page.locator('dialog.item-sheet .sheet-actions .btn-primary').click();
+      check((await text(page.locator('.focus-notes'), 'Got it at 80 bpm.')) === 'Got it at 80 bpm.', 'notes added from the block show on it');
+      await shot('12-focus-lick');
+    }
     await page.clock.runFor(5 * MIN);
     if (i === 6) {
       await page.reload();

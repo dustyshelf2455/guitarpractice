@@ -6,6 +6,9 @@ import { el, svg } from './util.js';
 import {
   scaleTones, arpeggioTones, fretboardNotes, chordShape, describeDiagram, pretty, STRING_NAMES, runNotes, runWindow,
 } from './music.js';
+import {
+  parseTab, tabNoteNames, readChart, isChordSymbol, strumCounts, strumSubdivision,
+} from './notation.js';
 
 const plain = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9#♯♭]+/g, ' ').trim();
 
@@ -18,6 +21,9 @@ export function renderDiagram(d, itemText = '', { upright = false } = {}) {
   if (!d) return null;
   if (d.type === 'chords') return chordsDiagram(d);
   if (d.type === 'run') return runDiagram(d, upright);
+  if (d.type === 'tab') return tabDiagram(d);
+  if (d.type === 'progression') return progressionDiagram(d);
+  if (d.type === 'strum') return strumDiagram(d);
   const toneList = d.type === 'scale' ? scaleTones(d.root, d.scale) : arpeggioTones(d.root, d.quality);
   if (!toneList.length) return null;
   const title = describeDiagram(d);
@@ -189,4 +195,130 @@ export function chordBox(shape) {
     el('figcaption', { class: 'chord-name', text: pretty(shape.name) }),
     g,
     shape.shape ? el('span', { class: 'chord-shape', text: `${shape.shape} shape` }) : null);
+}
+
+// ------------------------------------------------------------------ tab (licks)
+
+const BEND_WORDS = { 1: '½', 2: 'full', 3: '1½', 4: '2' };
+
+/** A lick as tab: six lines, high e on top, wrapped into rows of up to eight notes. */
+function tabDiagram(d) {
+  const events = parseTab(d.tab);
+  if (!events.length) return null;
+  const rowCount = Math.ceil(events.length / 8);
+  const per = Math.ceil(events.length / rowCount);
+  const names = tabNoteNames(events);
+  const systems = [];
+  for (let k = 0; k < events.length; k += per) systems.push(tabSystem(events.slice(k, k + per), per, k === 0));
+  return el('figure', { class: 'diagram diagram-tab', role: 'img', 'aria-label': `Tab, ${events.length} notes: ${names.map(pretty).join(', ')}` },
+    events.length <= 16 ? el('figcaption', { class: 'diagram-title' }, el('span', { class: 'diagram-notes', text: names.map(pretty).join(' ') })) : null,
+    systems);
+}
+
+function tabSystem(events, per, first) {
+  const col = 34;
+  const left = 24;
+  const top = 26;
+  const gap = 17;
+  const W = left + 14 + per * col;
+  const H = top + gap * 5 + 10;
+  const x = (k) => left + 16 + k * col;
+  const y = (string) => top + (5 - string) * gap;
+  // Sized by its length, so fret numbers read the same size in every lick.
+  const g = svg('svg', { class: 'tab', viewBox: `0 0 ${W} ${H}`, 'aria-hidden': 'true', style: `width: ${(W * 0.1).toFixed(2)}rem` });
+  for (let s = 0; s < 6; s++) {
+    g.append(svg('line', { class: 'tab-line', x1: left, x2: W - 2, y1: y(s), y2: y(s) }));
+    g.append(svg('text', { class: 'tab-label', x: 8, y: y(s) + 4, 'text-anchor': 'middle', text: STRING_NAMES[s] }));
+  }
+  g.append(svg('line', { class: first ? 'tab-start' : 'tab-bar', x1: left, x2: left, y1: y(5), y2: y(0) }));
+  events.forEach((ev, k) => {
+    if (ev.bar && k > 0) g.append(svg('line', { class: 'tab-bar', x1: x(k) - col / 2, x2: x(k) - col / 2, y1: y(5), y2: y(0) }));
+    for (const n of ev.notes) {
+      const cx = x(k);
+      const cy = y(n.string);
+      if (n.tech && k > 0) {
+        const px = x(k - 1);
+        if (n.tech === '/' || n.tech === '\\') {
+          const up = n.tech === '/';
+          g.append(svg('line', { class: 'tab-slide', x1: px + 9, x2: cx - 9, y1: cy + (up ? 4 : -4), y2: cy + (up ? -4 : 4) }));
+        } else {
+          g.append(svg('path', { class: 'tab-slur', d: `M${px + 3} ${cy - 9} Q${(px + cx) / 2} ${cy - 17} ${cx - 3} ${cy - 9}` }));
+          g.append(svg('text', { class: 'tab-tech', x: (px + cx) / 2, y: cy - 16, 'text-anchor': 'middle', text: n.tech }));
+        }
+      }
+      g.append(svg('text', { class: 'tab-num', x: cx, y: cy + 5, 'text-anchor': 'middle', text: n.fret === 'x' ? '×' : String(n.fret) }));
+      if (n.bend != null) {
+        const amount = BEND_WORDS[n.bend - n.fret] || `+${n.bend - n.fret}`;
+        g.append(svg('path', { class: 'tab-bend', d: `M${cx + 9} ${cy - 1} Q${cx + 15} ${cy - 2} ${cx + 15} ${cy - 13}` }));
+        g.append(svg('path', { class: 'tab-arrow', d: `M${cx + 11.5} ${cy - 10} L${cx + 15} ${cy - 15} L${cx + 18.5} ${cy - 10} Z` }));
+        g.append(svg('text', { class: 'tab-tech', x: cx + 15, y: cy - 18, 'text-anchor': 'middle', text: n.release != null ? `${amount} ↓` : amount }));
+      }
+      if (n.vib) g.append(svg('text', { class: 'tab-tech', x: cx, y: cy - 10, 'text-anchor': 'middle', text: '∿' }));
+    }
+  });
+  return g;
+}
+
+// ------------------------------------------------------------------ chord charts (songs)
+
+/** A song's chords by section, with a chord box for each chord it uses. */
+function progressionDiagram(d) {
+  const chart = readChart(d.text);
+  if (!chart.chords.length) return null;
+  const token = (t) => {
+    if (t === '|') return el('span', { class: 'prog-bar', 'aria-hidden': 'true' });
+    if (/^\(?[x×]\d\)?$/i.test(t)) return el('span', { class: 'prog-repeat', text: `×${t.replace(/\D/g, '')}` });
+    if (isChordSymbol(t)) return el('span', { class: 'prog-chord', text: pretty(t) });
+    return el('span', { class: 'prog-text', text: t });
+  };
+  const seen = new Set();
+  const boxes = chart.chords
+    .map((c) => chordShape(c.replace(/\/.*/, '')))
+    .filter((shape) => shape && !seen.has(shape.name) && seen.add(shape.name))
+    .slice(0, 10)
+    .map(chordBox);
+  return el('figure', { class: 'diagram diagram-progression' },
+    chart.meta.length ? el('p', { class: 'prog-meta' },
+      chart.meta.map(([k, v]) => el('span', { class: 'prog-meta-item' }, el('span', { class: 'prog-meta-key', text: k }), ` ${v}`))) : null,
+    el('div', { class: 'prog-sections' },
+      chart.sections.map((s) => el('div', { class: 'prog-section' },
+        el('span', { class: 'prog-label', text: s.label }),
+        el('div', { class: 'prog-rows' }, s.rows.map((row) => el('div', { class: 'prog-row' }, row.map(token))))))),
+    boxes.length ? el('div', { class: 'chord-row prog-boxes' }, boxes) : null);
+}
+
+// ------------------------------------------------------------------ strumming patterns
+
+/**
+ * Down and up arrows for each slot of the bar, with the count underneath.
+ * Slots carry data-i so the metronome can light them in time (see main.js).
+ */
+function strumDiagram(d) {
+  const n = d.pattern.length;
+  const counts = strumCounts(n);
+  const per = strumSubdivision(n);
+  const accents = new Set(d.accents || []);
+  const sw = 40;
+  const W = n * sw;
+  const H = 104;
+  const g = svg('svg', { class: 'strum', viewBox: `0 0 ${W} ${H}`, 'aria-hidden': 'true' });
+  [...d.pattern].forEach((c, i) => {
+    const cx = i * sw + sw / 2;
+    const slot = svg('g', { class: `strum-slot${i % per === 0 ? ' beat' : ''}${accents.has(i) ? ' accent' : ''}`, 'data-i': i });
+    slot.append(svg('rect', { class: 'strum-hit', x: i * sw + 3, y: 4, width: sw - 6, height: 78, rx: 8 }));
+    if (c === '-') {
+      slot.append(svg('circle', { class: 'strum-rest', cx, cy: 45, r: 2.8 }));
+    } else {
+      const down = c !== 'U';
+      const head = down ? `M${cx - 10} 62 L${cx} 77 L${cx + 10} 62 Z` : `M${cx - 10} 30 L${cx} 15 L${cx + 10} 30 Z`;
+      slot.append(svg('line', { class: 'strum-shaft', x1: cx, x2: cx, y1: down ? 18 : 72, y2: down ? 66 : 26 }));
+      slot.append(svg('path', { class: 'strum-head', d: head }));
+      if (c === 'X') slot.append(svg('path', { class: 'strum-mute', d: `M${cx - 8} 38 L${cx + 8} 52 M${cx + 8} 38 L${cx - 8} 52` }));
+      if (accents.has(i)) slot.append(svg('text', { class: 'strum-accent', x: cx, y: 12, 'text-anchor': 'middle', text: '>' }));
+    }
+    slot.append(svg('text', { class: 'strum-count', x: cx, y: 99, 'text-anchor': 'middle', text: counts[i] }));
+    g.append(slot);
+  });
+  const words = [...d.pattern].map((c, i) => `${counts[i]} ${({ D: 'down', U: 'up', X: 'chuck', '-': 'miss' })[c]}${accents.has(i) ? ' accented' : ''}`);
+  return el('figure', { class: 'diagram diagram-strum', dataset: { per: String(per) }, role: 'img', 'aria-label': `Strumming pattern: ${words.join(', ')}` }, g);
 }

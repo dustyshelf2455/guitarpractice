@@ -19,7 +19,7 @@ test('default plan: one item per slot, in slot order, no repeats', () => {
   assert.deepEqual(ids(plan), [
     'warmup-1', 'picking-1', 'scales-1', 'chords-1',
     'songs-1', 'songs-2', 'songs-3', 'songs-4',
-    'strumming-1', 'riffs-1', 'backing-1', 'backing-2',
+    'strumming-1', 'riffs-1', 'backing-1', 'licks-1',
   ]);
   assert.equal(new Set(ids(plan)).size, 12);
 });
@@ -47,7 +47,8 @@ test('completed items rotate to the back across days', () => {
   const day2 = generatePlan(lib, '2026-10-04');
   assert.deepEqual(ids(day2).slice(4, 8), ['songs-5', 'songs-6', 'songs-7', 'songs-8']);
   assert.equal(day2.entries[0].item_id, 'warmup-2');
-  assert.equal(day2.entries[10].item_id, 'backing-3');
+  assert.equal(day2.entries[10].item_id, 'backing-2');
+  assert.equal(day2.entries[11].item_id, 'licks-2');
 });
 
 test('skipped items stay next in line; skipped days change nothing', () => {
@@ -163,8 +164,8 @@ test('starter library matches the spec', () => {
   const lib = defaultLibrary();
   const count = (id) => activeItems(lib, id).length;
   assert.deepEqual(
-    ['warmup', 'picking', 'scales', 'chords', 'songs', 'strumming', 'riffs', 'backing'].map(count),
-    [6, 5, 5, 13, 10, 6, 5, 6],
+    ['warmup', 'picking', 'scales', 'chords', 'songs', 'strumming', 'riffs', 'backing', 'licks'].map(count),
+    [6, 5, 5, 13, 10, 7, 5, 6, 12],
   );
   assert.ok(lib.items.every((it) => it.text.length <= 45));
   const areaCount = {};

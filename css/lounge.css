@@ -164,6 +164,7 @@
 [data-skin="lounge"] .sheet-title,
 [data-skin="lounge"] .rating-item,
 [data-skin="lounge"] .chord-name,
+[data-skin="lounge"] .prog-chord,
 [data-skin="lounge"] .done-title {
   font-family: var(--font-display);
   font-variation-settings: 'SOFT' 100, 'WONK' 0;
@@ -259,12 +260,21 @@
 [data-skin="lounge"] .focus[data-state="timeup"] .focus-state { color: var(--accent); }
 [data-skin="lounge"] .focus-actions .btn { border-radius: 62.4375rem; }
 [data-skin="lounge"] .focus-back { color: var(--text-2); }
+[data-skin="lounge"] .focus-notes {
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  border-color: var(--border-strong);
+  box-shadow: inset 0 0 0 0.1875rem color-mix(in srgb, var(--surface) 70%, transparent), inset 0 0 0 0.25rem var(--tile-rule);
+  font-family: var(--font-display); font-variation-settings: 'SOFT' 100, 'WONK' 0;
+}
 
 /* Diagrams: brass roots, serif chord names. */
 [data-skin="lounge"] .board-dot.root circle { fill: var(--accent); stroke: var(--accent); }
 [data-skin="lounge"] .board-dot.root text { fill: var(--primary-text); }
 [data-skin="lounge"] .board-nut { stroke: var(--text-2); }
 [data-skin="lounge"] .chord-name { font-weight: 600; }
+[data-skin="lounge"] .prog-chord { font-weight: 600; }
+[data-skin="lounge"] .prog-label { font-family: var(--font-display); font-style: italic; font-weight: 500; letter-spacing: 0; text-transform: none; font-size: 1rem; }
+[data-skin="lounge"] .prog-meta-item { border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
 [data-skin="lounge"] .diagram-title { font-family: var(--font-display); font-style: italic; font-weight: 500; }
 
 /* ------------------------------------------------------------- pages, cards, sheets */

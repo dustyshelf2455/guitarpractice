@@ -144,6 +144,26 @@ metronome.onBeat((beat, strong) => {
   ], { duration: Math.min(beatMs * 0.75, 480), easing: 'ease-out' });
 });
 
+// ---- strumming patterns on a full-screen block light up in time ----
+
+let strumTimers = [];
+function lightStrum(slot) {
+  for (const fig of document.querySelectorAll('.focus:not([hidden]) .diagram-strum')) {
+    fig.querySelectorAll('.strum-slot.on').forEach((n) => n.classList.remove('on'));
+    if (slot != null) fig.querySelector(`.strum-slot[data-i="${slot.i % fig.querySelectorAll('.strum-slot').length}"]`)?.classList.add('on');
+  }
+}
+metronome.onBeat((beat) => {
+  const fig = document.querySelector('.focus:not([hidden]) .diagram-strum');
+  if (!fig) return;
+  const per = Number(fig.dataset.per) || 2;
+  const slots = fig.querySelectorAll('.strum-slot').length;
+  const first = (beat % (slots / per)) * per;
+  const step = 60000 / metronome.bpm / per;
+  strumTimers.forEach(clearTimeout);
+  strumTimers = Array.from({ length: per }, (_, k) => setTimeout(() => metronome.playing && lightStrum({ i: first + k }), k * step));
+});
+
 // ---- side effects that follow the session state ----
 
 function syncSideEffects() {
@@ -159,6 +179,7 @@ function syncSideEffects() {
   setWakeLock(!!running || metronome.playing);
   scheduleFrame();
   document.documentElement.classList.toggle('metro-on', metronome.playing);
+  if (!metronome.playing) lightStrum(null);
   const label = root.querySelector('.metro-label');
   if (label) label.textContent = metronome.playing ? `${metronome.bpm} bpm` : 'Metronome';
   const focusLabel = root.querySelector('.focus-metro-bpm');

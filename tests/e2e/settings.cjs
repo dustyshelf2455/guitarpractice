@@ -55,7 +55,7 @@ async function until(fn, ms = 3000) {
   await page.waitForSelector('dialog[open] .diagram-editor');
   check(await page.locator('dialog[open] .diagram-item .board').isVisible(), 'editor previews the existing diagram');
   await page.locator('dialog[open] .diagram-add').click();
-  await page.locator('dialog[open] .seg', { hasText: 'Chords' }).click();
+  await page.locator('dialog[open] .diagram-builder select').first().selectOption('chords');
   await page.fill('dialog[open] .diagram-builder input', 'Am Dm7 E7 Xq');
   check(await until(async () => /Don't know: Xq/.test(await page.locator('dialog[open] .diagram-builder .field-hint').textContent())), 'unknown chord names are flagged');
   await page.fill('dialog[open] .diagram-builder input', 'Am Dm7 E7');
@@ -64,7 +64,56 @@ async function until(fn, ms = 3000) {
   await page.locator('dialog[open] .sheet-actions .btn-primary').click();
   check(await until(() => app(() => window.timebox.app.item('scales-5').diagrams.length === 2)), 'chord diagram saved alongside the scale');
 
+  // A lick of your own: notes and a pasted tab.
+  await page.goto(`${BASE}#/settings/subtype/licks`);
+  await page.waitForSelector('input[placeholder="Add an item…"]');
+  await page.fill('input[placeholder="Add an item…"]', 'My new lick');
+  await page.keyboard.press('Enter');
+  await until(async () => (await page.locator('.row-title', { hasText: 'My new lick' }).count()) === 1);
+  await page.locator('.row-link', { hasText: 'My new lick' }).click();
+  await page.waitForSelector('dialog[open] .diagram-editor');
+  await page.fill('dialog[open] textarea.notes-input', 'From a YouTube lesson. Slow first.');
+  await page.locator('dialog[open] .diagram-add').click();
+  await page.locator('dialog[open] .diagram-builder select').first().selectOption('tab');
+  await page.fill('dialog[open] .diagram-builder textarea', 'e|---------|\nB|-----1---|\nG|-0h2-----|\nD|---------|\nA|---------|\nE|---------|');
+  check(await until(async () => (await page.locator('dialog[open] .diagram-preview .tab').count()) === 1), 'pasted tab previews');
+  await page.locator('dialog[open] .diagram-builder .btn-primary').click();
+  await page.locator('dialog[open] .sheet-actions .btn-primary').click();
+  check(await until(() => app(() => {
+    const it = window.timebox.app.library.items.find((i) => i.text === 'My new lick');
+    return it && it.notes === 'From a YouTube lesson. Slow first.' && it.diagrams[0]?.type === 'tab';
+  })), 'lick saved with notes and tab');
+
+  // A song: paste a chord sheet; only chords and sections are kept.
+  await page.goto(`${BASE}#/settings/subtype/songs`);
+  await page.locator('.row-link', { hasText: 'These Days' }).click();
+  await page.waitForSelector('dialog[open] .diagram-editor');
+  await page.locator('dialog[open] .diagram-add').click();
+  await page.locator('dialog[open] .diagram-builder select').first().selectOption('progression');
+  const sheet = '[Verse]\nG        C\nplaceholder lyric words\nD        G\nmore placeholder words\n[Chorus]\nC   D\nsung words';
+  await page.locator('dialog[open] .diagram-builder textarea').fill(sheet);
+  await page.locator('dialog[open] .diagram-builder textarea').blur();
+  check(await until(async () => (await page.locator('dialog[open] .diagram-builder textarea').inputValue()) === 'Verse: G C D G\nChorus: C D'), 'pasted chord sheet tidied, lyrics left out');
+  await page.locator('dialog[open] .diagram-builder .btn-primary').click();
+  await page.locator('dialog[open] .sheet-actions .btn-primary').click();
+  check(await until(() => app(() => window.timebox.app.item('songs-4').diagrams[0]?.text === 'Verse: G C D G\nChorus: C D')), 'chord chart saved');
+
+  // A strumming pattern: tap a slot to change it.
+  await page.goto(`${BASE}#/settings/subtype/strumming`);
+  await page.locator('.row-link', { hasText: 'Count aloud' }).click();
+  await page.waitForSelector('dialog[open] .diagram-editor');
+  await page.locator('dialog[open] .diagram-item .text-btn', { hasText: 'Edit' }).click();
+  await page.locator('dialog[open] .strum-edit-stroke').nth(1).click(); // miss -> down
+  await page.locator('dialog[open] .strum-edit-accent').nth(0).click();
+  await page.locator('dialog[open] .diagram-builder .btn-primary').click();
+  await page.locator('dialog[open] .sheet-actions .btn-primary').click();
+  check(await until(() => app(() => {
+    const d = window.timebox.app.item('strumming-6').diagrams[0];
+    return d.pattern === 'DDDU-UDU' && d.accents?.[0] === 0;
+  })), 'strumming pattern edited by tapping');
+
   // Edit the first item: add a link.
+  await page.goto(`${BASE}#/settings/subtype/scales`);
   await page.locator('.row-link', { hasText: 'C major scale' }).click();
   await page.waitForSelector('dialog[open] input[type=url]');
   await page.fill('dialog[open] input[type=url]', 'example.com/c-major');
@@ -132,21 +181,21 @@ async function until(fn, ms = 3000) {
   const file = path.join(os.tmpdir(), `timebox-e2e-${Date.now()}.json`);
   await download.saveAs(file);
   const data = JSON.parse(fs.readFileSync(file, 'utf8'));
-  check(data.app === 'timebox' && data.library.items.length === 58, `export has the library (${data.library.items.length} items)`);
+  check(data.app === 'timebox' && data.library.items.length === 72, `export has the library (${data.library.items.length} items)`);
 
   // Reset to defaults.
   await page.locator('button', { hasText: 'Reset library' }).click();
   await page.locator('dialog[open] .btn-danger').click();
-  check(await until(() => app(() => window.timebox.app.library.items.length === 56 && window.timebox.app.library.slots[11].subtype_id === 'backing')), 'reset restores starter library and slots');
+  check(await until(() => app(() => window.timebox.app.library.items.length === 69 && window.timebox.app.library.slots[11].subtype_id === 'licks')), 'reset restores starter library and slots');
 
   // Import (merge) brings the added item back without touching slots.
   await page.setInputFiles('input[type=file]', file);
   await page.waitForSelector('dialog[open] .import-summary');
   const summary = await page.locator('dialog[open] .import-summary').textContent();
-  check(/Add 2 library items/.test(summary), `merge summary shown before confirming (${summary.slice(0, 60)}…)`);
+  check(/Add 3 library items/.test(summary), `merge summary shown before confirming (${summary.slice(0, 60)}…)`);
   await page.locator('dialog[open] .btn-primary').click();
   check(await until(() => app(() => window.timebox.app.library.items.some((i) => i.text.startsWith('B minor')))), 'merge added the item');
-  check(await app(() => window.timebox.app.library.slots[11].subtype_id === 'backing'), 'merge kept local slots');
+  check(await app(() => window.timebox.app.library.slots[11].subtype_id === 'licks'), 'merge kept local slots');
 
   // Data survives a restart.
   await page.reload();

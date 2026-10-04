@@ -3,7 +3,7 @@
 
 import * as E from './engine.js';
 import * as P from './plan.js';
-import { defaultLibrary, defaultSettings, SCHEMA_VERSION, AREA_COLOR_COUNT } from './defaults.js';
+import { defaultLibrary, defaultSettings, SCHEMA_VERSION, AREA_COLOR_COUNT, NOTES_LIMIT } from './defaults.js';
 import { localDate, uid, clone, safeUrl } from './util.js';
 import { migrate, normaliseLibrary } from './transfer.js';
 import { normaliseDiagram, suggestDiagram } from './music.js';
@@ -62,6 +62,12 @@ export class App {
     this.active = actives.pop() || null;
     // More than one active session can only come from a crash mid-write; close the extras.
     for (const s of actives) await this.closeSession(s, s.last_activity_at ?? s.started_at, true);
+    // An upgrade can change the slots (v4 gave the last one to Licks): today's
+    // plan follows, unless a session is already under way.
+    if (library && (version ?? 1) !== SCHEMA_VERSION && !this.active) {
+      const today = localDate(this.clock());
+      if (this.plans.has(today)) await this.savePlan(P.reconcilePlan(this.library, this.plans.get(today)));
+    }
     await this.refresh();
   }
 
@@ -392,7 +398,7 @@ export class App {
     // A new item that names a scale, arpeggio or chords gets that diagram straight away.
     const suggested = suggestDiagram(text);
     const item = {
-      id: uid('i-'), subtype_id: subtypeId, text: text.trim(), url: safeUrl(url),
+      id: uid('i-'), subtype_id: subtypeId, text: text.trim(), url: safeUrl(url), notes: '',
       diagrams: suggested ? [normaliseDiagram(suggested)].filter(Boolean) : [],
       order, archived: false, last_completed_at: null,
     };
@@ -407,6 +413,7 @@ export class App {
     Object.assign(item, patch);
     item.text = String(item.text).trim();
     item.url = safeUrl(item.url);
+    item.notes = String(item.notes ?? '').slice(0, NOTES_LIMIT);
     item.diagrams = (item.diagrams || []).map(normaliseDiagram).filter(Boolean);
     await this.libraryChanged();
   }

@@ -1,7 +1,9 @@
 // Default areas, subtypes, starter library and slot template.
 // Ids are stable so "Reset to defaults" and import/merge behave predictably.
 
-export const SCHEMA_VERSION = 3;
+import { parseTab, serialiseTab } from './notation.js';
+
+export const SCHEMA_VERSION = 4;
 export const SLOT_COUNT = 12;
 
 const AREAS = [
@@ -19,8 +21,9 @@ const SUBTYPES = [
   ['chords', 'Chords and arpeggios', 'knowledge'],
   ['songs', 'Songs', 'repertoire'],
   ['strumming', 'Strumming', 'time'],
-  ['riffs', 'Riffs and licks', 'time'],
+  ['riffs', 'Riffs', 'time'],
   ['backing', 'Backing track', 'improvisation'],
+  ['licks', 'Licks', 'improvisation'],
 ];
 
 const LIBRARY = {
@@ -81,6 +84,7 @@ const LIBRARY = {
     'Strumming with chord changes, 60 bpm',
     'Accent beats 2 and 4, 70 bpm',
     'Count aloud while strumming',
+    'Make up a strum pattern, play a song with it',
   ],
   riffs: [
     'Pentatonic lick in 8th notes, 60 bpm',
@@ -88,6 +92,21 @@ const LIBRARY = {
     'Clap the rhythm, then play it',
     'Speed a lick up by 5 bpm',
     'Play a riff on the off-beat',
+  ],
+  // Stock licks, mostly around G, C and D. Tabs and notes are in STARTER_DIAGRAMS / STARTER_NOTES.
+  licks: [
+    'Bluegrass G run (Lester Flatt)',
+    'Folk hammer-ons on an open C chord',
+    'Blues: C minor pentatonic run, 8th fret',
+    'Country pull-off cascade in C',
+    'Bluegrass C run',
+    'Find a new lick on YouTube and learn it',
+    'Blues turnaround in G, into D7',
+    'Bluegrass D run, back to G',
+    'Hammer-on, pull-off fill over G',
+    'Double-stop lick in G, Chuck Berry style',
+    'Blues bend-and-release lick in G',
+    'Fiddle-tune line in G, eighth notes',
   ],
   backing: [
     'A minor pentatonic over an Am track',
@@ -99,12 +118,22 @@ const LIBRARY = {
   ],
 };
 
+const LICK_IDS = LIBRARY.licks.map((_, i) => `licks-${i + 1}`);
+
 // Diagrams for starter items (shown on the full-screen card). See js/music.js.
 const chords = (...list) => [{ type: 'chords', chords: list }];
 const scale = (root, kind, position) => [{ type: 'scale', root, scale: kind, position, labels: 'notes' }];
 const arpeggio = (root, quality, position, labels = 'notes') => [{ type: 'arpeggio', root, quality, position, labels }];
 // A run: [string, fret] in playing order (strings 0 = low E ... 5 = high e), then the two chords it links.
 const run = (notes, from, to) => [{ type: 'run', notes }, { type: 'chords', chords: [from, to] }];
+// A strumming pattern: one character per slot (D down, U up, X muted chuck, - miss).
+const strum = (pattern, accents) => ({ type: 'strum', pattern, ...(accents ? { accents } : {}) });
+const chart = (text) => [{ type: 'progression', text }];
+// A lick: tab plus the chord(s) it sits over.
+const lick = (tab, ...chordList) => [
+  { type: 'tab', tab: serialiseTab(parseTab(tab)) },
+  ...(chordList.length ? [{ type: 'chords', chords: chordList }] : []),
+];
 
 export const STARTER_DIAGRAMS = {
   'picking-1': chords('G', 'C', 'D'),
@@ -130,13 +159,124 @@ export const STARTER_DIAGRAMS = {
   'chords-11': run([[2, 0], [1, 3], [1, 2], [1, 0], [0, 3]], 'D', 'G'), // D C B A -> G
   'chords-12': run([[2, 0], [2, 2], [2, 4], [3, 0]], 'D', 'G'), // D E F# -> G
   'chords-13': chords('G', 'C', 'D'),
+  'strumming-1': [strum('DDDD')],
+  'strumming-2': [strum('D-DU-UDU')],
+  'strumming-3': [strum('DUDUDUDU')],
+  'strumming-4': [strum('D-DU-UDU'), { type: 'chords', chords: ['G', 'C', 'D'] }],
+  'strumming-5': [strum('DUDUDUDU', [2, 6])],
+  'strumming-6': [strum('D-DU-UDU')],
+  // Tom Dooley: the usual two-chord version (traditional).
+  'songs-9': chart('Key: G\nVerse and chorus: G | G | G | D7 | D7 | D7 | D7 | G'),
+  'licks-1': lick(`
+e|---------------|
+B|---------------|
+G|-------------0-|
+D|---------0-2---|
+A|---0h1/2-------|
+E|-3-------------|`, 'G'),
+  'licks-2': lick(`
+e|-------------0-|
+B|---------0h1---|
+G|-------0-------|
+D|---0h2---------|
+A|-3-------------|
+E|---------------|`, 'C'),
+  'licks-3': lick(`
+e|-8--------------|
+B|---11-8---------|
+G|--------10-8----|
+D|-------------10-|
+A|----------------|
+E|----------------|`, 'C7'),
+  'licks-4': lick(`
+e|-3p0---------------|
+B|-----3p1-----------|
+G|---------2p0-------|
+D|-------------2p0---|
+A|-----------------3-|
+E|-------------------|`, 'C'),
+  'licks-5': lick(`
+e|---------------|
+B|-------------1-|
+G|---------0-2---|
+D|---0h1/2-------|
+A|-3-------------|
+E|---------------|`, 'C'),
+  'licks-7': lick(`
+e|-3-3-3-3-2-|
+B|-6-5-4-3-1-|
+G|---------2-|
+D|---------0-|
+A|-----------|
+E|-----------|`, 'G7', 'D7'),
+  'licks-8': lick(`
+e|-------------|
+B|-------------|
+G|-------------|
+D|-----------0-|
+A|-----0h2p0---|
+E|-0h2---------|`, 'D', 'G'),
+  'licks-9': lick(`
+e|-----------------|
+B|-----------------|
+G|-------0---------|
+D|---0h2---2p0-----|
+A|-------------2---|
+E|-3-------------3-|`, 'G'),
+  'licks-10': lick(`
+e|-------------|
+B|-3---3-1-0---|
+G|-3h4-4-2-0---|
+D|-------------|
+A|-------------|
+E|-----------3-|`, 'G'),
+  'licks-11': lick(`
+e|-------------------|
+B|-6b8r6-3-----------|
+G|---------5b7r5-3---|
+D|-----------------5-|
+A|-------------------|
+E|-------------------|`, 'G7'),
+  'licks-12': lick(`
+e|-----------------------------------|
+B|-----------------3-1-0-------------|
+G|---------------0-------2-0---------|
+D|---------0-2-4-------------2-0-----|
+A|---0-2-3-----------------------2---|
+E|-3-------------------------------3-|`, 'G'),
   'riffs-1': scale('A', 'minor_pentatonic', 5),
   'backing-1': scale('A', 'minor_pentatonic', 5),
   'backing-4': scale('A', 'blues', 5),
 };
 
+/** Notes that come with starter items (instructions, practice tips). */
+export const STARTER_NOTES = {
+  'strumming-3': 'Rest your fretting hand lightly across all the strings so every strum is a muted chuck. Keep the hand moving down and up; it\'s all about the groove.',
+  'licks-1': 'Bluegrass, beginner. The classic way to end a phrase in G. Strum G, then play the run in one bar at about 70 bpm: pick the low G and the open A, and let the hammer-on and slide sound A♯ and B. Let the open G ring at the end.',
+  'licks-2': 'Folk, beginner. Hold a full C chord. Lift your middle and index fingers and hammer them back on, letting everything ring. The same trick works on G: A string, open, hammer onto fret 2.',
+  'licks-3': 'Blues, beginner. All in the C minor pentatonic box at the 8th fret: index finger on 8, ring or pinky on 10 and 11. Over a slow C7 or a 12-bar in C at 60–70 bpm; let the last C ring with a little vibrato.',
+  'licks-4': 'Country, beginner. Pure C major pentatonic, down through the C chord. Pick only the first note on each string and pull off with a small downward flick so the open string rings. Start slowly, then aim for an even four notes per beat.',
+  'licks-5': 'Bluegrass, beginner. The G run moved up a string to end on C: same shape, same feel. Keep the ring finger on the A string, 3rd fret. Use it at the end of a C bar, about 70 bpm.',
+  'licks-6': 'Search YouTube for a lick lesson ("bluegrass G lick", "blues lick in C", "country lick in G") and learn one new lick in five minutes, slowly. Like it? Add it to Licks in Settings, with the video link and the tab.',
+  'licks-7': 'Blues, beginner (a three-fret stretch). For the last two bars of a 12-bar in G: hold the high G and walk the B string down F, E, E♭, D, picking both strings each time, then strum D7. Start at 60 bpm.',
+  'licks-8': 'Bluegrass, beginner. Ends a phrase on the D chord before going back to G. Pick only three times (low E, A, D) and let the hammer-ons and pull-off do the rest. 60–80 bpm.',
+  'licks-9': 'Bluegrass, beginner. Up with a hammer-on, back down with a pull-off, all G major pentatonic. Play it between strums of G at 60–80 bpm; the hammered and pulled notes should be as loud as the picked ones.',
+  'licks-10': 'Country or rock, intermediate. Lay your index finger across fret 3 of the G and B strings and hammer the middle finger onto the G string, 4th fret: the bluesy minor third snaps into the major third. Pick both strings together, about 70 bpm over G.',
+  'licks-11': 'Blues, intermediate. Check each bend\'s target first by fretting it (B string 8 = G, G string 7 = D), then bend to that pitch and release in time. Over a G7 vamp at 60–70 bpm. On an acoustic, half-step bends are fine.',
+  'licks-12': 'Bluegrass, intermediate. Up the G major scale, then down through the chord tones. Strict alternate picking: down on the beat, up on the "and". Start at 60 bpm in eighth notes and work up.',
+  'strumming-7': 'Make up a strumming pattern on the spot: keep your hand swinging down and up in time, and choose which strums hit the strings. Then play a song you know with it (G, C and D cover plenty) and keep it going for the whole five minutes. Like it? Add it to this item as a strumming pattern.',
+};
+
+/** Links that come with starter items. */
+const STARTER_LINKS = {
+  'licks-6': 'https://www.youtube.com/results?search_query=easy+guitar+lick+lesson',
+};
+
 /** Starter items added in a later schema version: [version, ids]. */
-export const ADDED_ITEMS = [[3, ['chords-8', 'chords-9', 'chords-10', 'chords-11', 'chords-12', 'chords-13']]];
+export const ADDED_ITEMS = [
+  [3, ['chords-8', 'chords-9', 'chords-10', 'chords-11', 'chords-12', 'chords-13']],
+  [4, ['strumming-7', ...LICK_IDS]],
+];
 
 /** A starter item as shipped, by id (used to add new starter items to existing libraries). */
 export function starterItem(id) {
@@ -144,7 +284,7 @@ export function starterItem(id) {
   const text = starterText(id);
   if (!m || !text) return null;
   return {
-    id, subtype_id: m[1], text, url: '',
+    id, subtype_id: m[1], text, url: STARTER_LINKS[id] || '', notes: STARTER_NOTES[id] || '',
     diagrams: structuredClone(STARTER_DIAGRAMS[id] || []),
     order: Number(m[2]) - 1, archived: false, last_completed_at: null,
   };
@@ -159,8 +299,11 @@ export function starterText(id) {
 const SLOTS = [
   'warmup', 'picking', 'scales', 'chords',
   'songs', 'songs', 'songs', 'songs',
-  'strumming', 'riffs', 'backing', 'backing',
+  'strumming', 'riffs', 'backing', 'licks',
 ];
+
+/** The slots as shipped before v4 (the last one became Licks). */
+export const SLOTS_V3 = [...SLOTS.slice(0, 11), 'backing'];
 
 export function defaultLibrary() {
   return {
@@ -171,7 +314,8 @@ export function defaultLibrary() {
         id: `${subtype_id}-${i + 1}`,
         subtype_id,
         text,
-        url: '',
+        url: STARTER_LINKS[`${subtype_id}-${i + 1}`] || '',
+        notes: STARTER_NOTES[`${subtype_id}-${i + 1}`] || '',
         diagrams: structuredClone(STARTER_DIAGRAMS[`${subtype_id}-${i + 1}`] || []),
         order: i,
         archived: false,
@@ -192,4 +336,5 @@ export function defaultSettings() {
 }
 
 export const ITEM_SOFT_LIMIT = 45;
+export const NOTES_LIMIT = 4000;
 export const AREA_COLOR_COUNT = 8;

@@ -335,6 +335,41 @@ test('imported links are sanitised: no javascript: URLs', () => {
   assert.equal(parsed.data.library.items[0].url, '');
 });
 
+test('upgrading to v4 puts a lick in today\'s plan, unless a session is under way', async () => {
+  const { defaultLibrary } = await import('../js/defaults.js');
+  const { generatePlan } = await import('../js/plan.js');
+  const v3 = () => {
+    const lib = defaultLibrary();
+    lib.subtypes = lib.subtypes.filter((st) => st.id !== 'licks');
+    lib.items = lib.items.filter((i) => i.subtype_id !== 'licks');
+    lib.slots[11].subtype_id = 'backing';
+    return lib;
+  };
+  const store = memoryStore();
+  const lib = v3();
+  await store.putMany({ meta: { schema_version: 3, library: lib, settings: {} } });
+  await store.put('plans', generatePlan(lib, '2026-10-04'));
+  const app = new App(store, () => at(2026, 10, 4, 18));
+  await app.load();
+  assert.equal(app.boardTiles()[11].subtype_id, 'licks');
+  assert.equal(app.boardTiles()[11].item_id, 'licks-1');
+
+  // Mid-session: the session keeps its blocks; the slots still change for next time.
+  const { createSession } = await import('../js/engine.js');
+  const { snapshotEntry } = await import('../js/plan.js');
+  const busy = memoryStore();
+  const lib2 = v3();
+  const plan = generatePlan(lib2, '2026-10-04');
+  await busy.putMany({ meta: { schema_version: 3, library: lib2, settings: {} } });
+  await busy.put('plans', plan);
+  await busy.put('sessions', createSession({ id: 's1', date: plan.date, now: at(2026, 10, 4, 17), entries: plan.entries.map((e) => snapshotEntry(lib2, e)) }));
+  const app2 = new App(busy, () => at(2026, 10, 4, 18));
+  await app2.load();
+  assert.equal(app2.mode, 'active');
+  assert.equal(app2.boardTiles()[11].subtype_id, 'backing', 'the session in progress is left alone');
+  assert.equal(app2.library.slots[11].subtype_id, 'licks', 'slots upgraded for the next plan');
+});
+
 test('an installed v1 app gets starter diagrams on upgrade, and keeps them', async () => {
   const { defaultLibrary } = await import('../js/defaults.js');
   const store = memoryStore();
@@ -344,7 +379,8 @@ test('an installed v1 app gets starter diagrams on upgrade, and keeps them', asy
   const app = new App(store, () => at(2026, 10, 4, 9));
   await app.load();
   assert.equal(app.item('chords-1').diagrams[0].chords.length, 5);
-  assert.equal(await store.get('meta', 'schema_version'), 3);
+  assert.equal(await store.get('meta', 'schema_version'), 4);
+  assert.equal(app.library.slots[11].subtype_id, 'licks', 'untouched slots get the Licks slot');
   assert.ok(app.item('chords-8'), 'walk-ups added');
   assert.equal((await store.get('meta', 'library')).items.find((i) => i.id === 'scales-1').diagrams.length, 1, 'migrated library saved');
   assert.equal(app.settings.theme, 'dark', 'settings untouched');

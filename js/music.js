@@ -7,6 +7,8 @@
 //   { type: 'chords',   chords: ['C', 'G', 'Am', 'F:E'] }   ':E' / ':A' asks for that barre shape
 //   { type: 'run',      notes: [[string, fret], ...] }      a bass run / walk-up, in playing order
 
+import { parseTab, serialiseTab, cleanChart, readChart, normaliseStrum, readStrum } from './notation.js';
+
 const LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 const NATURAL = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 const MAJOR_STEPS = [0, 2, 4, 5, 7, 9, 11];
@@ -308,6 +310,20 @@ export function normaliseDiagram(d) {
       .slice(0, 12);
     return notes.length >= 2 ? { type: 'run', notes } : null;
   }
+  if (d.type === 'tab' && typeof d.tab === 'string') {
+    const events = parseTab(d.tab);
+    return events.length ? { type: 'tab', tab: serialiseTab(events) } : null;
+  }
+  if (d.type === 'progression' && typeof d.text === 'string') {
+    const text = cleanChart(d.text.slice(0, 20000));
+    return readChart(text).chords.length ? { type: 'progression', text } : null;
+  }
+  if (d.type === 'strum') {
+    const pattern = normaliseStrum(d.pattern);
+    if (!pattern) return null;
+    const accents = [...new Set((Array.isArray(d.accents) ? d.accents : []).filter((i) => Number.isInteger(i) && i >= 0 && i < pattern.length && pattern[i] !== '-'))].sort((a, b) => a - b);
+    return accents.length ? { type: 'strum', pattern, accents } : { type: 'strum', pattern };
+  }
   return null;
 }
 
@@ -326,6 +342,9 @@ export function describeDiagram(d) {
   if (d.type === 'arpeggio') return `${pretty(d.root)} ${ARPEGGIOS[d.quality].name.toLowerCase()} arpeggio, ${positionLabel(d.position)}`;
   if (d.type === 'chords') return `Chords: ${d.chords.map((c) => pretty(chordShape(c).label)).join(', ')}`;
   if (d.type === 'run') return `Bass run: ${runNotes(d).map((n) => pretty(n.name)).join(' → ')}`;
+  if (d.type === 'tab') return `Tab: ${parseTab(d.tab).length} notes`;
+  if (d.type === 'progression') return `Chord chart: ${readChart(d.text).chords.map(pretty).join(', ')}`;
+  if (d.type === 'strum') return `Strumming: ${d.pattern.split('').map((c) => ({ D: '↓', U: '↑', X: '×', '-': '·' })[c]).join(' ')}`;
   return '';
 }
 
@@ -391,6 +410,11 @@ export function suggestDiagram(text) {
       const pent = kind === 'minor_pentatonic' || kind === 'major_pentatonic' || kind === 'blues';
       return { type: 'scale', root, scale: kind, position: positionFrom(t, n.pc, pent), labels: 'notes' };
     }
+  }
+  // Strumming: a written pattern ("D DU UDU", "down-down-up").
+  if (/strum|\bD[\s-]?D?U|\bdown\b/i.test(t)) {
+    const pattern = readStrum(t);
+    if (pattern) return { type: 'strum', pattern };
   }
   // Chords: only when the text is clearly about chords or chord changes.
   if (/chord|change|progression|picking|crosspick|strum/i.test(t)) {

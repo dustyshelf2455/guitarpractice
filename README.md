@@ -28,14 +28,22 @@ Install it rather than using it in a browser tab. Installed, it opens full scree
 | Block hits 0:00 | Chimes and vibrates (vibration is Android only). A metronome that is playing drops to half volume, so you can finish the phrase. Tap **Finish and rate**, choose stars, and you're back at the grid. |
 | Tap a finished block | Change its rating, or reopen it: **Continue** picks up with the time it had left, **Do it over** starts again from 5:00. For a block finished by mistake. |
 | **End** (bottom) | Ends the session. It is saved as partial if not every block is done, and discarded if none are. |
-| 🔗 on a block | Opens that item's link (backing track, tab, video). |
+| 🔗 on a block | Opens that item's link (backing track, tab, YouTube lesson). |
+| **Edit** / **Add notes** on a full-screen block | Opens the item: its notes, its link, and its diagrams (paste a tab or a chord sheet right there). Your notes show under the diagrams. |
 | Metronome (bottom, or top right when full screen) | A wooden click track with accents. While it plays, a glow swings across the top of the screen in time, landing on each click (handy with the phone on silent). It offers the tempo from the current block, e.g. "70 bpm". It keeps playing when the sheet is closed, and shows its tempo at the top of a full-screen block. It stops when you go back to the grid. |
 
-**Diagrams:** a block can show scale shapes, arpeggios or chord charts on its full-screen card. The starter library has them for its scales, chords, picking patterns and pentatonic or blues items. To add or change one, go to Settings → Library → a subtype → tap an item → **Diagrams**:
+**Notes and links:** every item can have notes (anything to remember: where you got to, the capo, what to watch) and a link (a YouTube lesson, a backing track, a tab). Add them from the full-screen block (**Edit**), or in Settings → Library → a subtype → tap an item.
+
+**Diagrams:** a block can show scale shapes, arpeggios, chord shapes, a song's chord chart, a lick's tab, or a strumming pattern on its full-screen card. The starter library has them for its scales, chords, picking patterns, strumming, licks and pentatonic or blues items. To add or change one, tap **Edit** on the block (or go to Settings → Library → a subtype → tap an item) → **Diagrams**, then **Add a diagram** or **Edit** an existing one:
 
 - **Scale** or **Arpeggio**: pick the root, the scale (major, minor, pentatonics, blues, modes) or chord type, and the position ("open position" or a starting fret). The dots show note names or intervals. Roots are solid.
 - **Chords**: type names like `C G Am F`. It knows the common open shapes and plays any other chord as an E- or A-shape barre. Add `:E` or `:A` to pick the barre shape (`G:E`). Supported types: major, m, 7, maj7, m7, sus2, sus4, 5, plus open Cadd9.
-- When the item's text names a scale, arpeggio or chords (e.g. "B minor scale, 2nd position"), the editor suggests it, and new items get it automatically.
+- **Song chord chart**: one section per line, like `Verse: G C G D x2`, plus `Capo: 2` or `Key: G` if you like. Or paste a whole chord sheet, from Ultimate Guitar say: only the chords and section names are kept, lyrics are left out, and repeated verses and phrases are folded up. The card shows the chords by section and a chord box for each chord.
+- **Tab (a lick or riff)**: paste six-line tab, high e on top. It understands hammer-ons (h), pull-offs (p), slides (/ and \\), bends (7b9), bend and release (7b9r7), vibrato (~) and bar lines. The card draws it with the note names above.
+- **Strumming pattern**: tap each slot to choose down ↓, up ↑, muted chuck × or a miss, and tap > to accent it; pick 4/4 or 3/4, eighths or sixteenths. With the metronome on, the card lights each strum in time.
+- When the item's text names a scale, arpeggio, chords or a strumming pattern (e.g. "B minor scale, 2nd position", "D DU UDU"), the editor suggests it, and new items get it automatically.
+
+**Licks:** the last slot practises a lick: stock bluegrass, blues, country and folk licks around G, C and D (the G run, a C minor pentatonic run, a blues turnaround, a Chuck Berry double stop and more), each with tab and a note on how to practise it, plus "Find a new lick on YouTube and learn it". The tabs were written from teaching sources' descriptions and checked note by note. Add your own the same way.
 
 **Appearance** (Settings → Appearance):
 
@@ -69,6 +77,8 @@ Install it rather than using it in a browser tab. Installed, it opens full scree
 - The 45-character item limit is a soft warning, not a hard stop.
 - "Reset library to defaults" keeps all session history.
 - Requested extras: an optional link per library item, and the built-in metronome.
+- Licks have their own subtype (under Improvisation) and the 12th slot, which used to be a second Backing track. An installed app switches that slot only if the slots were never changed; either way it can be changed back in Settings → Slots. "Riffs and licks" is now just "Riffs".
+- A pasted chord sheet keeps chords and section names only, never lyrics.
 
 ## Testing on a real phone
 

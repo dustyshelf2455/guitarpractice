@@ -1,7 +1,7 @@
 // Settings: slot template, library (areas, subtypes, items), appearance, data.
 
 import { el, icon, fmtDate, localDate } from '../util.js';
-import { ITEM_SOFT_LIMIT } from '../defaults.js';
+import { ITEM_SOFT_LIMIT, NOTES_LIMIT } from '../defaults.js';
 import { buildExport, parseFile, planImport } from '../transfer.js';
 import { openSheet, confirmSheet, toast, iconButton } from './sheets.js';
 import { page, section, swatch, linkRow, emptyState } from './common.js';
@@ -259,7 +259,8 @@ function lengthHint(text, hintEl) {
     : `${n}/${ITEM_SOFT_LIMIT}`;
 }
 
-function editItemSheet(app, item) {
+/** The item editor. From a full-screen block (`fromBlock`) it leaves out archiving. */
+export function editItemSheet(app, item, { fromBlock = false } = {}) {
   const text = el('input', { class: 'input', type: 'text', value: item.text, maxlength: '200', enterkeyhint: 'done' });
   const hint = el('p', { class: 'field-hint', hidden: true });
   text.addEventListener('input', () => lengthHint(text.value, hint));
@@ -268,6 +269,11 @@ function editItemSheet(app, item) {
     class: 'input', type: 'url', value: item.url || '', placeholder: 'https://… (backing track, tab, video)',
     inputmode: 'url', autocapitalize: 'off', autocomplete: 'off', spellcheck: 'false',
   });
+  const notes = el('textarea', {
+    class: 'input notes-input', rows: '4', maxlength: String(NOTES_LIMIT),
+    placeholder: 'Anything to remember: where you got to, what to watch, the capo…',
+  });
+  notes.value = item.notes || '';
   const diagrams = diagramEditor(item.diagrams, () => text.value);
   text.addEventListener('change', () => diagrams.refresh());
   let sheet;
@@ -275,7 +281,7 @@ function editItemSheet(app, item) {
     const value = text.value.trim();
     if (!value) return;
     sheet.close();
-    await app.updateItem(item.id, { text: value, url: url.value, diagrams: diagrams.value() });
+    await app.updateItem(item.id, { text: value, url: url.value, notes: notes.value.trim(), diagrams: diagrams.value() });
   };
   sheet = openSheet({
     title: 'Edit item',
@@ -283,12 +289,13 @@ function editItemSheet(app, item) {
     content: [
       el('label', { class: 'field' }, el('span', { class: 'field-label', text: 'What to practise' }), text, hint),
       el('label', { class: 'field' }, el('span', { class: 'field-label', text: 'Link (optional)' }), url),
+      el('label', { class: 'field' }, el('span', { class: 'field-label', text: 'Notes (optional)' }), notes),
       el('div', { class: 'field' }, diagrams.node),
       el('div', { class: 'sheet-actions' },
         el('button', { class: 'btn', type: 'button', onclick: () => sheet.close() }, 'Cancel'),
         el('button', { class: 'btn btn-primary', type: 'button', onclick: save }, 'Save'),
       ),
-      el('button', {
+      fromBlock ? null : el('button', {
         class: 'text-btn', type: 'button',
         onclick: async () => {
           sheet.close();

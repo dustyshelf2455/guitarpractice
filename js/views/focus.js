@@ -1,30 +1,12 @@
 // Focus view: the block you are working on, full screen. It grows out of its
-// tile and shrinks back into it. A big countdown ring is the main control:
-// tap it (or the button below) to pause and resume.
+// tile and shrinks back into it. The exercise and its diagram get the screen;
+// a slim strip at the bottom holds the countdown (tap it to pause or resume),
+// a thin progress line, and the buttons.
 
-import { el, svg, icon, fmtClock, setDigits } from '../util.js';
+import { el, icon, fmtClock, setDigits } from '../util.js';
 import { tileRemaining, sessionRemaining, completedCount, TILE_MS } from '../engine.js';
 import { renderDiagrams } from '../diagrams.js';
 
-const R = 46;
-
-/** Sixty minute-style ticks inside the ring (only shown by some styles). */
-function dialTicks() {
-  const g = svg('g', { class: 'ring-ticks' });
-  for (let i = 0; i < 60; i++) {
-    const a = (i / 60) * Math.PI * 2;
-    const major = i % 5 === 0;
-    const r1 = major ? 39.2 : 40.8;
-    const r2 = 42.4;
-    g.append(svg('line', {
-      class: major ? 'tick major' : 'tick',
-      x1: (50 + r1 * Math.cos(a)).toFixed(2), y1: (50 + r1 * Math.sin(a)).toFixed(2),
-      x2: (50 + r2 * Math.cos(a)).toFixed(2), y2: (50 + r2 * Math.sin(a)).toFixed(2),
-    }));
-  }
-  return g;
-}
-const CIRCUMFERENCE = 2 * Math.PI * R;
 const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /**
@@ -57,22 +39,16 @@ export function createFocus(handlers) {
   // Your own notes for this item (tap to edit).
   const notes = el('button', { class: 'focus-notes', type: 'button', hidden: true, onclick: () => handlers.edit() });
 
-  const ring = svg('circle', {
-    class: 'ring-fg', cx: 50, cy: 50, r: R,
-    'stroke-dasharray': CIRCUMFERENCE.toFixed(2), 'stroke-dashoffset': '0',
-  });
+  // Progress: a thin line along the top of the strip, filling as the block runs.
+  const fill = el('span', { class: 'focus-track-fill' });
+  const track = el('span', { class: 'focus-track', 'aria-hidden': 'true' }, fill);
   const time = el('span', { class: 'focus-time' });
   const state = el('span', { class: 'focus-state' });
-  // The dial duplicates the labelled primary button as a big tap target, so it
+  // The clock duplicates the labelled primary button as a big tap target, so it
   // stays out of the accessibility tree and the tab order.
-  const dial = el('button', { class: 'focus-dial', type: 'button', tabindex: '-1', 'aria-hidden': 'true', onclick: handlers.primary },
-    svg('svg', { viewBox: '0 0 100 100', 'aria-hidden': 'true' },
-      dialTicks(),
-      svg('circle', { class: 'ring-bg', cx: 50, cy: 50, r: R }),
-      ring),
-    el('span', { class: 'focus-readout' }, time, state),
-  );
-  const timer = el('div', { class: 'focus-timer', role: 'timer', 'aria-live': 'off' }, dial);
+  const clock = el('button', { class: 'focus-clock', type: 'button', tabindex: '-1', 'aria-hidden': 'true', onclick: handlers.primary },
+    time, state);
+  const timer = el('div', { class: 'focus-timer', role: 'timer', 'aria-live': 'off' }, clock);
 
   // Scale shapes and chord charts for the item (see js/diagrams.js).
   const details = el('div', { class: 'focus-details', hidden: true });
@@ -85,14 +61,14 @@ export function createFocus(handlers) {
   const actions = el('div', { class: 'focus-actions' }, primary, finish, reroll);
 
   // Layout: header; the exercise and its diagrams fill the middle; a compact
-  // dock at the bottom holds the dial and the buttons, within thumb reach.
+  // strip at the bottom holds the clock and the buttons, within thumb reach.
   const inner = el('div', { class: 'focus-inner' },
     head,
     el('div', { class: 'focus-body' },
       el('div', { class: 'focus-hero' }, meta, title, chips),
       details,
       notes),
-    el('div', { class: 'focus-dock' }, timer, actions),
+    el('div', { class: 'focus-dock' }, track, timer, actions),
   );
   const root = el('section', { class: 'focus', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'focus-title', hidden: true }, inner);
   root.addEventListener('keydown', (e) => {
@@ -110,8 +86,8 @@ export function createFocus(handlers) {
     if (anim) anim.cancel();
     root.hidden = false;
     root.style.pointerEvents = '';
-    ring.classList.add('no-anim');
-    requestAnimationFrame(() => ring.classList.remove('no-anim'));
+    fill.classList.add('no-anim');
+    requestAnimationFrame(() => fill.classList.remove('no-anim'));
     if (fromRect && fromRect.width && !reducedMotion()) {
       const pageBg = getComputedStyle(root).backgroundColor;
       anim = root.animate(
@@ -148,9 +124,9 @@ export function createFocus(handlers) {
     }
   }
 
-  function setRing(t, now) {
-    const elapsed = TILE_MS - tileRemaining(t, now);
-    ring.setAttribute('stroke-dashoffset', ((elapsed / TILE_MS) * CIRCUMFERENCE).toFixed(2));
+  function setProgress(t, now) {
+    const elapsed = t.state === 'completed' ? TILE_MS : TILE_MS - tileRemaining(t, now);
+    fill.style.transform = `scaleX(${(elapsed / TILE_MS).toFixed(4)})`;
   }
 
   function setDetails(diagrams, itemText) {
@@ -213,7 +189,7 @@ export function createFocus(handlers) {
     const remaining = tileRemaining(t, now);
     setDigits(time, t.state === 'completed' ? fmtClock(t.elapsed_seconds * 1000) : fmtClock(remaining));
     state.textContent = { idle: 'Ready', running: '', paused: 'Paused', timeup: "Time's up", completed: 'Done' }[t.state] || '';
-    setRing(t, now);
+    setProgress(t, now);
 
     const label = {
       idle: ['play', 'Begin'],
@@ -239,7 +215,7 @@ export function createFocus(handlers) {
   function tick(t, session, now) {
     if (!t || t.state !== 'running') return;
     setDigits(time, fmtClock(tileRemaining(t, now)));
-    setRing(t, now);
+    setProgress(t, now);
     if (session) sessionInfo.textContent = `${fmtClock(sessionRemaining(session, now))} left · ${completedCount(session)} of ${session.tiles.length}`;
   }
 

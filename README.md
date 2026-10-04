@@ -14,17 +14,17 @@ Install it:
 
 Install it rather than using it in a browser tab. Installed, it opens full screen, and Safari will not clear its data. Safari can delete data for websites you haven't visited in 7 days, but not for home-screen apps.
 
-**Updating:** when new code is pushed, the installed app picks it up the next time you open it with a connection. Close it fully and reopen if you want the update immediately.
+**Updating:** the app checks for a new version whenever you bring it to the front (and every half hour while it's open). It switches over by itself at a quiet moment: never while a block is running, the metronome is playing or a sheet is open. Your session and blocks carry on exactly where they were, and a note says "Timebox is up to date". (Versions before this one didn't do that: if your app still looks old, swipe it away in the app switcher and open it again, twice.)
 
 ## How it works
 
 | You do | It does |
 |---|---|
-| Tap a block | Opens it **full screen**, ready: the item and its diagram fill the screen, with a compact countdown dial and the buttons at the bottom (on a phone held sideways, down the right). Nothing starts yet. |
+| Tap a block | Opens it **full screen**, ready: the item and its diagram fill the screen (a fretboard is always drawn whole, as big as the space allows), with a slim timer strip at the bottom: the countdown, a thin progress line, and the buttons (on a phone held sideways, a narrow column on the right). Nothing starts yet. |
 | **Begin** | Starts the block's 5:00 countdown, and the metronome. Beginning a block pauses any other running block. |
 | 🎲 **Re-roll** (under Begin, or on the block in the grid) | Not in the mood for this one? Shows another item from the same list (the one done longest ago first); tap as often as you like, it cycles round. Only before you begin, and not on a locked block. The new item stays for this session. |
 | **Lock** on a full-screen block (or in its rating sheet) | Keeps this item in this block every day, through new plans, until you unlock it: for the song you're focusing on this week. A locked block has a brass inner border and a padlock, and can't be re-rolled. Unlock the same way, or in Settings → Practice slots. |
-| Tap the ring or **Pause** | Pauses the block and the metronome. Tap again to resume both. **Finish** appears while paused, to complete it early. |
+| Tap the countdown or **Pause** | Pauses the block and the metronome. Tap again to resume both. **Finish** appears while paused, to complete it early. |
 | **All blocks** (top left), or the back gesture | Returns to the grid and stops the metronome. The block keeps running, and tapping it reopens full screen. |
 | **Pause / Resume** (top of grid) | Pauses or resumes the whole session. Resume reopens the block full screen. |
 | ⇄ on a block | Swaps in the next item from that block's list. Tap again to keep cycling. Only on blocks you haven't started. |

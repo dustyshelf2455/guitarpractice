@@ -10,6 +10,7 @@ import {
 import { setWakeLock } from './wakelock.js';
 import { sessionView } from './views/session.js';
 import { openMetronomeSheet } from './views/metronome.js';
+import { toast } from './views/sheets.js';
 import { statsView, areaView, subtypeStatsView, historyView, sessionDetailView } from './views/stats.js';
 import { settingsView, subtypeEditorView, areasView } from './views/settings.js';
 
@@ -358,9 +359,50 @@ async function boot() {
     root.prepend(el('p', { class: 'banner', text: 'This browser is blocking storage, so nothing will be saved.' }));
   }
 
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-    navigator.serviceWorker.register('sw.js').catch((err) => console.warn('Service worker failed', err));
-  }
+  setupUpdates();
+}
+
+// ---- updates ----
+// A home-screen app on iOS mostly resumes from memory instead of relaunching,
+// so it checks for a new version every time it comes to the front. A new
+// version takes over at a quiet moment: never while a block runs, the
+// metronome plays or a sheet is open (state is saved, so a reload loses nothing).
+
+function setupUpdates() {
+  if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
+  const sw = navigator.serviceWorker;
+  const hadController = !!sw.controller; // the very first install needs no reload
+  let pending = false;
+  sw.register('sw.js').catch((err) => console.warn('Service worker failed', err));
+  const check = () => sw.getRegistration().then((r) => r && r.update()).catch(() => {});
+  const quiet = () => !(app.active && app.active.running != null) && !metronome.playing && !document.querySelector('dialog[open]');
+  const maybeReload = () => {
+    if (!pending || !quiet()) return;
+    pending = false;
+    try { sessionStorage.setItem('timebox-updated', '1'); } catch { /* private mode */ }
+    location.reload();
+  };
+  sw.addEventListener('controllerchange', () => {
+    if (!hadController) return;
+    pending = true;
+    maybeReload();
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    check();
+    maybeReload();
+  });
+  setInterval(() => document.visibilityState === 'visible' && check(), 30 * 60 * 1000);
+  // Quiet moments: after a pause or finish, back on the grid, a sheet closed.
+  app.on(() => setTimeout(maybeReload, 300));
+  window.addEventListener('hashchange', () => setTimeout(maybeReload, 300));
+  document.addEventListener('close', () => setTimeout(maybeReload, 300), true);
+  try {
+    if (sessionStorage.getItem('timebox-updated')) {
+      sessionStorage.removeItem('timebox-updated');
+      setTimeout(() => toast('Timebox is up to date.'), 400);
+    }
+  } catch { /* private mode */ }
 }
 
 boot().catch((err) => {

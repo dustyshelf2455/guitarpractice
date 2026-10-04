@@ -124,7 +124,15 @@ function check(cond, msg) {
   check(await page.locator('.focus .board-v').isVisible(), 'scale block shows its fretboard, upright in portrait');
   check(!(await page.locator('.focus .board-h').isVisible()), 'the sideways neck is hidden in portrait');
   check((await page.locator('.focus .board-v .board-dot.root').count()) === 2, 'C major open position: two root Cs');
-  { const box = await page.locator('.focus-dial').boundingBox(); check(box.width <= 140, `the dial is compact (${Math.round(box.width)}px)`); }
+  { const box = await page.locator('.focus-dock').boundingBox(); check(box.height <= 96, `the timer strip is slim (${Math.round(box.height)}px)`); }
+  {
+    const fit = await page.evaluate(() => {
+      const body = document.querySelector('.focus-body');
+      const board = document.querySelector('.focus .board-v').getBoundingClientRect();
+      return { scrolls: body.scrollHeight > body.clientHeight + 1, inView: board.bottom <= body.getBoundingClientRect().bottom + 1 };
+    });
+    check(!fit.scrolls && fit.inView, `the whole fretboard is in view without scrolling (${JSON.stringify(fit)})`);
+  }
   await page.clock.runFor(30_000);
   await primary();
   check(await stateIs(2, 'paused'), 'Pause in focus pauses tile 3');

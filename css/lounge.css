@@ -249,14 +249,9 @@
     var(--page);
 }
 [data-skin="lounge"] .focus-time { font-weight: 400; font-variation-settings: 'SOFT' 30, 'WONK' 0; }
-[data-skin="lounge"] .focus-state { font-family: var(--font-display); font-style: italic; font-weight: 500; font-size: 1.0625rem; }
-[data-skin="lounge"] .ring-ticks { display: inline; }
-[data-skin="lounge"] .tick { stroke: var(--border-strong); stroke-width: 0.35; }
-[data-skin="lounge"] .tick.major { stroke: var(--text-2); stroke-width: 0.6; }
-[data-skin="lounge"] .ring-bg { stroke: var(--track); stroke-width: 2; }
-[data-skin="lounge"] .ring-fg { stroke: var(--accent); stroke-width: 2.5; }
-[data-skin="lounge"] .focus[data-state="paused"] .ring-fg { stroke: var(--muted); }
-[data-skin="lounge"] .focus[data-state="timeup"] .ring-bg { stroke: var(--accent); }
+[data-skin="lounge"] .focus-state { font-family: var(--font-display); font-style: italic; font-weight: 500; font-size: 0.9375rem; }
+[data-skin="lounge"] .focus-track { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+[data-skin="lounge"] .focus[data-state="timeup"] .focus-track-fill { background: var(--accent); }
 [data-skin="lounge"] .focus[data-state="timeup"] .focus-state { color: var(--accent); }
 [data-skin="lounge"] .focus-actions .btn { border-radius: 62.4375rem; }
 [data-skin="lounge"] .focus-back { color: var(--text-2); }

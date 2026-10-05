@@ -43,6 +43,8 @@
   --track: #2b3a32;
   --accent: #d4a85c;
   --tile-rule: rgba(233, 220, 188, 0.09);
+  --tile-edge: rgba(233, 220, 188, 0.16);
+  --tile-line: rgba(233, 220, 188, 0.3);
   --lamp: rgba(212, 168, 92, 0.09);
   --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.93 0 0 0 0 0.87 0 0 0 0 0.72 0 0 0 0.11 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
 
@@ -84,6 +86,8 @@
   --track: #e2d8c1;
   --accent: #865c18;
   --tile-rule: rgba(70, 55, 30, 0.12);
+  --tile-edge: rgba(70, 55, 30, 0.18);
+  --tile-line: rgba(70, 55, 30, 0.34);
   --lamp: rgba(255, 250, 236, 0.85);
   --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.32 0 0 0 0 0.26 0 0 0 0 0.16 0 0 0 0.09 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
   --c0: #b5532a; --c1: #2a75b8; --c2: #5a8526; --c3: #9b4880;
@@ -119,6 +123,8 @@
     --track: #e2d8c1;
     --accent: #865c18;
     --tile-rule: rgba(70, 55, 30, 0.12);
+  --tile-edge: rgba(70, 55, 30, 0.18);
+  --tile-line: rgba(70, 55, 30, 0.34);
     --lamp: rgba(255, 250, 236, 0.85);
     --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.32 0 0 0 0 0.26 0 0 0 0 0.16 0 0 0 0.09 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
     --c0: #b5532a; --c1: #2a75b8; --c2: #5a8526; --c3: #9b4880;
@@ -216,19 +222,21 @@
 [data-skin="lounge"] .progress { height: 0.1875rem; background: var(--track); }
 [data-skin="lounge"] .progress-fill { background: linear-gradient(90deg, var(--good), var(--accent)); }
 
-/* Tiles: a bookplate — outer edge, a gap, then a hairline rule. */
+/* Tiles: a bookplate — outer edge, a gap, then a firm inner rule. */
 [data-skin="lounge"] .tile {
   --tile-bg: var(--surface);
+  --tile-inner: calc(0.1875rem + 1.5px);
   background: var(--tile-bg);
-  border: 1px solid var(--border-strong);
+  border: 1.5px solid var(--tile-edge);
   border-radius: 0.75rem;
-  box-shadow: inset 0 0 0 0.1875rem var(--tile-bg), inset 0 0 0 0.25rem var(--tile-rule), 0 1px 2px rgba(0, 0, 0, 0.18);
+  box-shadow: inset 0 0 0 0.1875rem var(--tile-bg), inset 0 0 0 var(--tile-inner) var(--tile-line), 0 1px 3px rgba(0, 0, 0, 0.22);
 }
 [data-skin="lounge"] .tile[data-state="running"] {
   --tile-bg: var(--invert-bg);
   --tile-rule: color-mix(in srgb, var(--invert-text) 22%, transparent);
+  --tile-line: var(--tile-rule);
   border-color: var(--accent);
-  box-shadow: inset 0 0 0 0.1875rem var(--tile-bg), inset 0 0 0 0.25rem var(--tile-rule), 0 0 0 1px var(--accent), 0 0.375rem 1.5rem -6px color-mix(in srgb, var(--accent) 45%, transparent);
+  box-shadow: inset 0 0 0 0.1875rem var(--tile-bg), inset 0 0 0 var(--tile-inner) var(--tile-line), 0 0 0 1px var(--accent), 0 0.375rem 1.5rem -6px color-mix(in srgb, var(--accent) 45%, transparent);
 }
 [data-skin="lounge"] .tile[data-state="paused"] { --tile-bg: var(--surface-2); border: 2px dashed var(--accent); box-shadow: none; }
 [data-skin="lounge"] .tile[data-state="timeup"] { --tile-bg: var(--surface-2); border: 4px double var(--accent); box-shadow: none; }

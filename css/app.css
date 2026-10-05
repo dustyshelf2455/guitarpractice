@@ -191,7 +191,7 @@ h1, h2, h3, p { margin: 0; }
   container-type: size;
   border-radius: var(--radius);
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1.5px solid var(--border-strong);
   transition: background-color 0.15s, border-color 0.15s, color 0.15s;
 }
 .tile[data-color="0"] { --area: var(--c0); }
@@ -271,12 +271,7 @@ h1, h2, h3, p { margin: 0; }
   font-size: 0.6875rem; font-weight: 700;
 }
 
-/* Locked: an inner rule in the accent colour and a small padlock; it keeps its slot every day. */
-.tile.is-locked::after {
-  content: ''; position: absolute; inset: 0.1875rem; z-index: 0;
-  border: 1.5px solid var(--accent, var(--text-2)); border-radius: calc(var(--radius) - 0.1875rem);
-  pointer-events: none;
-}
+/* Locked: a small padlock beside the subtype; it keeps its slot every day. */
 .tile-lock { width: 0.8125rem; height: 0.8125rem; color: var(--accent, var(--text)); }
 .tile-lock svg { stroke-width: 2.4; }
 

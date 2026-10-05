@@ -8,6 +8,7 @@ import { tileRemaining, sessionRemaining, masterState, completedCount, TILE_MS }
 import { ratingSheet, confirmSheet, iconButton } from './sheets.js';
 import { createFocus } from './focus.js';
 import { editItemSheet } from './settings.js';
+import { backupBeacon } from './backup.js';
 
 const STATE_LABEL = {
   idle: 'Not started',
@@ -34,10 +35,12 @@ export function sessionView(app, ctx) {
   const doneSummary = el('div', { class: 'done-summary' });
   const progressRow = el('div', { class: 'progress-row' }, progress, progressLabel);
 
+  const beacon = backupBeacon(app);
+  const subRow = el('div', { class: 'head-sub-row' }, headSub, beacon.root);
   const head = el('header', { class: 'session-head' },
     el('div', { class: 'head-row' }, el('div', { class: 'clock-wrap' }, clock, doneSummary), masterBtn),
     progressRow,
-    headSub,
+    subRow,
   );
 
   const grid = el('ol', { class: 'grid', 'aria-label': 'Practice blocks' });
@@ -304,13 +307,17 @@ export function sessionView(app, ctx) {
       masterBtn.className = `master-btn ${ms === 'running' ? 'is-running' : 'is-paused'}`;
       masterBtn.replaceChildren(icon(ms === 'running' ? 'pause' : 'play'), el('span', { text: ms === 'running' ? 'Pause' : 'Resume' }));
       masterBtn.setAttribute('aria-label', ms === 'running' ? 'Pause session' : 'Resume session');
-      if (mode === 'plan') headSub.textContent = `${fmtDate(app.today, app.today)} · Tap any block to start`;
+      // Beside the backup reminder there is room for the date only.
+      beacon.update();
+      if (mode === 'plan') headSub.textContent = beacon.root.hidden ? `${fmtDate(app.today, app.today)} · Tap any block to start` : fmtDate(app.today, app.today);
       else if (ms === 'idle') headSub.textContent = remaining === 0 ? 'Tap finished blocks to complete them' : 'Tap a block to continue';
       else headSub.textContent = '';
     }
     endBtn.hidden = mode !== 'active';
     progressRow.hidden = mode === 'plan';
     headSub.hidden = !headSub.textContent;
+    beacon.update();
+    subRow.hidden = headSub.hidden && beacon.root.hidden;
 
     // Tiles
     for (let i = 0; i < tiles.length; i++) {

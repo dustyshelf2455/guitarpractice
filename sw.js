@@ -1,7 +1,7 @@
 // Service worker: precache the whole app so it works offline after first load.
 // Bump VERSION whenever any file changes, so phones pick up the new version.
 
-const VERSION = 'timebox-v15';
+const VERSION = 'timebox-v16';
 const ASSETS = [
   './',
   'index.html',
@@ -26,6 +26,7 @@ const ASSETS = [
   'js/audio.js',
   'js/wakelock.js',
   'js/views/common.js',
+  'js/views/backup.js',
   'js/views/sheets.js',
   'js/views/session.js',
   'js/views/focus.js',

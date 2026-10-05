@@ -67,7 +67,9 @@ Install it rather than using it in a browser tab. Installed, it opens full scree
 ## Your data
 
 - It lives in your browser's storage on this device only (IndexedDB). Nothing is sent anywhere.
-- **Back up now and then:** go to Settings → Export backup. On a phone this opens the share sheet, where "Save to Files" works well.
+- **Deleting the home-screen icon deletes the data with it.** Keep a backup file somewhere safe.
+- **Back up:** when a backup is due (something changed and it's been a week, or five sessions have piled up, or you've never backed up), a "Back up" button shows under the board's header. Tap it, or go to Settings → Back up now. On a phone this opens the share sheet: "Save to Files" → iCloud Drive keeps it off the phone.
+- **Restore:** on a fresh install the board offers "Reinstalled? Restore a backup"; or Settings → Restore from a backup. Pick the file and choose Replace (start from the file) or Merge (add what's missing).
 - **Import** shows exactly what will change before anything happens. **Merge** only adds what's missing; **Replace** swaps everything for the file.
 
 ## Decisions made beyond the original spec
@@ -132,6 +134,6 @@ js/charts.js     hand-rolled SVG charts
 js/music.js      music theory: spelled scales, arpeggios, positions, chord shapes
 js/diagrams.js   fretboard and chord-box SVG
 js/audio.js      chime, audio unlock, metronome
-js/views/        session, settings, stats, sheets, metronome
+js/views/        session, settings, backup, stats, sheets, metronome
 tests/           unit tests (node --test) and e2e scripts
 ```

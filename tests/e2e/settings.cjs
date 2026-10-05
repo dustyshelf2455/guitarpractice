@@ -177,7 +177,7 @@ async function until(fn, ms = 3000) {
   check(await until(() => app(() => window.timebox.app.settings.layout === 'grid')), 'grid layout restored');
 
   // Export.
-  const [download] = await Promise.all([page.waitForEvent('download'), page.locator('button', { hasText: 'Export backup' }).click()]);
+  const [download] = await Promise.all([page.waitForEvent('download'), page.locator('button', { hasText: 'Back up now' }).click()]);
   const file = path.join(os.tmpdir(), `timebox-e2e-${Date.now()}.json`);
   await download.saveAs(file);
   const data = JSON.parse(fs.readFileSync(file, 'utf8'));

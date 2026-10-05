@@ -425,3 +425,58 @@ test('an installed v1 app gets starter diagrams on upgrade, and keeps them', asy
   assert.equal((await store.get('meta', 'library')).items.find((i) => i.id === 'scales-1').diagrams.length, 1, 'migrated library saved');
   assert.equal(app.settings.theme, 'dark', 'settings untouched');
 });
+
+test('backup reminder: due after practice or edits, cleared by a backup, kept through a restore', async () => {
+  const { make, clock } = setup();
+  let app = await make();
+  assert.equal(app.looksNew, true);
+  assert.equal(app.backupStatus().due, false, 'nothing to lose on a fresh install');
+
+  // One session, never backed up: due straight away.
+  await app.tapTile(0);
+  clock.now += 2 * MIN;
+  await app.completeTile(0);
+  assert.equal(app.backupStatus().due, false, 'a session in progress is not counted yet');
+  await app.endSession();
+  let st = app.backupStatus();
+  assert.equal(st.sessions, 1);
+  assert.equal(st.due, true);
+  assert.equal(app.looksNew, false);
+
+  // Backing up clears it; it survives a restart.
+  await app.markBackedUp();
+  app = await make();
+  st = app.backupStatus();
+  assert.equal(st.at, clock.now);
+  assert.deepEqual([st.sessions, st.edits, st.due], [0, 0, false]);
+
+  // A library edit is owed, but not due until a week has passed.
+  await app.addItem('scales', 'E major scale');
+  st = app.backupStatus();
+  assert.deepEqual([st.edits, st.due], [1, false]);
+  clock.now += 7 * 24 * 60 * MIN;
+  assert.equal(app.backupStatus().due, true, 'a week later it is due');
+  assert.equal(app.backupStatus().days, 7);
+
+  // Restoring keeps the backup record it is given.
+  const file = parseFile(JSON.stringify(buildExport(app.snapshot(), clock.now)));
+  await app.replaceAll(file.data, { at: clock.now, edits: 0 });
+  app = await make();
+  assert.equal(app.backupStatus().due, false);
+  assert.equal(app.sessions.length, 1);
+});
+
+test('backup reminder: five sessions since the last backup make it due within the week', async () => {
+  const { make, clock } = setup();
+  const app = await make();
+  await app.markBackedUp();
+  for (let n = 0; n < 5; n++) {
+    clock.now += 60 * MIN;
+    await app.tapTile(n);
+    clock.now += 2 * MIN;
+    await app.completeTile(n);
+    await app.endSession();
+    if (app.mode === 'done') await app.newSession();
+    assert.equal(app.backupStatus().due, n === 4, `due only at the fifth session (after ${n + 1})`);
+  }
+});

@@ -8,6 +8,9 @@ import { localDate, uid, clone, safeUrl } from './util.js';
 import { migrate, normaliseLibrary } from './transfer.js';
 import { normaliseDiagram, suggestDiagram } from './music.js';
 
+const BACKUP_DAYS = 7;
+const BACKUP_SESSIONS = 5;
+
 export class App {
   constructor(store, clock = () => Date.now()) {
     this.store = store;
@@ -19,6 +22,7 @@ export class App {
     this.sessions = []; // every saved session, oldest first (includes the active one)
     this.active = null;
     this.today = null;
+    this.backup = { at: null, edits: 0 }; // when a backup was last saved, and library edits since
     this.listeners = new Set();
   }
 
@@ -35,11 +39,12 @@ export class App {
 
   async load() {
     const st = this.store;
-    const [version, library, settings, home, sessions, plans] = await Promise.all([
+    const [version, library, settings, home, backup, sessions, plans] = await Promise.all([
       st.get('meta', 'schema_version'),
       st.get('meta', 'library'),
       st.get('meta', 'settings'),
       st.get('meta', 'home'),
+      st.get('meta', 'backup'),
       st.getAll('sessions'),
       st.getAll('plans'),
     ]);
@@ -56,6 +61,7 @@ export class App {
       }
     }
     this.home = home || { mode: 'plan' };
+    this.backup = { at: null, edits: 0, ...(backup || {}) };
     this.sessions = (sessions || []).sort((a, b) => a.started_at - b.started_at);
     this.plans = new Map((plans || []).map((p) => [p.date, p]));
     const actives = this.sessions.filter((s) => s.status === 'active');
@@ -383,6 +389,7 @@ export class App {
   /** After any library edit: save, keep today's plan and idle tiles in step. */
   async libraryChanged() {
     await this.saveLibrary();
+    await this.noteEdit();
     if (this.active) {
       const plan = this.currentPlan;
       if (plan) {
@@ -559,6 +566,7 @@ export class App {
     this.library = fresh;
     if (!this.active) {
       await this.saveLibrary();
+      await this.noteEdit();
       await this.savePlan(P.generatePlan(this.library, this.today));
       this.emit('change');
     } else {
@@ -574,6 +582,40 @@ export class App {
     this.emit('settings');
   }
 
+  // ----------------------------------------------------------------- backup
+
+  async noteEdit() {
+    this.backup = { ...this.backup, edits: this.backup.edits + 1 };
+    await this.store.put('meta', clone(this.backup), 'backup');
+  }
+
+  /** A backup file was just saved: everything up to now is safe. */
+  async markBackedUp(now = this.clock()) {
+    this.backup = { at: now, edits: 0 };
+    await this.store.put('meta', clone(this.backup), 'backup');
+    this.emit('change');
+  }
+
+  /**
+   * What a backup would protect that the last one didn't: sessions finished
+   * since, and library edits. Due when there is something to lose and either
+   * there has never been a backup, a week has passed, or a lot has piled up.
+   */
+  backupStatus(now = this.clock()) {
+    const { at, edits } = this.backup;
+    const sessions = this.sessions.filter((s) => s.status !== 'active'
+      && (at == null || (s.ended_at ?? s.last_activity_at ?? s.started_at) > at)).length;
+    const days = at == null ? null : Math.floor((now - at) / 86_400_000);
+    const changed = sessions > 0 || edits > 0;
+    const due = changed && (at == null || days >= BACKUP_DAYS || sessions >= BACKUP_SESSIONS);
+    return { at, days, sessions, edits, due };
+  }
+
+  /** A fresh install (or a wiped one): nothing practised, never backed up. */
+  get looksNew() {
+    return this.sessions.length === 0 && this.backup.at == null;
+  }
+
   // ------------------------------------------------------------ import/export
 
   snapshot() {
@@ -585,11 +627,14 @@ export class App {
     };
   }
 
-  /** Replace all data with an already-validated dataset. */
-  async replaceAll(data) {
+  /**
+   * Replace all data with an already-validated dataset. `backup` is the backup
+   * record to keep (a restored file is itself a backup); by default the current one.
+   */
+  async replaceAll(data, backup = this.backup) {
     const library = normaliseLibrary(data.library);
     await this.store.replaceAll({
-      meta: { schema_version: SCHEMA_VERSION, library, settings: data.settings, home: { mode: 'plan' } },
+      meta: { schema_version: SCHEMA_VERSION, library, settings: data.settings, home: { mode: 'plan' }, backup: clone(backup) },
       sessions: data.sessions,
       plans: data.plans,
     });

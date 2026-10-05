@@ -2,10 +2,10 @@
 
 import { el, icon, fmtDate, localDate } from '../util.js';
 import { ITEM_SOFT_LIMIT, NOTES_LIMIT } from '../defaults.js';
-import { buildExport, parseFile, planImport } from '../transfer.js';
 import { openSheet, confirmSheet, toast, iconButton } from './sheets.js';
 import { page, section, swatch, linkRow, emptyState } from './common.js';
 import { diagramEditor } from './diagram-editor.js';
+import { exportData, restoreInput, backupSummary } from './backup.js';
 import { lockedItem } from '../plan.js';
 
 const APP_VERSION = '1.0.0';
@@ -136,14 +136,7 @@ export function settingsView(app, ctx) {
         }, text)))));
 
   // Data
-  const fileInput = el('input', {
-    type: 'file', accept: 'application/json,.json', hidden: true,
-    onchange: (e) => {
-      const file = e.target.files[0];
-      e.target.value = '';
-      if (file) importFile(app, file);
-    },
-  });
+  const fileInput = restoreInput(app);
 
   const root = page(ctx, { title: 'Settings', parent: '#/' },
     section('Practice slots',
@@ -156,13 +149,14 @@ export function settingsView(app, ctx) {
     section('Metronome', el('p', { class: 'section-note', text: 'Begin or Resume a block and the metronome starts; Pause and it stops. It uses the tempo you last chose, or the block\'s own ("70 bpm") when it names one.' }), metroCard),
     section('Appearance', appearance),
     section('Your data',
-      el('p', { class: 'section-note', text: 'Everything is stored on this device only. Export a backup now and then.' }),
+      el('p', { class: 'section-note', text: 'Everything is stored on this device only. Deleting the home-screen icon deletes it too, so keep a backup file somewhere safe, like iCloud Drive (Save to Files).' }),
+      el('p', { class: 'section-note', dataset: { key: 'backup-summary' }, text: backupSummary(app) }),
       el('div', { class: 'button-stack' },
-        el('button', { class: 'btn', type: 'button', dataset: { key: 'export' }, onclick: () => exportData(app) }, 'Export backup (JSON)'),
+        el('button', { class: 'btn', type: 'button', dataset: { key: 'export' }, onclick: () => exportData(app) }, 'Back up now'),
         el('button', {
           class: 'btn', type: 'button', dataset: { key: 'import' },
           onclick: () => (app.active ? toast('Finish or end the current session before importing.') : fileInput.click()),
-        }, 'Import from a backup…'),
+        }, 'Restore from a backup…'),
         el('button', { class: 'btn', type: 'button', dataset: { key: 'reset' }, onclick: () => resetDefaults(app) }, 'Reset library to defaults…'),
         fileInput,
       ),
@@ -415,89 +409,6 @@ function renameSheet(title, current, onSave) {
 }
 
 // ------------------------------------------------------------------ data
-
-async function exportData(app) {
-  const data = buildExport(app.snapshot());
-  const json = JSON.stringify(data, null, 1);
-  const name = `timebox-backup-${localDate()}.json`;
-  const blob = new Blob([json], { type: 'application/json' });
-  // On phones the share sheet ("Save to Files") is more reliable than a download.
-  const touch = matchMedia('(pointer: coarse)').matches;
-  if (touch && navigator.canShare) {
-    const file = new File([blob], name, { type: 'application/json' });
-    if (navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({ files: [file], title: 'Timebox backup' });
-        return;
-      } catch (err) {
-        if (err && err.name === 'AbortError') return;
-      }
-    }
-  }
-  const url = URL.createObjectURL(blob);
-  const a = el('a', { href: url, download: name });
-  document.body.append(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 10_000);
-  toast(`Exported ${data.sessions.length} sessions`);
-}
-
-async function importFile(app, file) {
-  const text = await file.text();
-  const parsed = parseFile(text);
-  if (parsed.errors.length) {
-    let sheet;
-    sheet = openSheet({
-      title: 'Can’t import this file',
-      content: [
-        el('ul', {}, parsed.errors.map((e) => el('li', { text: e }))),
-        el('p', { text: 'Nothing was changed.' }),
-        el('div', { class: 'sheet-actions' }, el('button', { class: 'btn', type: 'button', onclick: () => sheet.close() }, 'OK')),
-      ],
-    });
-    return;
-  }
-  const incoming = parsed.data;
-  let mode = 'merge';
-  const summary = el('ul', { class: 'import-summary' });
-  const confirm = el('button', { class: 'btn btn-primary', type: 'button' });
-  const modeGroup = el('div', { class: 'segmented', role: 'radiogroup', 'aria-label': 'Import mode' });
-  const modes = [['merge', 'Merge'], ['replace', 'Replace']];
-  for (const [value, label] of modes) {
-    modeGroup.append(el('button', { type: 'button', role: 'radio', class: 'seg', dataset: { mode: value }, onclick: () => { mode = value; render(); } }, label));
-  }
-  const explain = el('p');
-  function render() {
-    const plan = planImport(app.snapshot(), incoming, mode);
-    summary.replaceChildren(...plan.lines.map((l) => el('li', { text: l })));
-    for (const b of modeGroup.children) b.setAttribute('aria-checked', String(b.dataset.mode === mode));
-    explain.textContent = mode === 'merge'
-      ? 'Adds anything in the file that isn’t on this device. Nothing here is overwritten.'
-      : 'Deletes everything on this device and uses the file instead.';
-    confirm.textContent = mode === 'merge' ? (plan.changes ? 'Merge' : 'Nothing to merge') : 'Replace everything';
-    confirm.disabled = !plan.changes;
-    confirm.className = `btn ${mode === 'replace' ? 'btn-danger' : 'btn-primary'}`;
-    confirm.onclick = async () => {
-      sheet.close();
-      await app.replaceAll(plan.result);
-      toast(mode === 'merge' ? 'Backup merged' : 'Data replaced from backup');
-    };
-  }
-  const when = incoming.exported_at ? new Date(incoming.exported_at) : null;
-  let sheet;
-  render();
-  sheet = openSheet({
-    title: 'Import backup',
-    content: [
-      el('p', { text: `${file.name}${when && !Number.isNaN(when.getTime()) ? `, exported ${when.toLocaleString()}` : ''}: ${incoming.sessions.length} sessions, ${incoming.library.items.length} library items.` }),
-      modeGroup,
-      explain,
-      summary,
-      el('div', { class: 'sheet-actions' }, el('button', { class: 'btn', type: 'button', onclick: () => sheet.close() }, 'Cancel'), confirm),
-    ],
-  });
-}
 
 async function resetDefaults(app) {
   const ok = await confirmSheet({

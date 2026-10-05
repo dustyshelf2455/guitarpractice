@@ -191,6 +191,7 @@ export function setDigits(node, text) {
 
 // Icons: tiny inline SVG paths, stroked with currentColor.
 const ICONS = {
+  save: '<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5"/><path d="M5 15v4h14v-4"/>',
   pause: '<path d="M8 5v14M16 5v14"/>',
   play: '<path d="M7 4.5v15l12-7.5z" fill="currentColor"/>',
   stats: '<path d="M5 20V11M12 20V4M19 20v-6"/>',

@@ -8,7 +8,7 @@ import { diagramEditor } from './diagram-editor.js';
 import { exportData, restoreInput, backupSummary } from './backup.js';
 import { lockedItem } from '../plan.js';
 
-const APP_VERSION = '1.0.0';
+import { BUILD } from '../version.js';
 
 /** <optgroup> per area with its subtypes, for slot pickers. */
 function subtypeOptions(app, selectedId) {
@@ -162,7 +162,7 @@ export function settingsView(app, ctx) {
       ),
     ),
     section('About', el('div', { class: 'about' },
-      el('p', { text: `Timebox ${APP_VERSION}. Practice areas follow Justin Guitar's practice guidance: Technique, Knowledge, Repertoire, Time and Improvisation.` }),
+      el('p', { text: `Timebox build ${BUILD}. Practice areas follow Justin Guitar's practice guidance: Technique, Knowledge, Repertoire, Time and Improvisation.` }),
       el('p', { text: `Storage: ${app.store.kind === 'indexeddb' ? 'IndexedDB' : app.store.kind === 'localstorage' ? 'local storage' : 'not available (nothing is saved)'}. Install Timebox to your home screen so the browser keeps your data.` }),
     )),
   );

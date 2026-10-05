@@ -23,6 +23,11 @@ test('service worker precaches every app file', () => {
   for (const f of listed) if (f !== './') assert.ok(existsSync(join(root, f)), `${f} in sw.js does not exist`);
 });
 
+test('Settings build number matches the service worker VERSION', () => {
+  const build = readFileSync(join(root, 'js/version.js'), 'utf8').match(/BUILD = (\d+)/)[1];
+  assert.equal(sw.match(/VERSION = 'timebox-v(\d+)'/)[1], build, 'bump BUILD in js/version.js with VERSION in sw.js');
+});
+
 test('manifest is installable: name, start_url, standalone, 192 and 512 icons', () => {
   const m = JSON.parse(readFileSync(join(root, 'manifest.webmanifest'), 'utf8'));
   assert.ok(m.name && m.short_name);

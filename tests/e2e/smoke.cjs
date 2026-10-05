@@ -105,11 +105,14 @@ function check(cond, msg) {
   check((await focusState('timeup')) === 'timeup', 'tile 2 reaches time-up in focus');
   check((await text(page.locator('.clock'), '53:59')) === '53:59', 'session clock stopped at 53:59');
   check((await page.locator('.focus-primary').textContent()).includes('Finish'), 'primary button offers Finish and rate');
+  const metroOn = () => page.evaluate(() => document.documentElement.classList.contains('metro-on'));
+  check(await metroOn(), 'the metronome plays on at time-up');
   await shot('04-focus-timeup');
 
   // Finish and rate from the focus view, then it returns to the grid.
   await primary();
   await page.waitForSelector('dialog.rating-sheet[open]');
+  check((await settle(metroOn, false)) === false, 'Finish and rate stops the metronome');
   await shot('05-rating');
   await rateWith(4);
   check(await focusOpen(false) && !page.url().includes('#/block'), 'rating from the block returns to the board');

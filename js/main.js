@@ -170,6 +170,7 @@ metronome.onBeat((beat) => {
 let followed = null; // the block the metronome started with, while it runs full screen
 let lastTempoBlock = null; // the block whose tempo is in use (kept when that block resumes)
 let followReady = false; // nothing starts by itself when the page loads
+let playingOn = null; // { session, index } of a block whose time-up the metronome plays on through
 
 function followBlock() {
   const s = app.active;
@@ -183,6 +184,7 @@ function followBlock() {
     followed = runningInView ? key : null;
     return;
   }
+  if (runningInView) playingOn = null;
   if (runningInView && followed !== key) {
     followed = key;
     if (!auto) return;
@@ -198,7 +200,12 @@ function followBlock() {
   } else if (!runningInView && followed) {
     followed = null;
     // Paused, finished or left: stop. At time-up it plays on, quieter (see handleEvents).
-    if (auto && !(t && t.state === 'timeup')) metronome.stop();
+    if (t && t.state === 'timeup') playingOn = { session: s, index };
+    else if (auto) metronome.stop();
+  } else if (playingOn && (playingOn.session !== s || playingOn.session.tiles[playingOn.index].state !== 'timeup')) {
+    // Finish and rate (or ending the session) after time-up: the exercise is over, stop.
+    playingOn = null;
+    if (auto) metronome.stop();
   }
 }
 

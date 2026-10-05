@@ -32,7 +32,7 @@ export function renderDiagram(d, itemText = '', { upright = false } = {}) {
     el('figcaption', { class: 'diagram-title' },
       repeat ? null : title.replace(/^./, (c) => c.toUpperCase()),
       el('span', { class: 'diagram-notes', text: toneList.map((t) => pretty(d.labels === 'intervals' ? t.interval : t.name)).join(' ') })),
-    boards(fretboardNotes(toneList, d.position), (n) => (d.labels === 'intervals' ? n.interval : pretty(n.name)), title, upright));
+    boards({ ...fretboardNotes(toneList, d.position), marksOpen: true }, (n) => (d.labels === 'intervals' ? n.interval : pretty(n.name)), title, upright));
 }
 
 /** A walk-up or bass run: numbered in playing order; the note it lands on is solid. */
@@ -45,7 +45,14 @@ function runDiagram(d, upright) {
     boards({ notes: notes.map((n) => ({ ...n, root: n.last })), window: runWindow(d) }, (n) => String(n.order), title, upright));
 }
 
+/**
+ * Both board drawings get one empty fret past the notes so the shape of the
+ * neck reads. With `marksOpen` (scales, arpeggios) an open string that isn't
+ * in the set gets an ×, so every open string says whether it's in or out.
+ */
 function boards(data, labelOf, title, upright) {
+  const [lo, hi] = data.window;
+  data = { ...data, window: [lo, hi + 1], muted: data.marksOpen && lo === 0 ? openStringsOut(data.notes) : [] };
   const across = fretboard(data, labelOf, title);
   if (!upright) return across;
   across.classList.add('board-h');
@@ -59,7 +66,12 @@ export function renderDiagrams(list, itemText = '', options = {}) {
 
 // ------------------------------------------------------------------ fretboard
 
-function fretboard({ notes, window: [lo, hi] }, labelOf, title) {
+const openStringsOut = (notes) => [0, 1, 2, 3, 4, 5].filter((s) => !notes.some((n) => n.string === s && n.fret === 0));
+const dotClass = (n) => `board-dot${n.root ? ' root' : ''}${n.fret === 0 ? ' open' : ''}`;
+const ariaNotes = (title, notes, muted) => `${title}. ${notes.length} notes: ${notes.map((n) => `${STRING_NAMES[n.string]} string ${n.fret === 0 ? 'open' : `fret ${n.fret}`} ${n.name}`).join(', ')}`
+  + (muted.length ? `. Open ${muted.map((s) => STRING_NAMES[s]).join(', ')} not in it` : '');
+
+function fretboard({ notes, window: [lo, hi], muted }, labelOf, title) {
   const open = lo === 0;
   const first = open ? 1 : lo;
   const cols = hi - first + 1;
@@ -77,7 +89,7 @@ function fretboard({ notes, window: [lo, hi] }, labelOf, title) {
 
   const g = svg('svg', {
     class: 'board', viewBox: `0 0 ${W} ${H}`, role: 'img',
-    'aria-label': `${title}. ${notes.length} notes: ${notes.map((n) => `${STRING_NAMES[n.string]} string fret ${n.fret} ${n.name}`).join(', ')}`,
+    'aria-label': ariaNotes(title, notes, muted),
   });
   // Frets, nut, strings.
   for (let k = 0; k <= cols; k++) {
@@ -91,10 +103,11 @@ function fretboard({ notes, window: [lo, hi] }, labelOf, title) {
   for (let k = 0; k < cols; k++) {
     g.append(svg('text', { class: 'board-label', x: left + (k + 0.5) * cw, y: H - 5, 'text-anchor': 'middle', text: String(first + k) }));
   }
+  for (const s of muted) g.append(svg('text', { class: 'board-muted', x: x(0), y: y(s) + 4.5, 'text-anchor': 'middle', text: '×' }));
   // Notes.
   for (const n of notes) {
     const label = labelOf(n);
-    g.append(svg('g', { class: n.root ? 'board-dot root' : 'board-dot' },
+    g.append(svg('g', { class: dotClass(n) },
       svg('circle', { cx: x(n.fret), cy: y(n.string), r }),
       svg('text', { x: x(n.fret), y: y(n.string) + 3.3, 'text-anchor': 'middle', text: label })));
   }
@@ -102,7 +115,7 @@ function fretboard({ notes, window: [lo, hi] }, labelOf, title) {
 }
 
 /** The same notes on an upright neck: strings run down the page, low E on the left, nut at the top. */
-function fretboardUpright({ notes, window: [lo, hi] }, labelOf, title) {
+function fretboardUpright({ notes, window: [lo, hi], muted }, labelOf, title) {
   const open = lo === 0;
   const first = open ? 1 : lo;
   const rows = hi - first + 1;
@@ -119,7 +132,7 @@ function fretboardUpright({ notes, window: [lo, hi] }, labelOf, title) {
 
   const g = svg('svg', {
     class: 'board board-v', viewBox: `0 0 ${W} ${H}`, role: 'img',
-    'aria-label': `${title}. ${notes.length} notes: ${notes.map((n) => `${STRING_NAMES[n.string]} string fret ${n.fret} ${n.name}`).join(', ')}`,
+    'aria-label': ariaNotes(title, notes, muted),
   });
   for (let s = 0; s < 6; s++) {
     g.append(svg('text', { class: 'board-label', x: x(s), y: 12, 'text-anchor': 'middle', text: STRING_NAMES[s] }));
@@ -132,8 +145,9 @@ function fretboardUpright({ notes, window: [lo, hi] }, labelOf, title) {
   for (let k = 0; k < rows; k++) {
     g.append(svg('text', { class: 'board-label', x: 13, y: top + (k + 0.5) * rh + 4.5, 'text-anchor': 'middle', text: String(first + k) }));
   }
+  for (const s of muted) g.append(svg('text', { class: 'board-muted', x: x(s), y: y(0) + 8, 'text-anchor': 'middle', text: '×' }));
   for (const n of notes) {
-    g.append(svg('g', { class: n.root ? 'board-dot root' : 'board-dot' },
+    g.append(svg('g', { class: dotClass(n) },
       svg('circle', { cx: x(n.string), cy: y(n.fret), r }),
       svg('text', { x: x(n.string), y: y(n.fret) + r * 0.36, 'text-anchor': 'middle', 'font-size': (r * 0.95).toFixed(1), text: labelOf(n) })));
   }
@@ -154,7 +168,7 @@ export function chordBox(shape) {
   const fretted = shape.frets.filter((f) => f > 0);
   const max = fretted.length ? Math.max(...fretted) : 0;
   const start = max <= 4 ? 1 : Math.min(...fretted);
-  const rows = Math.max(4, max - start + 1);
+  const rows = Math.max(4, max - start + 2); // an empty fret past the shape
   const W = 76;
   const left = 15;
   const sx = 10;

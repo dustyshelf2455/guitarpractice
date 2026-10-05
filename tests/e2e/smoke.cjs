@@ -128,6 +128,9 @@ function check(cond, msg) {
   check(await page.locator('.focus .board-v').isVisible(), 'scale block shows its fretboard, upright in portrait');
   check(!(await page.locator('.focus .board-h').isVisible()), 'the sideways neck is hidden in portrait');
   check((await page.locator('.focus .board-v .board-dot.root').count()) === 2, 'C major open position: two root Cs');
+  check((await page.locator('.focus .board-v .board-dot.open').count()) === 6, 'C major open position: all six open strings ringed as in the scale');
+  check((await page.locator('.focus .board-v .board-muted').count()) === 0, 'no open string marked as out of the scale');
+  check((await page.locator('.focus .board-v .board-label').allTextContents()).includes('4'), 'open position drawn out to the 4th fret');
   { const box = await page.locator('.focus-dock').boundingBox(); check(box.height <= 96, `the timer strip is slim (${Math.round(box.height)}px)`); }
   {
     const fit = await page.evaluate(() => {

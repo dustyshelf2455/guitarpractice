@@ -99,7 +99,7 @@ export function createFocus(handlers) {
     fill.classList.add('no-anim');
     requestAnimationFrame(() => fill.classList.remove('no-anim'));
     if (wasOpen) {
-      // Straight on to the next block: it slides in where the last one was.
+      // Already open on another block: it slides in where the last one was.
       inner.getAnimations().forEach((a) => a.cancel());
       if (!reducedMotion()) {
         inner.animate([{ opacity: 0, transform: 'translateX(2.5rem)' }, { opacity: 1, transform: 'none' }],

@@ -144,34 +144,17 @@ export function sessionView(app, ctx) {
     if (r.action === 'completed') rate(r.session, r.index);
   }
 
-  /** The block to practise after block i: the first one after it (going round) that is waiting or paused. */
-  function nextAfter(i) {
-    if (app.mode !== 'active') return null;
-    const board = app.boardTiles();
-    for (let k = 1; k < board.length; k++) {
-      const j = (i + k) % board.length;
-      if (['idle', 'paused'].includes(board[j].state)) return j;
-    }
-    return null;
-  }
-
   /**
-   * Rate a block. Rated from its full-screen view, the next unfinished block
-   * opens in its place, ready to Begin (the grid, when nothing is left). The
-   * sheet also offers to reopen the block (continue, or do it over).
+   * Rate a block. Rated from its full-screen view, it shrinks back to the grid
+   * so you pick what's next. The sheet also offers to reopen the block
+   * (continue, or do it over).
    */
   function rate(session, index) {
     const tile = session.tiles[index];
     const fromFocus = focusIndex === index;
     const done = () => {
-      if (fromFocus && focusIndex === index) {
-        const next = nextAfter(index);
-        if (next == null) ctx.back('#/');
-        else {
-          ctx.replace(`#/block/${next}`);
-          announce(`Up next: ${app.boardTiles()[next].item_text}`);
-        }
-      } else tiles[index].main.focus({ preventScroll: true });
+      if (fromFocus && focusIndex === index) ctx.back('#/');
+      else tiles[index].main.focus({ preventScroll: true });
     };
     const reopen = app.canReopen(session.id, index) ? {
       remainingMs: TILE_MS - tile.elapsed_seconds * 1000,

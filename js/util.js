@@ -197,6 +197,7 @@ const ICONS = {
   stats: '<path d="M5 20V11M12 20V4M19 20v-6"/>',
   settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
   metronome: '<path d="M9 3h6l4 18H5z"/><path d="M12 15l5-8"/>',
+  tuner: '<path d="M8 3v7a4 4 0 0 0 8 0V3"/><path d="M12 14v7"/>',
   swap: '<path d="M7 7h11l-3-3M17 17H6l3 3"/>',
   check: '<path d="M5 12.5l4.5 4.5L19 7"/>',
   back: '<path d="M15 5l-7 7 7 7"/>',

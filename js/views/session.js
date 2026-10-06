@@ -19,7 +19,7 @@ const STATE_LABEL = {
 };
 
 export function sessionView(app, ctx) {
-  const { navigate, openMetronome, announce } = ctx;
+  const { navigate, openMetronome, openTuner, announce } = ctx;
   const clock = el('div', { class: 'clock', role: 'timer', 'aria-label': 'Session time remaining' });
   const headSub = el('div', { class: 'head-sub' });
   const masterBtn = el('button', { class: 'master-btn', type: 'button', onclick: onMaster });
@@ -58,6 +58,7 @@ export function sessionView(app, ctx) {
     metroBtn,
     endBtn,
     el('span', { class: 'bar-spacer' }),
+    iconButton('tuner', 'Tuner', () => openTuner(), 'bar-icon tuner-btn'),
     iconButton('stats', 'Stats', () => navigate('#/stats'), 'bar-icon'),
     iconButton('settings', 'Settings', () => navigate('#/settings'), 'bar-icon'),
   );

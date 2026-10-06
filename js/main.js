@@ -10,6 +10,7 @@ import {
 import { setWakeLock } from './wakelock.js';
 import { sessionView } from './views/session.js';
 import { openMetronomeSheet } from './views/metronome.js';
+import { openTunerSheet } from './views/tuner.js';
 import { toast } from './views/sheets.js';
 import { statsView, areaView, subtypeStatsView, historyView, sessionDetailView } from './views/stats.js';
 import { settingsView, subtypeEditorView, areasView } from './views/settings.js';
@@ -47,6 +48,7 @@ const ctx = {
     location.replace(hash);
   },
   openMetronome: () => openMetronomeSheet(app, { onChange: syncSideEffects }),
+  openTuner: () => openTunerSheet(),
   /** Called inside the tap that starts a block: a fresh audio engine so its chime will sound. */
   refreshAudio: () => {
     if (!metronome.playing) freshAudio();

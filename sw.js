@@ -2,7 +2,7 @@
 // Bump VERSION whenever any file changes, so phones pick up the new version,
 // and set BUILD in js/version.js to the same number (shown in Settings > About).
 
-const VERSION = 'timebox-v19';
+const VERSION = 'timebox-v20';
 const ASSETS = [
   './',
   'index.html',
@@ -34,6 +34,8 @@ const ASSETS = [
   'js/views/focus.js',
   'js/views/diagram-editor.js',
   'js/views/metronome.js',
+  'js/views/tuner.js',
+  'js/tuner.js',
   'js/views/settings.js',
   'js/views/stats.js',
   'icons/icon.svg',
@@ -41,6 +43,7 @@ const ASSETS = [
   'icons/icon-512.png',
   'icons/maskable-512.png',
   'icons/apple-touch-icon.png',
+  'img/headstock.webp',
 ];
 
 self.addEventListener('install', (event) => {

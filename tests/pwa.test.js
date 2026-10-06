@@ -16,7 +16,7 @@ const sw = readFileSync(join(root, 'sw.js'), 'utf8');
 const listed = [...sw.matchAll(/^\s+'([^']+)',$/gm)].map((m) => m[1]);
 
 test('service worker precaches every app file', () => {
-  const files = ['js', 'css', 'icons', 'fonts'].flatMap((d) => walk(join(root, d)))
+  const files = ['js', 'css', 'icons', 'fonts', 'img'].flatMap((d) => walk(join(root, d)))
     .map((p) => relative(root, p))
     .filter((f) => !f.endsWith('.txt'));
   for (const f of files) assert.ok(listed.includes(f), `${f} is missing from sw.js ASSETS`);

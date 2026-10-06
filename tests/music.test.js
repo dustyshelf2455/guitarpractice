@@ -5,7 +5,7 @@ import {
   suggestDiagram, normaliseDiagram, describeDiagram, pretty, STRING_NAMES,
   numeralChord, numeralBars, parseNumeral, PROGRESSION_KEYS,
 } from '../js/music.js';
-import { defaultLibrary, STARTER_DIAGRAMS, SCHEMA_VERSION } from '../js/defaults.js';
+import { defaultLibrary, STARTER_DIAGRAMS, STARTER_NOTES, STARTER_NOTES_V7, SCHEMA_VERSION } from '../js/defaults.js';
 import { migrate, parseFile } from '../js/transfer.js';
 
 const names = (list) => list.map((t) => t.name).join(' ');
@@ -262,4 +262,19 @@ test('v5 -> v6 migration adds the two progression exercises', () => {
   const added = out.library.items.filter((i) => ['chords-29', 'chords-30'].includes(i.id));
   assert.equal(added.length, 2);
   assert.ok(added.every((i) => i.subtype_id === 'chords' && i.diagrams[0].progressions.length === 5 && i.notes));
+});
+
+test('v7 -> v8: the Life of Sin lick gets its new notes and link, unless edited', () => {
+  const lib = defaultLibrary();
+  const lick = lib.items.find((i) => i.id === 'licks-13');
+  Object.assign(lick, { notes: STARTER_NOTES_V7['licks-13'], url: '' }); // as shipped in v7
+  let out = migrate({ schema_version: 7, library: lib, settings: {}, sessions: [], plans: [] });
+  let item = out.library.items.find((i) => i.id === 'licks-13');
+  assert.equal(item.notes, STARTER_NOTES['licks-13']);
+  assert.match(item.notes, /Laur Joamets/);
+  assert.match(item.url, /^https:\/\//);
+  Object.assign(lick, { notes: 'my own notes', url: '' });
+  out = migrate({ schema_version: 7, library: lib, settings: {}, sessions: [], plans: [] });
+  item = out.library.items.find((i) => i.id === 'licks-13');
+  assert.equal(item.notes, 'my own notes', 'edited notes left alone');
 });

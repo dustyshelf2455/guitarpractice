@@ -3,7 +3,7 @@
 
 import { parseTab, serialiseTab, normaliseRhythm } from './notation.js';
 
-export const SCHEMA_VERSION = 7;
+export const SCHEMA_VERSION = 8;
 export const SLOT_COUNT = 12;
 
 const AREAS = [
@@ -329,7 +329,7 @@ export const STARTER_NOTES = {
   'licks-9': 'Bluegrass, beginner. Up with a hammer-on, back down with a pull-off, all G major pentatonic. Play it between strums of G at 60–80 bpm; the hammered and pulled notes should be as loud as the picked ones.',
   'licks-10': 'Country or rock, intermediate. Lay your index finger across fret 3 of the G and B strings and hammer the middle finger onto the G string, 4th fret: the bluesy minor third snaps into the major third. Pick both strings together, about 70 bpm over G.',
   'licks-11': 'Blues, intermediate. Check each bend\'s target first by fretting it (B string 8 = G, G string 7 = D), then bend to that pitch and release in time. Over a G7 vamp at 60–70 bpm. On an acoustic, half-step bends are fine.',
-  'licks-13': 'Country, intermediate. The intro to Sturgill Simpson\'s Life of Sin (High Top Mountain), key of E, no capo. Bar 1: let the open high e ring over everything. Slide into the B string, 5th fret, pick it again and pull off to the open B, then 3rd fret twice and open. Bar 2: on the G string, 2nd fret, bend a half step (A up to A♯) on every other eighth note, then bend the low E, 3rd fret, a half step (G up to G♯) on beat 4, pulling the string toward the floor, and land on open E. Check the targets first by fretting them: G string 3, low E 4. Start at 100 bpm; the record is 169. Once it\'s clean three times in a row, go up 5–10 bpm.',
+  'licks-13': 'Country, intermediate. The intro to Sturgill Simpson\'s Life of Sin, key of E, no capo. Bar 1: let the open high e ring over everything. Slide into the B string, 5th fret, pick it again and pull off to the open B, then 3rd fret twice and open. Bar 2: on the G string, 2nd fret, bend a half step (A up to A♯) on every other eighth note, then bend the low E, 3rd fret, a half step (G up to G♯) on beat 4, pulling the string toward the floor, and land on open E. Check the targets first by fretting them: G string 3, low E 4. Start at 100 bpm; the record is 169. Once it\'s clean three times in a row, go up 5–10 bpm.\n\nThe lead is Laur Joamets, who had just moved to Nashville from Estonia. Simpson writes his songs on acoustic guitar and gave Joamets complete creative freedom with the electric leads. Drawing on blues and classic country, Joamets came up with the track\'s hooks, this descending intro lick and the sixuplet-filled solos among them; the chicken pickin\' vocabulary and phrasing of the opening are all his.',
   'licks-12': 'Bluegrass, intermediate. Up the G major scale, then down through the chord tones. Strict alternate picking: down on the beat, up on the "and". Start at 60 bpm in eighth notes and work up.',
   'chords-14': 'Three shapes of the same G chord on the G, B and high e strings, low to high up the neck. Pick each one as a 3-note arpeggio, then strum it four times, one bar each at 80 bpm, and slide to the next. Say which note is the root (G) in every shape. These small shapes are what a second guitar or mandolin-style rhythm plays over a band.',
   'chords-15': 'The same idea in C: three shapes on the top three strings, open, 5th fret and 8th fret. One bar of quarter-note strums on each at 80 bpm, up the neck and back down. Mute the lower strings with the side of your picking hand.',
@@ -353,8 +353,17 @@ export const STARTER_NOTES = {
 
 /** Links that come with starter items. */
 const STARTER_LINKS = {
+  'licks-13': 'https://www.nashvillescene.com/music/how-estonian-guitarist-laur-joamets-became-sturgill-simpsons-danny-gatton/article_3dedce8c-ef81-5b1d-9580-8dcdb7cc7142.html',
   'licks-6': 'https://www.youtube.com/results?search_query=easy+guitar+lick+lesson',
 };
+
+/** Starter notes as first shipped, so a later version can update them if untouched. */
+export const STARTER_NOTES_V7 = {
+  'licks-13': 'Country, intermediate. The intro to Sturgill Simpson\'s Life of Sin (High Top Mountain), key of E, no capo. Bar 1: let the open high e ring over everything. Slide into the B string, 5th fret, pick it again and pull off to the open B, then 3rd fret twice and open. Bar 2: on the G string, 2nd fret, bend a half step (A up to A♯) on every other eighth note, then bend the low E, 3rd fret, a half step (G up to G♯) on beat 4, pulling the string toward the floor, and land on open E. Check the targets first by fretting them: G string 3, low E 4. Start at 100 bpm; the record is 169. Once it\'s clean three times in a row, go up 5–10 bpm.',
+};
+
+/** The link for a starter item, if it has one. */
+export const starterLink = (id) => STARTER_LINKS[id] || '';
 
 /** Starter items added in a later schema version: [version, ids]. */
 export const ADDED_ITEMS = [

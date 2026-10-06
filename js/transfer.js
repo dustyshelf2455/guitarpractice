@@ -3,7 +3,7 @@
 
 import {
   SCHEMA_VERSION, SLOT_COUNT, defaultSettings, STARTER_DIAGRAMS, STARTER_NOTES, starterText, starterItem, ADDED_ITEMS,
-  NOTES_LIMIT, SLOTS_V3,
+  NOTES_LIMIT, SLOTS_V3, STARTER_NOTES_V7, starterLink,
 } from './defaults.js';
 import { normaliseDiagram } from './music.js';
 import { endSession, completedCount } from './engine.js';
@@ -18,6 +18,7 @@ const optNum = (v) => v == null || isNum(v);
 export function migrate(data) {
   const out = clone(data);
   let v = out.schema_version || 1;
+  const from = v;
   if (v < 2) {
     // v2: items carry diagrams. Starter items still worded as shipped get theirs.
     for (const it of out.library?.items || []) {
@@ -61,6 +62,14 @@ export function migrate(data) {
       }
     }
     v = version;
+  }
+  // v8: the Life of Sin lick (added in v7) gains the story of its lead and a link, if untouched.
+  if (from === 7) {
+    for (const it of out.library?.items || []) {
+      if (!STARTER_NOTES_V7[it.id] || starterText(it.id) !== it.text) continue;
+      if (it.notes === STARTER_NOTES_V7[it.id]) it.notes = STARTER_NOTES[it.id];
+      if (!it.url) it.url = starterLink(it.id);
+    }
   }
   out.schema_version = SCHEMA_VERSION;
   return out;

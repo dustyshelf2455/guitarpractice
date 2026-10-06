@@ -128,6 +128,156 @@ export function sessionView(app, ctx) {
     return { li, main, area, sub, text, hint, time, status, swap, finish, link, lockMark };
   }
 
+  // ---- rearranging: press and hold a block, drag it, the others slide aside ----
+
+  const HOLD_MS = 350; // how long a press must stay put before the block lifts
+  const SLOP = 8; // px a finger may wander during the hold (more is a scroll)
+  const EDGE = 48; // px from the grid's top or bottom where dragging scrolls it
+  let drag = null;
+  let swallowClick = false;
+
+  grid.addEventListener('pointerdown', (e) => {
+    if (drag || !e.isPrimary || e.button !== 0 || focusIndex != null) return;
+    const main = e.target.closest('.tile-main');
+    const index = main ? tiles.findIndex((v) => v.main === main) : -1;
+    if (index < 0 || !app.canMoveTiles()) return;
+    drag = { index, target: index, id: e.pointerId, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, lifted: false };
+    drag.timer = setTimeout(lift, HOLD_MS);
+    window.addEventListener('pointermove', onDragMove);
+    window.addEventListener('pointerup', onDragEnd);
+    window.addEventListener('pointercancel', onDragEnd);
+  });
+  // Once a block is lifted the finger drags it, not the page.
+  grid.addEventListener('touchmove', (e) => { if (drag && drag.lifted) e.preventDefault(); }, { passive: false });
+  grid.addEventListener('contextmenu', (e) => { if (drag) e.preventDefault(); });
+  // The tap that ends a drag doesn't open the block.
+  grid.addEventListener('click', (e) => {
+    if (!swallowClick) return;
+    swallowClick = false;
+    e.preventDefault();
+    e.stopPropagation();
+  }, true);
+
+  function lift() {
+    const n = app.boardTiles().length;
+    const top = grid.getBoundingClientRect().top;
+    drag.lifted = true;
+    drag.n = n;
+    drag.scroll0 = grid.scrollTop;
+    // Slot positions in the grid's scrolling frame, so autoscroll doesn't throw them off.
+    drag.rects = tiles.slice(0, n).map((v) => {
+      const r = v.li.getBoundingClientRect();
+      return { x: r.left, y: r.top - top + grid.scrollTop, w: r.width, h: r.height };
+    });
+    grid.classList.add('is-reordering');
+    tiles[drag.index].li.classList.add('is-dragging', 'is-held');
+    navigator.vibrate?.(10);
+    layoutDrag();
+  }
+
+  function onDragMove(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    drag.x = e.clientX;
+    drag.y = e.clientY;
+    if (!drag.lifted) {
+      if (Math.hypot(drag.x - drag.x0, drag.y - drag.y0) > SLOP) endDrag();
+      return;
+    }
+    layoutDrag();
+    autoScroll();
+  }
+
+  function layoutDrag() {
+    const { index, rects } = drag;
+    const dx = drag.x - drag.x0;
+    const dy = drag.y - drag.y0 + grid.scrollTop - drag.scroll0;
+    const cx = rects[index].x + rects[index].w / 2 + dx;
+    const cy = rects[index].y + rects[index].h / 2 + dy;
+    let best = index;
+    let bestD = Infinity;
+    rects.forEach((r, k) => {
+      const d = Math.hypot(r.x + r.w / 2 - cx, r.y + r.h / 2 - cy);
+      if (d < bestD) { bestD = d; best = k; }
+    });
+    drag.target = best;
+    tiles[index].li.style.transform = `translate(${dx}px, ${dy}px) scale(1.06)`;
+    // Where every other block goes if the lifted one were dropped here.
+    const order = [...Array(drag.n).keys()].filter((j) => j !== index);
+    order.splice(best, 0, index);
+    order.forEach((j, k) => {
+      if (j === index) return;
+      const ox = rects[k].x - rects[j].x;
+      const oy = rects[k].y - rects[j].y;
+      tiles[j].li.style.transform = ox || oy ? `translate(${ox}px, ${oy}px)` : '';
+    });
+  }
+
+  function autoScroll() {
+    if (drag.scrolling) return;
+    const r = grid.getBoundingClientRect();
+    const step = drag.y < r.top + EDGE ? -8 : drag.y > r.bottom - EDGE ? 8 : 0;
+    if (!step || grid.scrollHeight <= grid.clientHeight) return;
+    drag.scrolling = true;
+    requestAnimationFrame(() => {
+      if (!drag || !drag.lifted) return;
+      drag.scrolling = false;
+      const before = grid.scrollTop;
+      grid.scrollTop += step;
+      if (grid.scrollTop !== before) {
+        layoutDrag();
+        autoScroll();
+      }
+    });
+  }
+
+  async function onDragEnd(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    if (!drag.lifted || e.type === 'pointercancel') {
+      endDrag();
+      return;
+    }
+    const { index, target, rects } = drag;
+    swallowClick = true;
+    setTimeout(() => { swallowClick = false; }, 400);
+    endDrag(false);
+    // Settle into the gap, then make the move for real and drop the offsets in the same frame.
+    const li = tiles[index].li;
+    li.classList.remove('is-held');
+    li.style.transform = `translate(${rects[target].x - rects[index].x}px, ${rects[target].y - rects[index].y}px)`;
+    await new Promise((r) => setTimeout(r, 180));
+    const name = app.boardTiles()[index]?.item_text;
+    const moved = target !== index && await app.moveTile(index, target);
+    clearDrag();
+    if (moved) {
+      update();
+      announce(`Moved ${name} to block ${target + 1}`);
+    }
+  }
+
+  function endDrag(clear = true) {
+    clearTimeout(drag.timer);
+    window.removeEventListener('pointermove', onDragMove);
+    window.removeEventListener('pointerup', onDragEnd);
+    window.removeEventListener('pointercancel', onDragEnd);
+    const wasLifted = drag.lifted;
+    drag = null;
+    if (wasLifted && clear) clearDrag(true);
+  }
+
+  /** Put every block back in its own cell: sliding there, or at once once the move is made. */
+  function clearDrag(animate = false) {
+    if (!animate) grid.classList.add('no-slide');
+    for (const v of tiles) {
+      v.li.style.transform = '';
+      v.li.classList.remove('is-dragging', 'is-held');
+    }
+    grid.classList.remove('is-reordering');
+    if (!animate) {
+      void grid.offsetWidth;
+      grid.classList.remove('no-slide');
+    }
+  }
+
   // ---- actions ----
 
   async function onTap(i) {

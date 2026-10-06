@@ -555,6 +555,40 @@ export class App {
     await this.libraryChanged();
   }
 
+  /** Can the board be rearranged by dragging? Not once the session has finished. */
+  canMoveTiles() {
+    return this.mode !== 'done' && this.boardTiles().length > 1;
+  }
+
+  /**
+   * Drag a board tile from position `from` to `to`; the tiles between slide
+   * along. The slot order is what moves, so tomorrow's board keeps it (a
+   * locked slot carries its lock along). Mid-session the session's own tiles
+   * move too, with the running and resume pointers following their tiles.
+   */
+  async moveTile(from, to) {
+    if (!this.canMoveTiles() || from === to) return false;
+    const n = this.boardTiles().length;
+    if (!(from >= 0 && from < n && to >= 0 && to < n)) return false;
+    const move = (arr) => arr.splice(to, 0, arr.splice(from, 1)[0]);
+    if (this.active) {
+      const s = this.active;
+      const running = s.running != null ? s.tiles[s.running] : null;
+      const last = s.last_tile != null ? s.tiles[s.last_tile] : null;
+      move(s.tiles);
+      if (running) s.running = s.tiles.indexOf(running);
+      if (last) s.last_tile = s.tiles.indexOf(last);
+    }
+    // The slots follow the board's order (slots not on the board keep their place at the end).
+    const order = this.boardTiles().map((t) => t.slot_id);
+    if (!this.active) move(order);
+    const rank = new Map(order.map((id, i) => [id, i]));
+    this.library.slots.sort((a, b) => (rank.get(a.slot_id) ?? n) - (rank.get(b.slot_id) ?? n));
+    if (this.active) await this.saveSession(this.active);
+    await this.libraryChanged();
+    return true;
+  }
+
   /** Restore default slots, areas, subtypes and starter library. History is kept. */
   async resetLibrary() {
     const fresh = defaultLibrary();

@@ -481,3 +481,54 @@ test('backup reminder: five sessions since the last backup make it due within th
     assert.equal(app.backupStatus().due, n === 4, `due only at the fifth session (after ${n + 1})`);
   }
 });
+
+test('dragging a tile reorders the board, keeps today\'s items, and the order sticks on later days', async () => {
+  const { make, clock } = setup();
+  let app = await make();
+  const before = app.boardTiles().map((t) => [t.slot_id, t.item_id]);
+  await app.setLocked(3, true);
+  const lockedItem = app.boardTiles()[3].item_id;
+  assert.equal(await app.moveTile(3, 0), true);
+  const after = app.boardTiles().map((t) => [t.slot_id, t.item_id]);
+  assert.deepEqual(after, [before[3], before[0], before[1], before[2], ...before.slice(4)], 'tiles between slide along, items stay put');
+  assert.equal(await app.moveTile(0, 0), false);
+  assert.equal(await app.moveTile(0, 12), false);
+  // Next day: new items, same slot order, and the lock moved with its slot.
+  clock.now += 24 * 3600 * 1000;
+  app = await make();
+  assert.deepEqual(app.boardTiles().map((t) => t.slot_id), after.map(([s]) => s));
+  assert.equal(app.boardTiles()[0].item_id, lockedItem);
+  assert.equal(app.isLocked(0), true);
+});
+
+test('dragging mid-session moves the session\'s tiles; running and resume follow their tile', async () => {
+  const { make, clock } = setup();
+  let app = await make();
+  await app.tapTile(2); // starts the session, block 3 running
+  clock.now += MIN;
+  const running = app.active.tiles[2];
+  assert.equal(await app.moveTile(2, 7), true);
+  assert.equal(app.active.running, 7);
+  assert.equal(app.active.last_tile, 7);
+  assert.equal(app.active.tiles[7], running);
+  assert.equal(app.library.slots[7].slot_id, running.slot_id);
+  assert.equal(await app.moveTile(0, 11), true);
+  assert.equal(app.active.running, 6);
+  app = await make(); // survives closing the app
+  assert.equal(app.active.running, 6);
+  assert.equal(app.active.tiles[6].slot_id, running.slot_id);
+  assert.equal(app.active.tiles[6].state, 'running');
+});
+
+test('a finished session\'s board cannot be rearranged', async () => {
+  const { make } = setup();
+  const app = await make();
+  await app.tapTile(0);
+  await app.endSession();
+  await app.tapTile(1); // nothing done: discarded, back to plan
+  await app.completeTile(1);
+  await app.endSession();
+  assert.equal(app.mode, 'done');
+  assert.equal(app.canMoveTiles(), false);
+  assert.equal(await app.moveTile(0, 1), false);
+});

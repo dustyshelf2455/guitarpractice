@@ -60,6 +60,8 @@ Install it rather than using it in a browser tab. Installed, it opens full scree
 
 **Which item comes up:** each block has a subtype (Warm-up, Scales, Songs, and so on). Within a subtype, the item you completed longest ago comes first, and items you've never done come before everything. Only completed blocks count, so anything you skip stays next in line. Today's plan is fixed the first time you open the app each day.
 
+**Rearranging blocks:** press and hold a block until it lifts, then drag it where you want it; the others slide out of the way. The new order sticks from day to day (a locked block moves with its place), and works mid-session too.
+
 **Settings:** choose what each of the 12 slots practises and in what order. Edit the library (add, edit, reorder, add links, archive). Add areas and subtypes. Pick the theme. Export or import a backup, and reset the library to defaults. Archived items leave the rotation but keep their history.
 
 **Stats:** streaks, sessions per week, a 13-week practice calendar, totals, your rating trend (a five-session average drawn through the per-session marks, once there are enough sessions), and time share by area. Tap an area to see its subtypes, then a subtype to see its items. "Weak spots" lists your lowest-rated items, and History has every session block by block. A day counts toward your streak once any block is completed.
@@ -106,6 +108,7 @@ End-to-end tests drive headless Chromium with a fake clock (Playwright installed
 NODE_PATH=$(npm root -g) node tests/e2e/smoke.cjs      # session flow, reload, full 60-minute run
 NODE_PATH=$(npm root -g) node tests/e2e/blocks.cjs     # Begin, re-roll, locking a block across days
 NODE_PATH=$(npm root -g) node tests/e2e/settings.cjs   # library, slots, theme, export/import, reset
+NODE_PATH=$(npm root -g) node tests/e2e/reorder.cjs    # press, hold and drag blocks to rearrange the board
 NODE_PATH=$(npm root -g) node tests/e2e/offline.cjs    # service worker and offline reload
 NODE_PATH=$(npm root -g) node tests/e2e/audio.cjs      # chime scheduling against the real audio clock
 ```

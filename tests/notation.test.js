@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  parseTab, serialiseTab, tabNoteNames, cleanChart, readChart, isChordSymbol, readStrum, normaliseStrum, strumCounts,
+  parseTab, parseRhythm, normaliseRhythm, serialiseTab, tabNoteNames, cleanChart, readChart, isChordSymbol, readStrum, normaliseStrum, strumCounts,
 } from '../js/notation.js';
 import { normaliseDiagram, describeDiagram } from '../js/music.js';
 
@@ -119,4 +119,14 @@ test('strumming: written patterns become slots, with downs on the beat', () => {
   assert.deepEqual(strumCounts(16).slice(0, 4), ['1', 'e', '&', 'a']);
   assert.deepEqual(strumCounts(4), ['1', '2', '3', '4']);
   assert.deepEqual(normaliseDiagram({ type: 'strum', pattern: 'DUDUDUDU', accents: [2, 6, 6, 40] }), { type: 'strum', pattern: 'DUDUDUDU', accents: [2, 6] });
+});
+
+test('tab rhythm: one value per note, dotted allowed, kept only when it fits the tab', () => {
+  assert.deepEqual(parseRhythm('q e. | s', 3).map((r) => r.beats), [1, 0.75, 0.25]);
+  assert.equal(parseRhythm('q e e', 2), null);
+  assert.equal(parseRhythm('q x', 2), null);
+  assert.equal(normaliseRhythm('Q  e | E', 3), 'q e e');
+  const tab = 'e|-0-0-|\nB|-----|\nG|-----|\nD|-----|\nA|-----|\nE|-----|';
+  assert.equal(normaliseDiagram({ type: 'tab', tab, rhythm: 'q q' }).rhythm, 'q q');
+  assert.equal(normaliseDiagram({ type: 'tab', tab, rhythm: 'q q q' }).rhythm, undefined);
 });

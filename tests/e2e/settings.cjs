@@ -181,12 +181,12 @@ async function until(fn, ms = 3000) {
   const file = path.join(os.tmpdir(), `timebox-e2e-${Date.now()}.json`);
   await download.saveAs(file);
   const data = JSON.parse(fs.readFileSync(file, 'utf8'));
-  check(data.app === 'timebox' && data.library.items.length === 89, `export has the library (${data.library.items.length} items)`);
+  check(data.app === 'timebox' && data.library.items.length === 90, `export has the library (${data.library.items.length} items)`);
 
   // Reset to defaults.
   await page.locator('button', { hasText: 'Reset library' }).click();
   await page.locator('dialog[open] .btn-danger').click();
-  check(await until(() => app(() => window.timebox.app.library.items.length === 86 && window.timebox.app.library.slots[11].subtype_id === 'licks')), 'reset restores starter library and slots');
+  check(await until(() => app(() => window.timebox.app.library.items.length === 87 && window.timebox.app.library.slots[11].subtype_id === 'licks')), 'reset restores starter library and slots');
 
   // Import (merge) brings the added item back without touching slots.
   await page.setInputFiles('input[type=file]', file);

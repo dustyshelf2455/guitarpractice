@@ -10,7 +10,7 @@
 //   { type: 'numbers',  key: 'G', progressions: [{ name, bars: 'I | vi | IV | V7' }] }
 //                                                         progressions by number, shown in a key you pick
 
-import { parseTab, serialiseTab, cleanChart, readChart, normaliseStrum, readStrum } from './notation.js';
+import { parseTab, serialiseTab, normaliseRhythm, cleanChart, readChart, normaliseStrum, readStrum } from './notation.js';
 
 const LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 const NATURAL = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
@@ -378,7 +378,9 @@ export function normaliseDiagram(d) {
   }
   if (d.type === 'tab' && typeof d.tab === 'string') {
     const events = parseTab(d.tab);
-    return events.length ? { type: 'tab', tab: serialiseTab(events) } : null;
+    if (!events.length) return null;
+    const rhythm = normaliseRhythm(d.rhythm, events.length);
+    return rhythm ? { type: 'tab', tab: serialiseTab(events), rhythm } : { type: 'tab', tab: serialiseTab(events) };
   }
   if (d.type === 'progression' && typeof d.text === 'string') {
     const text = cleanChart(d.text.slice(0, 20000));

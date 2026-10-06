@@ -1,9 +1,9 @@
 // Default areas, subtypes, starter library and slot template.
 // Ids are stable so "Reset to defaults" and import/merge behave predictably.
 
-import { parseTab, serialiseTab } from './notation.js';
+import { parseTab, serialiseTab, normaliseRhythm } from './notation.js';
 
-export const SCHEMA_VERSION = 6;
+export const SCHEMA_VERSION = 7;
 export const SLOT_COUNT = 12;
 
 const AREAS = [
@@ -126,6 +126,7 @@ const LIBRARY = {
     'Double-stop lick in G, Chuck Berry style',
     'Blues bend-and-release lick in G',
     'Fiddle-tune line in G, eighth notes',
+    'Life of Sin intro (Sturgill Simpson), 100 bpm',
   ],
   backing: [
     'A minor pentatonic over an Am track',
@@ -155,6 +156,11 @@ const lick = (tab, ...chordList) => [
   { type: 'tab', tab: serialiseTab(parseTab(tab)) },
   ...(chordList.length ? [{ type: 'chords', chords: chordList }] : []),
 ];
+// A lick with its rhythm drawn under the tab (one value per note, see parseRhythm).
+const timedLick = (tab, rhythm, ...chordList) => {
+  const [first, ...rest] = lick(tab, ...chordList);
+  return [{ ...first, rhythm: normaliseRhythm(rhythm, parseTab(tab).length) }, ...rest];
+};
 
 export const STARTER_DIAGRAMS = {
   'picking-1': chords('G', 'C', 'D'),
@@ -295,6 +301,15 @@ G|---------------0-------2-0---------|
 D|---------0-2-4-------------2-0-----|
 A|---0-2-3-----------------------2---|
 E|-3-------------------------------3-|`, 'G'),
+  // Sturgill Simpson, Life of Sin: the intro lick, bars 2-3, landing on the verse's open E.
+  'licks-13': timedLick(`
+e|-0---0-------0---0---0---|-------------------------------|---|
+B|/5---5---p0--3---3---0---|-------------------------------|---|
+G|-------------------------|-2b3-2---2b3-2---2b3-2---------|---|
+D|-------------------------|-------------------------------|---|
+A|-------------------------|-------------------------------|---|
+E|-------------------------|---------------------------3b4-|-0-|`,
+  'q e e q e e | e e e e e e q | q', 'E'),
   'riffs-1': scale('A', 'minor_pentatonic', 5),
   'backing-1': scale('A', 'minor_pentatonic', 5),
   'backing-4': scale('A', 'blues', 5),
@@ -314,6 +329,7 @@ export const STARTER_NOTES = {
   'licks-9': 'Bluegrass, beginner. Up with a hammer-on, back down with a pull-off, all G major pentatonic. Play it between strums of G at 60–80 bpm; the hammered and pulled notes should be as loud as the picked ones.',
   'licks-10': 'Country or rock, intermediate. Lay your index finger across fret 3 of the G and B strings and hammer the middle finger onto the G string, 4th fret: the bluesy minor third snaps into the major third. Pick both strings together, about 70 bpm over G.',
   'licks-11': 'Blues, intermediate. Check each bend\'s target first by fretting it (B string 8 = G, G string 7 = D), then bend to that pitch and release in time. Over a G7 vamp at 60–70 bpm. On an acoustic, half-step bends are fine.',
+  'licks-13': 'Country, intermediate. The intro to Sturgill Simpson\'s Life of Sin (High Top Mountain), key of E, no capo. Bar 1: let the open high e ring over everything. Slide into the B string, 5th fret, pick it again and pull off to the open B, then 3rd fret twice and open. Bar 2: on the G string, 2nd fret, bend a half step (A up to A♯) on every other eighth note, then bend the low E, 3rd fret, a half step (G up to G♯) on beat 4, pulling the string toward the floor, and land on open E. Check the targets first by fretting them: G string 3, low E 4. Start at 100 bpm; the record is 169. Once it\'s clean three times in a row, go up 5–10 bpm.',
   'licks-12': 'Bluegrass, intermediate. Up the G major scale, then down through the chord tones. Strict alternate picking: down on the beat, up on the "and". Start at 60 bpm in eighth notes and work up.',
   'chords-14': 'Three shapes of the same G chord on the G, B and high e strings, low to high up the neck. Pick each one as a 3-note arpeggio, then strum it four times, one bar each at 80 bpm, and slide to the next. Say which note is the root (G) in every shape. These small shapes are what a second guitar or mandolin-style rhythm plays over a band.',
   'chords-15': 'The same idea in C: three shapes on the top three strings, open, 5th fret and 8th fret. One bar of quarter-note strums on each at 80 bpm, up the neck and back down. Mute the lower strings with the side of your picking hand.',
@@ -346,6 +362,7 @@ export const ADDED_ITEMS = [
   [4, ['strumming-7', ...LICK_IDS]],
   [5, Array.from({ length: 15 }, (_, i) => `chords-${i + 14}`)],
   [6, ['chords-29', 'chords-30']],
+  [7, ['licks-13']],
 ];
 
 /** A starter item as shipped, by id (used to add new starter items to existing libraries). */

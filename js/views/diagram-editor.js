@@ -7,7 +7,7 @@ import {
   ROOTS, SCALES, ARPEGGIOS, pretty, positionLabel, normaliseDiagram, describeDiagram, suggestDiagram,
   chordTokens, chordShape,
 } from '../music.js';
-import { cleanChart, strumCounts } from '../notation.js';
+import { cleanChart, strumCounts, parseTab, parseRhythm } from '../notation.js';
 import { renderDiagram } from '../diagrams.js';
 
 const MAX = 6;
@@ -51,7 +51,7 @@ function textarea(value, props) {
 function draftFrom(d) {
   const draft = {
     type: 'scale', root: 'C', scale: 'major', quality: 'major', position: 'open', labels: 'notes',
-    chords: '', chart: '', tab: '', strum: 'D-DU-UDU', accents: [],
+    chords: '', chart: '', tab: '', rhythm: '', strum: 'D-DU-UDU', accents: [],
   };
   if (!d) return draft;
   draft.type = d.type;
@@ -60,7 +60,7 @@ function draftFrom(d) {
   if (d.type === 'arpeggio') draft.quality = d.quality;
   if (d.type === 'chords') draft.chords = d.chords.join(' ');
   if (d.type === 'progression') draft.chart = d.text;
-  if (d.type === 'tab') draft.tab = d.tab;
+  if (d.type === 'tab') Object.assign(draft, { tab: d.tab, rhythm: d.rhythm || '' });
   if (d.type === 'strum') Object.assign(draft, { strum: d.pattern, accents: [...(d.accents || [])] });
   return draft;
 }
@@ -81,7 +81,7 @@ export function diagramEditor(initial, getText) {
     switch (draft.type) {
       case 'chords': return normaliseDiagram({ type: 'chords', chords: chordTokens(draft.chords) });
       case 'progression': return normaliseDiagram({ type: 'progression', text: draft.chart });
-      case 'tab': return normaliseDiagram({ type: 'tab', tab: draft.tab });
+      case 'tab': return normaliseDiagram({ type: 'tab', tab: draft.tab, rhythm: draft.rhythm });
       case 'strum': return normaliseDiagram({ type: 'strum', pattern: draft.strum, accents: draft.accents });
       default: {
         const position = draft.position === 'open' ? 'open' : Number(draft.position);
@@ -230,11 +230,31 @@ export function diagramEditor(initial, getText) {
         status.textContent = ok || !area.value.trim() ? '' : 'No tab found yet: it needs six lines, high e on top.';
         status.classList.toggle('warn', !ok && !!area.value.trim());
       });
+      const rhythm = el('input', { class: 'input', type: 'text', autocomplete: 'off', spellcheck: 'false', autocapitalize: 'off', placeholder: 'q e e q q' });
+      rhythm.value = draft.rhythm;
+      const rhythmStatus = el('p', { class: 'field-hint' });
+      const checkRhythm = () => {
+        const notes = parseTab(draft.tab).length;
+        const values = draft.rhythm.replace(/\|/g, ' ').trim().split(/\s+/).filter(Boolean).length;
+        const bad = !!draft.rhythm.trim() && notes > 0 && !parseRhythm(draft.rhythm, notes);
+        rhythmStatus.textContent = bad ? `The rhythm needs one value per note: ${values} for ${notes} notes, or a letter it doesn't know.` : '';
+        rhythmStatus.classList.toggle('warn', bad);
+      };
+      rhythm.addEventListener('input', () => {
+        draft.rhythm = rhythm.value;
+        refreshPreview();
+        checkRhythm();
+      });
+      area.addEventListener('input', checkRhythm);
       fields.push(
         el('label', { class: 'field diagram-field' }, el('span', { class: 'field-label', text: 'Tab' }), area),
         el('p', { class: 'field-hint', text: 'Six lines, high e on top. h hammer-on, p pull-off, / and \\ slides, 7b9 bend, 7b9r7 bend and release, ~ vibrato.' }),
         status,
+        el('label', { class: 'field diagram-field' }, el('span', { class: 'field-label', text: 'Rhythm (optional)' }), rhythm),
+        el('p', { class: 'field-hint', text: 'One per note, drawn under the tab: w whole, h half, q quarter, e eighth, s sixteenth; add . for dotted.' }),
+        rhythmStatus,
       );
+      checkRhythm();
       return finish();
     }
 

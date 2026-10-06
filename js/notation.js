@@ -100,6 +100,32 @@ export function serialiseTab(events) {
   return rows.map((row, r) => `${TAB_LABELS[r]}|${row}|`).join('\n');
 }
 
+// ------------------------------------------------------------------ tab rhythm
+
+const RHYTHM_BEATS = { w: 4, h: 2, q: 1, e: 0.5, s: 0.25 };
+
+/**
+ * An optional rhythm for a tab: one value per note, "w h q e s" (whole to
+ * sixteenth) with "." for dotted, e.g. "q e e q | e e q". Bar lines are
+ * ignored (the tab has its own). Returns [{ value, dotted, beats }], or null
+ * if it isn't a rhythm or the count doesn't match `count` notes.
+ */
+export function parseRhythm(text, count) {
+  const tokens = String(text || '').replace(/\|/g, ' ').trim().split(/\s+/).filter(Boolean);
+  if (!tokens.length || tokens.length !== count || !tokens.every((t) => /^[whqes]\.?$/i.test(t))) return null;
+  return tokens.map((t) => {
+    const value = t[0].toLowerCase();
+    const dotted = t.length === 2;
+    return { value, dotted, beats: RHYTHM_BEATS[value] * (dotted ? 1.5 : 1) };
+  });
+}
+
+/** The canonical rhythm text ("q e e q"), or '' when it doesn't fit the tab. */
+export function normaliseRhythm(text, count) {
+  const list = parseRhythm(text, count);
+  return list ? list.map((r) => r.value + (r.dotted ? '.' : '')).join(' ') : '';
+}
+
 const FLAT_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
 const BLACK_KEYS = new Set([1, 3, 6, 8, 10]);
 

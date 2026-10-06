@@ -627,6 +627,9 @@ h1, h2, h3, p { margin: 0; }
 .tab-slur, .tab-bend { fill: none; stroke: var(--text-2); stroke-width: 1.2; }
 .tab-slide { stroke: var(--text-2); stroke-width: 1.5; stroke-linecap: round; }
 .tab-arrow { fill: var(--text-2); }
+.tab-stem { stroke: var(--text-2); stroke-width: 1.2; }
+.tab-flag { fill: none; stroke: var(--text-2); stroke-width: 1.4; stroke-linecap: round; }
+.tab-beam, .tab-dot { fill: var(--text-2); }
 
 /* Chord charts (songs): section labels on the left, chords flowing on the right. */
 .diagram-progression { width: 100%; max-width: 36rem; margin: 0 auto; text-align: left; }

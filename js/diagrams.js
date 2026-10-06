@@ -8,7 +8,7 @@ import {
   PROGRESSION_KEYS, numeralBars, numeralChord, prettyNumeral,
 } from './music.js';
 import {
-  parseTab, tabNoteNames, readChart, isChordSymbol, strumCounts, strumSubdivision,
+  parseTab, parseRhythm, tabNoteNames, readChart, isChordSymbol, strumCounts, strumSubdivision,
 } from './notation.js';
 
 const plain = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9#♯♭]+/g, ' ').trim();
@@ -218,27 +218,56 @@ export function chordBox(shape) {
 
 const BEND_WORDS = { 1: '½', 2: 'full', 3: '1½', 4: '2' };
 
-/** A lick as tab: six lines, high e on top, wrapped into rows of up to eight notes. */
+/** A lick as tab: six lines, high e on top, wrapped into rows of up to eight notes (at bar lines when it has them). */
 function tabDiagram(d) {
   const events = parseTab(d.tab);
   if (!events.length) return null;
-  const rowCount = Math.ceil(events.length / 8);
-  const per = Math.ceil(events.length / rowCount);
+  const rhythm = parseRhythm(d.rhythm, events.length);
+  // Where each note falls in its bar, in beats, so eighths in one beat share a beam.
+  let pos = 0;
+  const beats = events.map((ev, k) => {
+    if (ev.bar) pos = 0;
+    const at = pos;
+    pos += rhythm ? rhythm[k].beats : 1;
+    return at;
+  });
+  const rows = tabRows(events);
+  const per = Math.max(...rows.map(([a, b]) => b - a));
   const names = tabNoteNames(events);
-  const systems = [];
-  for (let k = 0; k < events.length; k += per) systems.push(tabSystem(events.slice(k, k + per), per, k === 0));
+  const systems = rows.map(([a, b]) => tabSystem(events.slice(a, b), per, a === 0,
+    rhythm && rhythm.slice(a, b).map((r, i) => ({ ...r, at: beats[a + i] }))));
   return el('figure', { class: 'diagram diagram-tab', role: 'img', 'aria-label': `Tab, ${events.length} notes: ${names.map(pretty).join(', ')}` },
     events.length <= 16 ? el('figcaption', { class: 'diagram-title' }, el('span', { class: 'diagram-notes', text: names.map(pretty).join(' ') })) : null,
     systems);
 }
 
-function tabSystem(events, per, first) {
+/** [start, end) of each row: whole bars, packed up to eight notes; otherwise even rows of up to eight. */
+function tabRows(events) {
+  const bars = [];
+  events.forEach((ev, k) => { if (k === 0 || ev.bar) bars.push([k, k]); bars[bars.length - 1][1] = k + 1; });
+  if (bars.length > 1 && bars.every(([a, b]) => b - a <= 8)) {
+    const rows = [];
+    for (const [a, b] of bars) {
+      const last = rows[rows.length - 1];
+      if (last && b - last[0] <= 8) last[1] = b;
+      else rows.push([a, b]);
+    }
+    return rows;
+  }
+  const rowCount = Math.ceil(events.length / 8);
+  const per = Math.ceil(events.length / rowCount);
+  const rows = [];
+  for (let k = 0; k < events.length; k += per) rows.push([k, Math.min(k + per, events.length)]);
+  return rows;
+}
+
+function tabSystem(events, per, first, rhythm) {
   const col = 34;
   const left = 24;
   const top = 26;
   const gap = 17;
   const W = left + 14 + per * col;
-  const H = top + gap * 5 + 10;
+  const H = top + gap * 5 + (rhythm ? 32 : 10);
   const x = (k) => left + 16 + k * col;
   const y = (string) => top + (5 - string) * gap;
   // Sized by its length, so fret numbers read the same size in every lick.
@@ -248,11 +277,18 @@ function tabSystem(events, per, first) {
     g.append(svg('text', { class: 'tab-label', x: 8, y: y(s) + 4, 'text-anchor': 'middle', text: STRING_NAMES[s] }));
   }
   g.append(svg('line', { class: first ? 'tab-start' : 'tab-bar', x1: left, x2: left, y1: y(5), y2: y(0) }));
+  if (rhythm) tabRhythm(g, rhythm, x, y(0));
   events.forEach((ev, k) => {
-    if (ev.bar && k > 0) g.append(svg('line', { class: 'tab-bar', x1: x(k) - col / 2, x2: x(k) - col / 2, y1: y(5), y2: y(0) }));
+    if (ev.bar && k > 0) {
+      // Clear of a bend arrow on the note before.
+      const bx = x(k) - col / 2 + (events[k - 1].notes.some((n) => n.bend != null) ? 5 : 0);
+      g.append(svg('line', { class: 'tab-bar', x1: bx, x2: bx, y1: y(5), y2: y(0) }));
+    }
     for (const n of ev.notes) {
       const cx = x(k);
       const cy = y(n.string);
+      // A slide into the first note of a row comes from nowhere: a short stroke before it.
+      if (n.tech === '/' && k === 0) g.append(svg('line', { class: 'tab-slide', x1: cx - 13, x2: cx - 8, y1: cy + 4, y2: cy - 3 }));
       if (n.tech && k > 0) {
         const px = x(k - 1);
         if (n.tech === '/' || n.tech === '\\') {
@@ -274,6 +310,50 @@ function tabSystem(events, per, first) {
     }
   });
   return g;
+}
+
+/** Rhythm under the tab, as in printed tab: stems, with eighths and sixteenths in one beat beamed together. */
+function tabRhythm(g, rhythm, x, bottom) {
+  const y1 = bottom + 10;
+  const y2 = bottom + 28;
+  const beamed = (r) => r.value === 'e' || r.value === 's';
+  rhythm.forEach((r, k) => {
+    if (r.value === 'w') return;
+    g.append(svg('line', { class: 'tab-stem', x1: x(k), x2: x(k), y1: r.value === 'h' ? y1 + 9 : y1, y2 }));
+    if (r.dotted) g.append(svg('circle', { class: 'tab-dot', cx: x(k) + 5, cy: y2 - 3, r: 1.6 }));
+  });
+  // Group beamable notes that share a beat.
+  const groups = [];
+  rhythm.forEach((r, k) => {
+    const last = groups[groups.length - 1];
+    if (!beamed(r)) return;
+    if (last && last[last.length - 1] === k - 1 && Math.floor(rhythm[k - 1].at) === Math.floor(r.at)) last.push(k);
+    else groups.push([k]);
+  });
+  for (const group of groups) {
+    if (group.length === 1) {
+      const k = group[0];
+      const flags = rhythm[k].value === 's' ? 2 : 1;
+      for (let f = 0; f < flags; f++) {
+        g.append(svg('path', { class: 'tab-flag', d: `M${x(k)} ${y2 - f * 5} q 5 -3 8 -9` }));
+      }
+      continue;
+    }
+    const a = group[0];
+    const b = group[group.length - 1];
+    g.append(svg('rect', { class: 'tab-beam', x: x(a), y: y2 - 3, width: x(b) - x(a), height: 3 }));
+    // A second beam between neighbouring sixteenths, or a stub on a lone one.
+    group.forEach((k, i) => {
+      if (rhythm[k].value !== 's') return;
+      const next = group[i + 1];
+      if (next != null && rhythm[next].value === 's') {
+        g.append(svg('rect', { class: 'tab-beam', x: x(k), y: y2 - 8, width: x(next) - x(k), height: 3 }));
+      } else if (!(i > 0 && rhythm[group[i - 1]].value === 's')) {
+        const dir = i === group.length - 1 ? -1 : 1;
+        g.append(svg('rect', { class: 'tab-beam', x: dir > 0 ? x(k) : x(k) - 8, y: y2 - 8, width: 8, height: 3 }));
+      }
+    });
+  }
 }
 
 // ------------------------------------------------------------------ chord charts (songs)

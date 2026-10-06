@@ -5,6 +5,7 @@
 import { el, svg } from './util.js';
 import {
   scaleTones, arpeggioTones, fretboardNotes, chordShape, describeDiagram, pretty, STRING_NAMES, runNotes, runWindow,
+  PROGRESSION_KEYS, numeralBars, numeralChord, prettyNumeral,
 } from './music.js';
 import {
   parseTab, tabNoteNames, readChart, isChordSymbol, strumCounts, strumSubdivision,
@@ -23,6 +24,7 @@ export function renderDiagram(d, itemText = '', { upright = false } = {}) {
   if (d.type === 'run') return runDiagram(d, upright);
   if (d.type === 'tab') return tabDiagram(d);
   if (d.type === 'progression') return progressionDiagram(d);
+  if (d.type === 'numbers') return numbersDiagram(d);
   if (d.type === 'strum') return strumDiagram(d);
   const toneList = d.type === 'scale' ? scaleTones(d.root, d.scale) : arpeggioTones(d.root, d.quality);
   if (!toneList.length) return null;
@@ -300,6 +302,50 @@ function progressionDiagram(d) {
         el('span', { class: 'prog-label', text: s.label }),
         el('div', { class: 'prog-rows' }, s.rows.map((row) => el('div', { class: 'prog-row' }, row.map(token))))))),
     boxes.length ? el('div', { class: 'chord-row prog-boxes' }, boxes) : null);
+}
+
+// ------------------------------------------------------------------ progressions by number
+
+// The key last picked on any progressions diagram, so every one opens in it.
+const KEY_STORE = 'timebox-progression-key';
+function savedKey() {
+  try { return localStorage.getItem(KEY_STORE); } catch { return null; }
+}
+function saveKey(key) {
+  try { localStorage.setItem(KEY_STORE, key); } catch { /* private mode: the menu still works */ }
+}
+
+/**
+ * Progressions written in numbers, with the chords for the key picked from the
+ * menu under each number, and a chord box for every chord they use.
+ */
+function numbersDiagram(d) {
+  let key = PROGRESSION_KEYS.includes(savedKey()) ? savedKey() : d.key;
+  const menu = el('select', {
+    class: 'input numbers-key-select', 'aria-label': 'Key',
+    onchange: (e) => { key = e.target.value; saveKey(key); draw(); },
+  }, PROGRESSION_KEYS.map((k) => el('option', { value: k, selected: k === key }, pretty(k))));
+  const list = el('ol', { class: 'numbers-list' });
+  const boxes = el('div', { class: 'chord-row prog-boxes' });
+
+  function draw() {
+    list.replaceChildren(...d.progressions.map((p) => el('li', { class: 'numbers-prog' },
+      p.name ? el('span', { class: 'numbers-name', text: p.name }) : null,
+      el('div', { class: 'numbers-bars' }, numeralBars(p.bars).map((bar) => el('span', { class: 'numbers-bar' },
+        bar.map((t) => el('span', { class: 'numbers-step' },
+          el('span', { class: 'numbers-numeral', text: prettyNumeral(t) }),
+          el('span', { class: 'numbers-chord', text: pretty(numeralChord(key, t)) })))))))));
+    const seen = new Set();
+    boxes.replaceChildren(...d.progressions.flatMap((p) => numeralBars(p.bars).flat())
+      .map((t) => chordShape(numeralChord(key, t)))
+      .filter((shape) => shape && !seen.has(shape.name) && seen.add(shape.name))
+      .slice(0, 12)
+      .map(chordBox));
+  }
+  draw();
+  return el('figure', { class: 'diagram diagram-numbers' },
+    el('label', { class: 'numbers-key' }, el('span', { class: 'numbers-key-label', text: 'Key of' }), menu),
+    list, boxes);
 }
 
 // ------------------------------------------------------------------ strumming patterns

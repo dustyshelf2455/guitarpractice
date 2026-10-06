@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   scaleTones, arpeggioTones, fretboardNotes, chordShape, parseChord, chordTokens, runNotes, runWindow,
   suggestDiagram, normaliseDiagram, describeDiagram, pretty, STRING_NAMES,
+  numeralChord, numeralBars, parseNumeral, PROGRESSION_KEYS,
 } from '../js/music.js';
 import { defaultLibrary, STARTER_DIAGRAMS, SCHEMA_VERSION } from '../js/defaults.js';
 import { migrate, parseFile } from '../js/transfer.js';
@@ -224,9 +225,41 @@ test('written-out voicings: frets, fingers, inversion, and only chord tones', ()
 
 test('v4 -> v5 migration adds the triad and seventh exercises at 80 bpm', () => {
   const lib = defaultLibrary();
-  lib.items = lib.items.filter((i) => !/^chords-(1[4-9]|2\d)$/.test(i.id));
+  lib.items = lib.items.filter((i) => !/^chords-(1[4-9]|2[0-8])$/.test(i.id));
   const out = migrate({ schema_version: 4, library: lib, settings: {}, sessions: [], plans: [] });
-  const added = out.library.items.filter((i) => /^chords-(1[4-9]|2\d)$/.test(i.id));
+  const added = out.library.items.filter((i) => /^chords-(1[4-9]|2[0-8])$/.test(i.id));
   assert.equal(added.length, 15);
   assert.ok(added.every((i) => /\b80 bpm$/.test(i.text) && i.diagrams.length && i.notes));
+});
+
+test('progressions by number: numerals become chords in any key', () => {
+  const inKey = (key, text) => numeralBars(text).flat().map((t) => numeralChord(key, t)).join(' ');
+  assert.equal(inKey('G', 'I | vi | IV | V7'), 'G Em C D7');
+  assert.equal(inKey('C', 'I | VI7 | II7 | V7 | III7'), 'C A7 D7 G7 E7');
+  assert.equal(inKey('A', 'I | bVII | IV | iv'), 'A G D Dm');
+  assert.equal(inKey('A', 'i | bVII | bVI | V7'), 'Am G F E7');
+  assert.equal(inKey('F', 'I7 | IV7 | ii | iii'), 'F7 Bb7 Gm Am');
+  assert.equal(inKey('Db', 'bVII | bVI'), 'B A', 'no Cb or Bbb');
+  assert.deepEqual(numeralBars('I | IV V7 | nonsense | I'), [['I'], ['IV', 'V7'], ['I']]);
+  assert.equal(parseNumeral('Q'), null);
+  // Every chord in every starter progression, in every key, has a chord box.
+  for (const list of Object.values(STARTER_DIAGRAMS)) {
+    for (const d of list.filter((x) => x.type === 'numbers')) {
+      assert.deepEqual(normaliseDiagram(d), d, 'starter progressions are stored clean');
+      for (const key of PROGRESSION_KEYS) {
+        for (const p of d.progressions) for (const t of numeralBars(p.bars).flat()) assert.ok(chordShape(numeralChord(key, t)), `${t} in ${key}`);
+      }
+    }
+  }
+  assert.equal(normaliseDiagram({ type: 'numbers', key: 'H', progressions: [{ name: 'x', bars: 'I | V' }] }).key, 'G');
+  assert.equal(normaliseDiagram({ type: 'numbers', key: 'G', progressions: [{ bars: 'nope' }] }), null);
+});
+
+test('v5 -> v6 migration adds the two progression exercises', () => {
+  const lib = defaultLibrary();
+  lib.items = lib.items.filter((i) => !['chords-29', 'chords-30'].includes(i.id));
+  const out = migrate({ schema_version: 5, library: lib, settings: {}, sessions: [], plans: [] });
+  const added = out.library.items.filter((i) => ['chords-29', 'chords-30'].includes(i.id));
+  assert.equal(added.length, 2);
+  assert.ok(added.every((i) => i.subtype_id === 'chords' && i.diagrams[0].progressions.length === 5 && i.notes));
 });

@@ -115,7 +115,8 @@ export function diagramEditor(initial, getText) {
         el('div', { class: 'diagram-item-head' },
           el('span', { class: 'diagram-item-title', text: describeDiagram(d) }),
           el('span', { class: 'diagram-item-actions' },
-            building ? null : el('button', {
+            // Progressions by number come with the starter items; there's no builder for them.
+            building || d.type === 'numbers' ? null : el('button', {
               class: 'text-btn', type: 'button', 'aria-label': `Edit ${describeDiagram(d)}`, onclick: () => open(i),
             }, 'Edit'),
             el('button', {

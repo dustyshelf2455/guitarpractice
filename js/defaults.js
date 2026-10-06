@@ -3,7 +3,7 @@
 
 import { parseTab, serialiseTab } from './notation.js';
 
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
 export const SLOT_COUNT = 12;
 
 const AREAS = [
@@ -80,6 +80,9 @@ const LIBRARY = {
     'Barre sevenths: G7, C7, D7, 80 bpm',
     'G7, C7, D7 on the top 4 strings, 80 bpm',
     'G7, C7 and D7 arpeggios, 80 bpm',
+    // Progressions by number, in whatever key is picked on the block.
+    'Five progressions to know, set 1, 80 bpm',
+    'Five progressions to know, set 2, 80 bpm',
   ],
   songs: [
     'Lefty - Long Black Veil',
@@ -145,6 +148,8 @@ const run = (notes, from, to) => [{ type: 'run', notes }, { type: 'chords', chor
 // A strumming pattern: one character per slot (D down, U up, X muted chuck, - miss).
 const strum = (pattern, accents) => ({ type: 'strum', pattern, ...(accents ? { accents } : {}) });
 const chart = (text) => [{ type: 'progression', text }];
+// Progressions by number: [name, bars], bars split by '|'; the block has a menu to pick the key.
+const numbers = (...list) => [{ type: 'numbers', key: 'G', progressions: list.map(([name, bars]) => ({ name, bars })) }];
 // A lick: tab plus the chord(s) it sits over.
 const lick = (tab, ...chordList) => [
   { type: 'tab', tab: serialiseTab(parseTab(tab)) },
@@ -191,6 +196,20 @@ export const STARTER_DIAGRAMS = {
   'chords-26': chords('G7:E', 'C7:A', 'D7:A'),
   'chords-27': chords('G7=xx5767~001324', 'C7=xx5556~001112', 'D7=xx4535~002314'),
   'chords-28': [...arpeggio('G', '7', 'open', 'intervals'), ...arpeggio('C', '7', 'open', 'intervals'), ...arpeggio('D', '7', 'open', 'intervals')],
+  'chords-29': numbers(
+    ['12-bar blues, quick change', 'I7 | IV7 | I7 | I7 | IV7 | IV7 | I7 | I7 | V7 | IV7 | I7 | V7'],
+    ['I-vi-IV-V, the fifties ballad', 'I | vi | IV | V'],
+    ['I-V-vi-IV', 'I | V | vi | IV'],
+    ['Freight Train: the III7 detour', 'I | I | V7 | V7 | V7 | V7 | I | I | III7 | III7 | IV | IV | I | V7 | I | I'],
+    ['Mixolydian ♭VII', 'I | bVII | IV | I'],
+  ),
+  'chords-30': numbers(
+    ['8-bar blues', 'I7 | V7 | IV7 | IV7 | I7 | V7 | I7 IV7 | I7 V7'],
+    ['I-vi-ii-V turnaround', 'I | vi | ii | V7'],
+    ['II7 to V7', 'I | I | II7 | II7 | V7 | V7 | I | I'],
+    ['Minor iv, gospel and country ballads', 'I | I7 | IV | iv | I | V7 | I | I'],
+    ['Minor key walk-down', 'i | bVII | bVI | V7'],
+  ),
   'strumming-1': [strum('DDDD')],
   'strumming-2': [strum('D-DU-UDU')],
   'strumming-3': [strum('DUDUDUDU')],
@@ -311,6 +330,8 @@ export const STARTER_NOTES = {
   'chords-26': 'G7 with the E-shape barre at the 3rd fret, C7 with the A shape at the 3rd fret, and D7 with the A shape at the 5th. Closed shapes let you chop: squeeze on beats 2 and 4 and release so the chord stops short. One bar each at 80 bpm.',
   'chords-27': 'Four-note sevenths on the D, G, B and high e strings, all around the 5th fret, so the changes barely move. Two bars each at 80 bpm: G7-C7-G7-D7-G7. Good for a lighter rhythm sound or backing a fiddle.',
   'chords-28': 'Play each dominant seventh arpeggio up and down in quarter notes at 80 bpm: 1, 3, 5, ♭7. Listen for the ♭7, the note that makes it want to move on. Then do two notes per click.',
+  'chords-29': 'Pick a key from the menu, then about a minute per progression at 80 bpm, one strum or boom-chuck per beat, four beats to a bar. Say the numbers out loud as you change. The quick change goes to IV in bar 2; Freight Train (Elizabeth Cotten) takes the III7, a major chord on the 3rd, back to IV; the ♭VII is the borrowed chord in Old Joe Clark. Once a progression is easy, change the key.',
+  'chords-30': 'Pick a key, then about a minute per progression at 80 bpm, four beats to a bar; a bar with two numbers gets two beats each. The II7 is a major chord on the 2nd that pushes to the V. In the minor iv, the IV turns minor for a bar before home. The last one is in minor: key of A means A minor (Am-G-F-E7). Say the numbers as you play.',
   'strumming-7': 'Make up a strumming pattern on the spot: keep your hand swinging down and up in time, and choose which strums hit the strings. Then play a song you know with it (G, C and D cover plenty) and keep it going for the whole five minutes. Like it? Add it to this item as a strumming pattern.',
 };
 
@@ -324,6 +345,7 @@ export const ADDED_ITEMS = [
   [3, ['chords-8', 'chords-9', 'chords-10', 'chords-11', 'chords-12', 'chords-13']],
   [4, ['strumming-7', ...LICK_IDS]],
   [5, Array.from({ length: 15 }, (_, i) => `chords-${i + 14}`)],
+  [6, ['chords-29', 'chords-30']],
 ];
 
 /** A starter item as shipped, by id (used to add new starter items to existing libraries). */

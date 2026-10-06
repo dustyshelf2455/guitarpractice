@@ -481,6 +481,7 @@ h1, h2, h3, p { margin: 0; }
 .focus .chord-name { font-size: 1.375rem; }
 .focus .prog-chord { font-size: 1.75rem; }
 .focus .prog-label { font-size: 0.8125rem; }
+.focus .numbers-chord { font-size: 1.5rem; }
 .focus .diagram-strum .strum { max-width: 34rem; }
 
 /* Upright neck in portrait, across in landscape (focus view only). */
@@ -646,6 +647,21 @@ h1, h2, h3, p { margin: 0; }
 .prog-text { font-size: 0.9375rem; font-style: italic; color: var(--text-2); }
 .prog-boxes { margin-top: 1.125rem; }
 .diagram-progression .prog-boxes { flex-wrap: wrap; row-gap: 0.5rem; }
+
+/* Progressions by number: a key menu, then each progression as bars of numeral over chord. */
+.diagram-numbers { width: 100%; max-width: 36rem; margin: 0 auto; text-align: left; }
+.numbers-key { display: flex; align-items: center; justify-content: center; gap: 0.625rem; margin-bottom: 0.875rem; }
+.numbers-key-label { font-size: 0.9375rem; color: var(--text-2); white-space: nowrap; }
+.numbers-key select.numbers-key-select { flex: 0 0 auto; width: auto; min-width: 6rem; font-size: 1.0625rem; font-weight: 700; }
+.numbers-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.875rem; }
+.numbers-name { display: block; margin-bottom: 0.25rem; font-size: 0.8125rem; font-weight: 650; color: var(--text-2); }
+.numbers-bars { display: flex; flex-wrap: wrap; gap: 0.375rem 0; }
+.numbers-bar { display: flex; gap: 0.625rem; padding: 0 0.625rem; border-left: 1px solid var(--border-strong); }
+.numbers-bar:last-child { border-right: 1px solid var(--border-strong); }
+.numbers-step { display: flex; flex-direction: column; align-items: center; min-width: 1.75rem; }
+.numbers-numeral { font-size: 0.875rem; font-weight: 650; color: var(--text-2); line-height: 1.2; }
+.numbers-chord { font-size: 1.25rem; font-weight: 700; color: var(--text); line-height: 1.25; }
+.diagram-numbers .prog-boxes { flex-wrap: wrap; row-gap: 0.5rem; }
 
 /* Strumming: arrows per slot, the count underneath; the metronome lights each in turn. */
 .diagram-strum .strum { display: block; width: 100%; height: auto; max-width: 30rem; margin: 0 auto; }

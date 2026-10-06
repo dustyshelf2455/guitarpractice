@@ -7,6 +7,8 @@
 //   { type: 'chords',   chords: ['C', 'G', 'Am', 'F:E'] }   ':E' / ':A' asks for that barre shape,
 //                                                         'G=xxx433' a written-out voicing (triads)
 //   { type: 'run',      notes: [[string, fret], ...] }      a bass run / walk-up, in playing order
+//   { type: 'numbers',  key: 'G', progressions: [{ name, bars: 'I | vi | IV | V7' }] }
+//                                                         progressions by number, shown in a key you pick
 
 import { parseTab, serialiseTab, cleanChart, readChart, normaliseStrum, readStrum } from './notation.js';
 
@@ -281,6 +283,46 @@ function customVoicing(token) {
   };
 }
 
+// ------------------------------------------------------------------ progressions by number
+
+// Keys offered for 'numbers' diagrams, spelled the way guitarists read them.
+export const PROGRESSION_KEYS = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
+const NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+
+/** 'bVII', 'ii', 'V7', 'IVmaj7' -> { acc, degree, minor, seventh } or null. Lower case is minor. */
+export function parseNumeral(token) {
+  const m = /^([b#♭♯]?)(VII|VI|IV|V|III|II|I|vii|vi|iv|v|iii|ii|i)(7|maj7)?$/.exec(String(token || '').trim());
+  if (!m) return null;
+  return {
+    acc: m[1] === 'b' || m[1] === '♭' ? -1 : m[1] ? 1 : 0,
+    degree: NUMERALS.indexOf(m[2].toUpperCase()),
+    minor: m[2] === m[2].toLowerCase(),
+    seventh: m[3] || '',
+  };
+}
+
+/** The chord a numeral stands for in a major key: numeralChord('G', 'VI7') -> 'E7'. */
+export function numeralChord(key, token) {
+  const n = parseNumeral(token);
+  if (!n || !parseNote(key)) return null;
+  const spelled = spell(key, n.degree, (MAJOR_STEPS[n.degree] + n.acc + 12) % 12);
+  // Cb, Fbb and friends read as B, Eb...: no guitarist names a chord that way.
+  const note = /^(Cb|Fb|E#|B#)$|bb|##/.test(spelled.name) ? PROGRESSION_KEYS[spelled.pc] : spelled.name;
+  return note + (n.minor ? 'm' : '') + n.seventh;
+}
+
+/** Numerals for display: 'bVII' -> '♭VII'. */
+export function prettyNumeral(token) {
+  return String(token).replace(/^b/, '♭').replace(/^#/, '♯');
+}
+
+/** 'I | IV V7 | I' -> [['I'], ['IV', 'V7'], ['I']]: bars, each a list of numerals. */
+export function numeralBars(text) {
+  return String(text || '').split('|')
+    .map((bar) => bar.trim().split(/\s+/).filter((t) => parseNumeral(t)))
+    .filter((bar) => bar.length);
+}
+
 /** Split "C, G to Am - F" into chord tokens. */
 export function chordTokens(text) {
   return String(text || '')
@@ -342,6 +384,14 @@ export function normaliseDiagram(d) {
     const text = cleanChart(d.text.slice(0, 20000));
     return readChart(text).chords.length ? { type: 'progression', text } : null;
   }
+  if (d.type === 'numbers' && Array.isArray(d.progressions)) {
+    const key = PROGRESSION_KEYS.find((k) => k === d.key) || 'G';
+    const progressions = d.progressions
+      .filter((p) => p && typeof p.bars === 'string' && numeralBars(p.bars).length)
+      .map((p) => ({ name: String(p.name || '').slice(0, 80), bars: numeralBars(p.bars).map((bar) => bar.join(' ')).join(' | ') }))
+      .slice(0, 8);
+    return progressions.length ? { type: 'numbers', key, progressions } : null;
+  }
   if (d.type === 'strum') {
     const pattern = normaliseStrum(d.pattern);
     if (!pattern) return null;
@@ -368,6 +418,7 @@ export function describeDiagram(d) {
   if (d.type === 'run') return `Bass run: ${runNotes(d).map((n) => pretty(n.name)).join(' → ')}`;
   if (d.type === 'tab') return `Tab: ${parseTab(d.tab).length} notes`;
   if (d.type === 'progression') return `Chord chart: ${readChart(d.text).chords.map(pretty).join(', ')}`;
+  if (d.type === 'numbers') return `Progressions: ${d.progressions.map((p) => p.name || numeralBars(p.bars).flat().map(prettyNumeral).join('-')).join(', ')}`;
   if (d.type === 'strum') return `Strumming: ${d.pattern.split('').map((c) => ({ D: '↓', U: '↑', X: '×', '-': '·' })[c]).join(' ')}`;
   return '';
 }

@@ -171,6 +171,7 @@
 [data-skin="lounge"] .rating-item,
 [data-skin="lounge"] .chord-name,
 [data-skin="lounge"] .prog-chord,
+[data-skin="lounge"] .numbers-chord,
 [data-skin="lounge"] .done-title {
   font-family: var(--font-display);
   font-variation-settings: 'SOFT' 100, 'WONK' 0;
@@ -277,6 +278,8 @@
 [data-skin="lounge"] .board-nut { stroke: var(--text-2); }
 [data-skin="lounge"] .chord-name { font-weight: 600; }
 [data-skin="lounge"] .prog-chord { font-weight: 600; }
+[data-skin="lounge"] .numbers-chord { font-weight: 600; }
+[data-skin="lounge"] .numbers-name { font-family: var(--font-display); font-style: italic; font-weight: 500; font-size: 1rem; }
 [data-skin="lounge"] .prog-label { font-family: var(--font-display); font-style: italic; font-weight: 500; letter-spacing: 0; text-transform: none; font-size: 1rem; }
 [data-skin="lounge"] .prog-meta-item { border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
 [data-skin="lounge"] .diagram-title { font-family: var(--font-display); font-style: italic; font-weight: 500; }

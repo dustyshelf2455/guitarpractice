@@ -194,3 +194,39 @@ test('v2 -> v3 migration adds the walk-ups to Chords and arpeggios, once', () =>
   noChords.items = noChords.items.filter((i) => i.subtype_id !== 'chords');
   assert.ok(!migrate({ schema_version: 2, library: noChords }).library.items.some((i) => i.id === 'chords-8'), 'skipped if the subtype is gone');
 });
+
+test('written-out voicings: frets, fingers, inversion, and only chord tones', () => {
+  const g = chordShape('G=xxx433~000211');
+  assert.equal(frets(g), 'xxx433');
+  assert.deepEqual(g.fingers, [0, 0, 0, 2, 1, 1]);
+  assert.equal(g.note, '1st inversion');
+  assert.equal(chordShape('G=x.x.x.12.12.10').note, 'root position');
+  assert.equal(chordShape('C=xxx010').note, '2nd inversion');
+  assert.equal(chordShape('G=xxx43'), null, 'six strings needed');
+  assert.equal(chordShape('Hm=xxx433'), null);
+  assert.deepEqual(normaliseDiagram({ type: 'chords', chords: ['D7=xx4535'] }), { type: 'chords', chords: ['D7=xx4535'] });
+  assert.match(describeDiagram({ type: 'chords', chords: ['G=xxx433'] }), /G \(1st inversion\)/);
+  // Every written-out starter voicing plays its chord's notes and nothing else.
+  const QUALITY = { '': 'major', m: 'minor', '7': '7' };
+  for (const list of Object.values(STARTER_DIAGRAMS)) {
+    for (const d of list) {
+      if (d.type !== 'chords') continue;
+      for (const tok of d.chords.filter((t) => t.includes('='))) {
+        const s = chordShape(tok);
+        const c = parseChord(tok.split('=')[0]);
+        const want = new Set(arpeggioTones(c.root, QUALITY[c.quality]).map((t) => t.pc));
+        const got = new Set(s.frets.map((f, i) => (f < 0 ? null : ([4, 9, 2, 7, 11, 4][i] + f) % 12)).filter((p) => p != null));
+        assert.deepEqual([...got].sort(), [...want].sort(), tok);
+      }
+    }
+  }
+});
+
+test('v4 -> v5 migration adds the triad and seventh exercises at 80 bpm', () => {
+  const lib = defaultLibrary();
+  lib.items = lib.items.filter((i) => !/^chords-(1[4-9]|2\d)$/.test(i.id));
+  const out = migrate({ schema_version: 4, library: lib, settings: {}, sessions: [], plans: [] });
+  const added = out.library.items.filter((i) => /^chords-(1[4-9]|2\d)$/.test(i.id));
+  assert.equal(added.length, 15);
+  assert.ok(added.every((i) => /\b80 bpm$/.test(i.text) && i.diagrams.length && i.notes));
+});

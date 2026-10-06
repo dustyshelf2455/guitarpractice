@@ -3,7 +3,7 @@
 
 import { parseTab, serialiseTab } from './notation.js';
 
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 export const SLOT_COUNT = 12;
 
 const AREAS = [
@@ -64,6 +64,22 @@ const LIBRARY = {
     'Walk-down D to G: D-C-B-A-G',
     'Walk-up D to G: D-E-F#-G',
     'Walk-ups in G-C-G-D-G, 70 bpm',
+    // Triads and seventh chords for country and bluegrass rhythm, all at 80 bpm.
+    'G triads up the neck, top 3 strings, 80 bpm',
+    'C triads up the neck, top 3 strings, 80 bpm',
+    'D triads up the neck, top 3 strings, 80 bpm',
+    'G-C-D triads, frets 2-5, 80 bpm',
+    'G-C-D triads, frets 5-9, 80 bpm',
+    'A-D-E triads, top 3 strings, 80 bpm',
+    'G-C-D triads, strings D-G-B, 80 bpm',
+    'G, C and D triad arpeggios, 80 bpm',
+    'Open sevenths in G: G7, C7, D7, 80 bpm',
+    'Key of E: E, A, B7, 80 bpm',
+    'Seven to one: D7-G, A7-D, E7-A, B7-E, 80 bpm',
+    'Salty Dog changes: G-E7-A7-D7, 80 bpm',
+    'Barre sevenths: G7, C7, D7, 80 bpm',
+    'G7, C7, D7 on the top 4 strings, 80 bpm',
+    'G7, C7 and D7 arpeggios, 80 bpm',
   ],
   songs: [
     'Lefty - Long Black Veil',
@@ -159,6 +175,22 @@ export const STARTER_DIAGRAMS = {
   'chords-11': run([[2, 0], [1, 3], [1, 2], [1, 0], [0, 3]], 'D', 'G'), // D C B A -> G
   'chords-12': run([[2, 0], [2, 2], [2, 4], [3, 0]], 'D', 'G'), // D E F# -> G
   'chords-13': chords('G', 'C', 'D'),
+  // Written-out voicings, low E to high e (see customVoicing in js/music.js).
+  'chords-14': chords('G=xxx433~000211', 'G=xxx787~000132', 'G=x.x.x.12.12.10~000231'),
+  'chords-15': chords('C=xxx010~000010', 'C=xxx553~000231', 'C=xxx988~000211'),
+  'chords-16': chords('D=xxx232~000132', 'D=xxx775~000231', 'D=x.x.x.11.10.10~000211'),
+  'chords-17': chords('G=xxx433~000211', 'C=xxx553~000231', 'D=xxx232~000132'),
+  'chords-18': chords('G=xxx787~000132', 'C=xxx988~000211', 'D=xxx775~000231'),
+  'chords-19': chords('A=xxx655~000211', 'D=xxx775~000231', 'E=xxx454~000132'),
+  'chords-20': chords('G=xx543x~003210', 'C=xx555x~001110', 'D=xx423x~003120'),
+  'chords-21': [...arpeggio('G', 'major', 'open', 'intervals'), ...arpeggio('C', 'major', 'open', 'intervals'), ...arpeggio('D', 'major', 'open', 'intervals')],
+  'chords-22': chords('G7', 'C7', 'D7'),
+  'chords-23': chords('E', 'A', 'B7'),
+  'chords-24': chords('D7', 'G', 'A7', 'D', 'E7', 'A', 'B7', 'E'),
+  'chords-25': chords('G', 'E7', 'A7', 'D7'),
+  'chords-26': chords('G7:E', 'C7:A', 'D7:A'),
+  'chords-27': chords('G7=xx5767~001324', 'C7=xx5556~001112', 'D7=xx4535~002314'),
+  'chords-28': [...arpeggio('G', '7', 'open', 'intervals'), ...arpeggio('C', '7', 'open', 'intervals'), ...arpeggio('D', '7', 'open', 'intervals')],
   'strumming-1': [strum('DDDD')],
   'strumming-2': [strum('D-DU-UDU')],
   'strumming-3': [strum('DUDUDUDU')],
@@ -264,6 +296,21 @@ export const STARTER_NOTES = {
   'licks-10': 'Country or rock, intermediate. Lay your index finger across fret 3 of the G and B strings and hammer the middle finger onto the G string, 4th fret: the bluesy minor third snaps into the major third. Pick both strings together, about 70 bpm over G.',
   'licks-11': 'Blues, intermediate. Check each bend\'s target first by fretting it (B string 8 = G, G string 7 = D), then bend to that pitch and release in time. Over a G7 vamp at 60–70 bpm. On an acoustic, half-step bends are fine.',
   'licks-12': 'Bluegrass, intermediate. Up the G major scale, then down through the chord tones. Strict alternate picking: down on the beat, up on the "and". Start at 60 bpm in eighth notes and work up.',
+  'chords-14': 'Three shapes of the same G chord on the G, B and high e strings, low to high up the neck. Pick each one as a 3-note arpeggio, then strum it four times, one bar each at 80 bpm, and slide to the next. Say which note is the root (G) in every shape. These small shapes are what a second guitar or mandolin-style rhythm plays over a band.',
+  'chords-15': 'The same idea in C: three shapes on the top three strings, open, 5th fret and 8th fret. One bar of quarter-note strums on each at 80 bpm, up the neck and back down. Mute the lower strings with the side of your picking hand.',
+  'chords-16': 'The same idea in D: the top of the open D chord, then 5th fret and 10th fret. One bar each at 80 bpm, up and back down. Find the D (the root) in each shape before you start.',
+  'chords-17': 'I, IV and V in G without moving your hand: G, C and D all sit between the 2nd and 5th frets. Two bars of each at 80 bpm, G-C-G-D-G. Notice how few fingers move between shapes; keep the ones that stay.',
+  'chords-18': 'G, C and D again, now between the 5th and 9th frets. Two bars each at 80 bpm, G-C-G-D-G. Then try mixing this set with the one at frets 2-5 so the chords climb as the song goes on.',
+  'chords-19': 'I, IV and V in A, the other big bluegrass key (Salty Dog, Ragtime Annie). All three shapes sit between the 4th and 7th frets. Two bars of each at 80 bpm: A-D-A-E-A.',
+  'chords-20': 'G, C and D on the middle three strings (D, G, B), between the 2nd and 5th frets. Mute the low E with your fretting thumb or a fingertip and skip the high e. One bar each at 80 bpm, then G-C-G-D-G.',
+  'chords-21': 'Play each triad up and down in quarter notes at 80 bpm: root, 3rd, 5th, then on to the next octave, using only the notes on the board. Say the interval as you play it. Once it\'s even, play two notes per click.',
+  'chords-22': 'The dominant seventh (♭7) gives country and bluegrass changes their pull. One bar of quarter-note strums on each at 80 bpm, G7-C7-G7-D7-G7. Keep the G7 shape close to G so you can switch between them in a song.',
+  'chords-23': 'The I, IV and V7 in E, a common key for country and blues singers. B7 is the tricky one: get all four fingers down together. Two bars each at 80 bpm: E-A-E-B7-E.',
+  'chords-24': 'Every dominant seventh wants to resolve to the chord a fourth above. Play each pair as one bar of the 7th, then one bar of where it goes, at 80 bpm: D7 to G, A7 to D, E7 to A, B7 to E.',
+  'chords-25': 'The ragtime progression behind Salty Dog Blues and lots of fiddle tunes: G, then a chain of sevenths that each lead to the next (E7, A7, D7) and home to G. Two bars each at 80 bpm, with a boom-chuck: bass note on 1 and 3, strum on 2 and 4.',
+  'chords-26': 'G7 with the E-shape barre at the 3rd fret, C7 with the A shape at the 3rd fret, and D7 with the A shape at the 5th. Closed shapes let you chop: squeeze on beats 2 and 4 and release so the chord stops short. One bar each at 80 bpm.',
+  'chords-27': 'Four-note sevenths on the D, G, B and high e strings, all around the 5th fret, so the changes barely move. Two bars each at 80 bpm: G7-C7-G7-D7-G7. Good for a lighter rhythm sound or backing a fiddle.',
+  'chords-28': 'Play each dominant seventh arpeggio up and down in quarter notes at 80 bpm: 1, 3, 5, ♭7. Listen for the ♭7, the note that makes it want to move on. Then do two notes per click.',
   'strumming-7': 'Make up a strumming pattern on the spot: keep your hand swinging down and up in time, and choose which strums hit the strings. Then play a song you know with it (G, C and D cover plenty) and keep it going for the whole five minutes. Like it? Add it to this item as a strumming pattern.',
 };
 
@@ -276,6 +323,7 @@ const STARTER_LINKS = {
 export const ADDED_ITEMS = [
   [3, ['chords-8', 'chords-9', 'chords-10', 'chords-11', 'chords-12', 'chords-13']],
   [4, ['strumming-7', ...LICK_IDS]],
+  [5, Array.from({ length: 15 }, (_, i) => `chords-${i + 14}`)],
 ];
 
 /** A starter item as shipped, by id (used to add new starter items to existing libraries). */

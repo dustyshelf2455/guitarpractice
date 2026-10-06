@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { App } from '../js/state.js';
+import { SCHEMA_VERSION } from '../js/defaults.js';
 import { memoryStore } from '../js/store.js';
 import { TILE_MS, sessionRemaining } from '../js/engine.js';
 import { buildExport, parseFile, planImport } from '../js/transfer.js';
@@ -419,7 +420,7 @@ test('an installed v1 app gets starter diagrams on upgrade, and keeps them', asy
   const app = new App(store, () => at(2026, 10, 4, 9));
   await app.load();
   assert.equal(app.item('chords-1').diagrams[0].chords.length, 5);
-  assert.equal(await store.get('meta', 'schema_version'), 4);
+  assert.equal(await store.get('meta', 'schema_version'), SCHEMA_VERSION);
   assert.equal(app.library.slots[11].subtype_id, 'licks', 'untouched slots get the Licks slot');
   assert.ok(app.item('chords-8'), 'walk-ups added');
   assert.equal((await store.get('meta', 'library')).items.find((i) => i.id === 'scales-1').diagrams.length, 1, 'migrated library saved');

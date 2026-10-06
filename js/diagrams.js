@@ -208,7 +208,8 @@ export function chordBox(shape) {
   return el('figure', { class: 'chord' },
     el('figcaption', { class: 'chord-name', text: pretty(shape.name) }),
     g,
-    shape.shape ? el('span', { class: 'chord-shape', text: `${shape.shape} shape` }) : null);
+    shape.shape ? el('span', { class: 'chord-shape', text: `${shape.shape} shape` })
+      : shape.note ? el('span', { class: 'chord-shape', text: shape.note }) : null);
 }
 
 // ------------------------------------------------------------------ tab (licks)

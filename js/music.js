@@ -4,7 +4,8 @@
 // Diagram data stored on a library item (item.diagrams is a list):
 //   { type: 'scale',    root: 'C', scale: 'major',  position: 'open' | 1..12, labels: 'notes' | 'intervals' }
 //   { type: 'arpeggio', root: 'C', quality: 'major', position: 'open' | 1..12, labels: 'notes' | 'intervals' }
-//   { type: 'chords',   chords: ['C', 'G', 'Am', 'F:E'] }   ':E' / ':A' asks for that barre shape
+//   { type: 'chords',   chords: ['C', 'G', 'Am', 'F:E'] }   ':E' / ':A' asks for that barre shape,
+//                                                         'G=xxx433' a written-out voicing (triads)
 //   { type: 'run',      notes: [[string, fret], ...] }      a bass run / walk-up, in playing order
 
 import { parseTab, serialiseTab, cleanChart, readChart, normaliseStrum, readStrum } from './notation.js';
@@ -222,6 +223,8 @@ function fromStrings(frets, fingers) {
  * Returns { name, frets, fingers, barre: { fret, from, to } | null, label } or null.
  */
 export function chordShape(token) {
+  const custom = customVoicing(token);
+  if (custom) return custom;
   const c = parseChord(token);
   if (!c) return null;
   const pc = parseNote(c.root).pc;
@@ -254,6 +257,27 @@ export function chordShape(token) {
     barre: tpl.barre ? { fret: r, from: tpl.barre[0], to: tpl.barre[1] } : null,
     label: c.shape ? `${c.name} · ${sh} shape` : c.name,
     shape: c.shape ? sh : null,
+  };
+}
+
+// A written-out voicing: 'G=xxx433' (low E to high e), or 'G=x.x.x.12.12.10' once a
+// fret reaches 10; '~xxx211' adds fingers. Used for triads and other small shapes.
+const INVERSIONS = { 0: 'root position', 3: '1st inversion', 4: '1st inversion', 7: '2nd inversion', 10: '3rd inversion', 11: '3rd inversion' };
+
+function customVoicing(token) {
+  const m = /^([A-G][#b♯♭]?[A-Za-z0-9Δ+\-]*)=([x\d.]+)(?:~([\d.]+))?$/.exec(String(token || '').trim());
+  if (!m) return null;
+  const c = parseChord(m[1]);
+  const split = (s) => (s.includes('.') ? s.split('.') : [...s]);
+  const frets = split(m[2]).map((f) => (f === 'x' ? -1 : Number(f)));
+  if (!c || c.shape || frets.length !== 6 || frets.some((f) => !Number.isInteger(f) || f > 17) || frets.every((f) => f < 0)) return null;
+  const fingers = m[3] ? split(m[3]).map(Number) : [];
+  const lowest = frets.findIndex((f) => f >= 0);
+  const bass = (TUNING[lowest] + frets[lowest] - parseNote(c.root).pc + 24) % 12;
+  return {
+    name: c.name, frets,
+    fingers: fingers.length === 6 && fingers.every((f) => Number.isInteger(f) && f >= 0 && f <= 4) ? fingers : [0, 0, 0, 0, 0, 0],
+    barre: null, label: c.name, shape: null, note: INVERSIONS[bass] || null,
   };
 }
 
@@ -340,7 +364,7 @@ export function positionLabel(position) {
 export function describeDiagram(d) {
   if (d.type === 'scale') return `${pretty(d.root)} ${SCALES[d.scale].name.toLowerCase()} scale, ${positionLabel(d.position)}`;
   if (d.type === 'arpeggio') return `${pretty(d.root)} ${ARPEGGIOS[d.quality].name.toLowerCase()} arpeggio, ${positionLabel(d.position)}`;
-  if (d.type === 'chords') return `Chords: ${d.chords.map((c) => pretty(chordShape(c).label)).join(', ')}`;
+  if (d.type === 'chords') return `Chords: ${d.chords.map((c) => { const s = chordShape(c); return pretty(s.label) + (s.note ? ` (${s.note})` : ''); }).join(', ')}`;
   if (d.type === 'run') return `Bass run: ${runNotes(d).map((n) => pretty(n.name)).join(' → ')}`;
   if (d.type === 'tab') return `Tab: ${parseTab(d.tab).length} notes`;
   if (d.type === 'progression') return `Chord chart: ${readChart(d.text).chords.map(pretty).join(', ')}`;

@@ -2,7 +2,7 @@
 // Bump VERSION whenever any file changes, so phones pick up the new version,
 // and set BUILD in js/version.js to the same number (shown in Settings > About).
 
-const VERSION = 'timebox-v24';
+const VERSION = 'timebox-v25';
 const ASSETS = [
   './',
   'index.html',

@@ -384,7 +384,10 @@ export function normaliseDiagram(d) {
   }
   if (d.type === 'progression' && typeof d.text === 'string') {
     const text = cleanChart(d.text.slice(0, 20000));
-    return readChart(text).chords.length ? { type: 'progression', text } : null;
+    if (!readChart(text).chords.length) return null;
+    // Optional written-out voicings ("G=320033") used for the chart's chord boxes.
+    const shapes = (Array.isArray(d.shapes) ? d.shapes : []).map(String).filter((t) => t.includes('=') && chordShape(t)).slice(0, 10);
+    return shapes.length ? { type: 'progression', text, shapes } : { type: 'progression', text };
   }
   if (d.type === 'numbers' && Array.isArray(d.progressions)) {
     const key = PROGRESSION_KEYS.find((k) => k === d.key) || 'G';

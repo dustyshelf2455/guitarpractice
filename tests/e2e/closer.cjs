@@ -42,9 +42,11 @@ async function until(fn, ms = 3000) {
     check(rolled, `Closer to Fine on a songs block (${scheme})`);
 
     await page.locator('.tile').nth(i).click();
-    await until(() => page.locator('.focus .diagram-chords').isVisible());
-    const names = await page.locator('.focus .diagram-chords .chord-name').allTextContents();
-    check(names.join(' ') === 'G A7sus4 Cadd9 Dsus4', `four chord boxes: ${names.join(' ')}`);
+    await until(() => page.locator('.focus .diagram-progression').isVisible());
+    const names = await page.locator('.focus .diagram-progression .chord-name').allTextContents();
+    check(names.join(' ') === 'G A7sus4 Cadd9 Dsus4 D Dsus2 C', `chord boxes from the chart: ${names.join(' ')}`);
+    const g = await app(() => [...document.querySelectorAll('.focus .diagram-progression .chord')][0].querySelectorAll('.chord-dot').length);
+    check(g === 4, 'G drawn with the B and e strings held at the 3rd fret (4 fretted notes)');
     check((await page.locator('.focus .diagram-strum').count()) === 1, 'strum pattern shown');
     check(await page.locator('.focus').getByText(/capo on the 2nd fret/i).isVisible(), 'notes mention the capo');
     await page.screenshot({ path: path.join(SHOTS, 'closer', `closer-to-fine-${scheme}.png`), fullPage: true });

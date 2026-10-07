@@ -3,7 +3,7 @@
 
 import {
   SCHEMA_VERSION, SLOT_COUNT, defaultSettings, STARTER_DIAGRAMS, STARTER_NOTES, starterText, starterItem, ADDED_ITEMS,
-  NOTES_LIMIT, SLOTS_V3, STARTER_NOTES_V7, starterLink,
+  NOTES_LIMIT, SLOTS_V3, STARTER_NOTES_V7, starterLink, SONGS_V10, STARTER_V9,
 } from './defaults.js';
 import { normaliseDiagram } from './music.js';
 import { endSession, completedCount } from './engine.js';
@@ -69,6 +69,22 @@ export function migrate(data) {
       if (!STARTER_NOTES_V7[it.id] || starterText(it.id) !== it.text) continue;
       if (it.notes === STARTER_NOTES_V7[it.id]) it.notes = STARTER_NOTES[it.id];
       if (!it.url) it.url = starterLink(it.id);
+    }
+  }
+  // v10: starter songs still worded as shipped get chords, notes and a link where they have none.
+  if (from < 10) {
+    for (const it of out.library?.items || []) {
+      if (!SONGS_V10.includes(it.id) || starterText(it.id) !== it.text) continue;
+      if (!(Array.isArray(it.diagrams) && it.diagrams.length)) it.diagrams = clone(STARTER_DIAGRAMS[it.id] || []);
+      if (!it.notes) it.notes = STARTER_NOTES[it.id] || '';
+      if (!it.url) it.url = starterLink(it.id);
+    }
+    // Closer to Fine (added in v9) gets the full chart from Ben's tab, if untouched.
+    for (const it of out.library?.items || []) {
+      const was = STARTER_V9[it.id];
+      if (!was || starterText(it.id) !== it.text) continue;
+      if (JSON.stringify(it.diagrams) === JSON.stringify(was.diagrams)) it.diagrams = clone(STARTER_DIAGRAMS[it.id]);
+      if (it.notes === was.notes) it.notes = STARTER_NOTES[it.id];
     }
   }
   out.schema_version = SCHEMA_VERSION;

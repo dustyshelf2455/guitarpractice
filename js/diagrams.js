@@ -4,7 +4,7 @@
 
 import { el, svg } from './util.js';
 import {
-  scaleTones, arpeggioTones, fretboardNotes, chordShape, describeDiagram, pretty, STRING_NAMES, runNotes, runWindow,
+  scaleTones, arpeggioTones, fretboardNotes, chordShape, parseChord, describeDiagram, pretty, STRING_NAMES, runNotes, runWindow,
   PROGRESSION_KEYS, numeralBars, numeralChord, prettyNumeral,
 } from './music.js';
 import {
@@ -369,8 +369,9 @@ function progressionDiagram(d) {
     return el('span', { class: 'prog-text', text: t });
   };
   const seen = new Set();
+  const written = new Map((d.shapes || []).map(chordShape).filter(Boolean).map((s) => [s.name, s]));
   const boxes = chart.chords
-    .map((c) => chordShape(c.replace(/\/.*/, '')))
+    .map((c) => written.get(parseChord(c)?.name) || chordShape(c.replace(/\/.*/, '')))
     .filter((shape) => shape && !seen.has(shape.name) && seen.add(shape.name))
     .slice(0, 10)
     .map(chordBox);

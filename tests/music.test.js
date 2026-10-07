@@ -5,7 +5,7 @@ import {
   suggestDiagram, normaliseDiagram, describeDiagram, pretty, STRING_NAMES,
   numeralChord, numeralBars, parseNumeral, PROGRESSION_KEYS, parseNote,
 } from '../js/music.js';
-import { defaultLibrary, STARTER_DIAGRAMS, STARTER_NOTES, STARTER_NOTES_V7, SCHEMA_VERSION } from '../js/defaults.js';
+import { defaultLibrary, STARTER_DIAGRAMS, STARTER_NOTES, STARTER_NOTES_V7, STARTER_V9, SCHEMA_VERSION } from '../js/defaults.js';
 import { migrate, parseFile } from '../js/transfer.js';
 
 const names = (list) => list.map((t) => t.name).join(' ');
@@ -209,11 +209,11 @@ test('written-out voicings: frets, fingers, inversion, and only chord tones', ()
   assert.match(describeDiagram({ type: 'chords', chords: ['G=xxx433'] }), /G \(1st inversion\)/);
   // Every written-out starter voicing plays its chord's notes and nothing else.
   const QUALITY = { '': 'major', m: 'minor', '7': '7' };
-  const STEPS = { sus4: [0, 5, 7], '7sus4': [0, 5, 7, 10], add9: [0, 2, 4, 7] };
+  const STEPS = { sus2: [0, 2, 7], sus4: [0, 5, 7], '7sus4': [0, 5, 7, 10], add9: [0, 2, 4, 7] };
   for (const list of Object.values(STARTER_DIAGRAMS)) {
     for (const d of list) {
-      if (d.type !== 'chords') continue;
-      for (const tok of d.chords.filter((t) => t.includes('='))) {
+      if (d.type !== 'chords' && !d.shapes) continue;
+      for (const tok of (d.chords || d.shapes).filter((t) => t.includes('='))) {
         const s = chordShape(tok);
         const c = parseChord(tok.split('=')[0]);
         const want = new Set(STEPS[c.quality]
@@ -291,9 +291,47 @@ test('v8 -> v9: Closer to Fine joins Songs, with its chord-change exercise', () 
   assert.equal(song.text, 'Indigo Girls - Closer to Fine');
   assert.match(song.url, /^https:\/\/tabs\.ultimate-guitar\.com\//);
   assert.equal(drill.subtype_id, 'chords');
+  assert.equal(song.diagrams[0].type, 'progression');
+  assert.match(song.diagrams[0].text, /Pre-chorus: D Cadd9 G/);
   for (const it of [song, drill]) {
-    assert.deepEqual(it.diagrams[0].chords.map((t) => chordShape(t).name), ['G', 'A7sus4', 'Cadd9', 'Dsus4']);
+    assert.deepEqual((it.diagrams[0].chords || it.diagrams[0].shapes).map((t) => chordShape(t).name), ['G', 'A7sus4', 'Cadd9', 'Dsus4', 'D', 'Dsus2']);
     assert.equal(it.diagrams[1].type, 'strum');
     assert.match(it.notes, /capo/i);
   }
+});
+
+test('v9 -> v10: Alison gets its chart, notes and link unless edited, plus a barre exercise', () => {
+  const lib = defaultLibrary();
+  lib.items = lib.items.filter((i) => i.id !== 'chords-32');
+  const song = lib.items.find((i) => i.id === 'songs-3');
+  Object.assign(song, { diagrams: [], notes: '', url: '' }); // as shipped before v10
+  let out = migrate({ schema_version: 9, library: lib, settings: {}, sessions: [], plans: [] });
+  let item = out.library.items.find((i) => i.id === 'songs-3');
+  assert.equal(item.diagrams[0].type, 'progression');
+  assert.match(item.diagrams[0].text, /Chorus: A E A B \| G#m G#7 C#m B/);
+  assert.match(item.notes, /barre/);
+  assert.match(item.url, /alison/);
+  assert.ok(out.library.items.some((i) => i.id === 'chords-32'));
+  Object.assign(song, { notes: 'mine', text: 'Alison, my way' });
+  out = migrate({ schema_version: 9, library: lib, settings: {}, sessions: [], plans: [] });
+  item = out.library.items.find((i) => i.id === 'songs-3');
+  assert.equal(item.notes, 'mine', 'renamed songs left alone');
+  assert.deepEqual(item.diagrams, []);
+});
+
+test('v9 -> v10: Closer to Fine gets the full chart from the tab, unless edited', () => {
+  const lib = defaultLibrary();
+  for (const id of ['songs-11', 'chords-31']) Object.assign(lib.items.find((i) => i.id === id), structuredClone(STARTER_V9[id]));
+  const song = lib.items.find((i) => i.id === 'songs-11');
+  let out = migrate({ schema_version: 9, library: lib, settings: {}, sessions: [], plans: [] });
+  let item = out.library.items.find((i) => i.id === 'songs-11');
+  assert.equal(item.diagrams[0].type, 'progression');
+  assert.deepEqual(item.diagrams[0].shapes, normaliseDiagram(item.diagrams[0]).shapes, 'shapes survive normalising');
+  assert.match(item.notes, /Dadd11/);
+  assert.match(out.library.items.find((i) => i.id === 'chords-31').notes, /Dsus2/);
+  song.notes = 'mine';
+  out = migrate({ schema_version: 9, library: lib, settings: {}, sessions: [], plans: [] });
+  item = out.library.items.find((i) => i.id === 'songs-11');
+  assert.equal(item.notes, 'mine', 'edited notes left alone');
+  assert.equal(item.diagrams[0].type, 'progression', 'untouched diagrams still updated');
 });

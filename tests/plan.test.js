@@ -187,7 +187,7 @@ test('starter library matches the spec', () => {
   const count = (id) => activeItems(lib, id).length;
   assert.deepEqual(
     ['warmup', 'picking', 'scales', 'chords', 'songs', 'strumming', 'riffs', 'backing', 'licks'].map(count),
-    [6, 5, 5, 31, 11, 7, 5, 6, 13],
+    [6, 5, 5, 33, 11, 7, 5, 6, 13],
   );
   assert.ok(lib.items.every((it) => it.text.length <= 45));
   const areaCount = {};

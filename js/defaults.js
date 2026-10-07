@@ -3,7 +3,7 @@
 
 import { parseTab, serialiseTab, normaliseRhythm } from './notation.js';
 
-export const SCHEMA_VERSION = 9;
+export const SCHEMA_VERSION = 10;
 export const SLOT_COUNT = 12;
 
 const AREAS = [
@@ -84,6 +84,8 @@ const LIBRARY = {
     'Five progressions to know, set 1, 80 bpm',
     'Five progressions to know, set 2, 80 bpm',
     'Closer to Fine changes, capo 2, 80 bpm',
+    'Alison barre changes, key of E, 70 bpm',
+    "I Don't Mind changes: G-Em-D-C, 80 bpm",
   ],
   songs: [
     'Lefty - Long Black Veil',
@@ -165,6 +167,8 @@ const timedLick = (tab, rhythm, ...chordList) => {
 };
 
 const CLOSER_TO_FINE = ['G=320033~210034', 'A7sus4=x02033~001034', 'Cadd9=x32033~021034', 'Dsus4=x00233~000134'];
+// The D figure that ends its phrases: D, Dsus2, D, Dsus4.
+const D_FIGURE = ['D=xx0232~000132', 'Dsus2=xx0230~000130'];
 
 export const STARTER_DIAGRAMS = {
   'picking-1': chords('G', 'C', 'D'),
@@ -221,8 +225,15 @@ export const STARTER_DIAGRAMS = {
     ['Minor key walk-down', 'i | bVII | bVI | V7'],
   ),
   // Indigo Girls, Closer to Fine (capo 2): ring finger and pinky stay on the 3rd fret of B and e.
-  'chords-31': [{ type: 'chords', chords: CLOSER_TO_FINE }, strum('D-DU-UDU')],
-  'songs-11': [{ type: 'chords', chords: CLOSER_TO_FINE }, strum('D-DU-UDU')],
+  'chords-31': [{ type: 'chords', chords: [...CLOSER_TO_FINE, ...D_FIGURE] }, strum('D-DU-UDU')],
+  // Chords as on Ben's tab.
+  'songs-11': [{ ...chart('Capo: 2\nIntro: G A7sus4 Cadd9 Dsus4 | D Dsus2 D Dsus4\nVerse: G A7sus4 Cadd9 Dsus4 | D Dsus2 D Dsus4\nVerse end: Dadd11 C | Dadd11 C | G Cadd9 G\nPre-chorus: D Cadd9 G | D Cadd9 G | Dadd11 C\nChorus: G A7sus4 Cadd9 | D G A7sus4 Cadd9 | Dsus4 D Dsus2 D\nOutro: G A7sus4 Cadd9 D x3')[0], shapes: [...CLOSER_TO_FINE, ...D_FIGURE] }, strum('D-DU-UDU')],
+  // Elvis Costello, Alison: chords as on Ben's tab, key of E, no capo.
+  'songs-3': chart('Key: E\nIntro: B A C#m B | F#m G#m\nVerse: B A E | A G#m C#m B | A G#m C#m | D B\nChorus: A E A B | G#m G#7 C#m B | A E A B E\nOutro: D B E A x6'),
+  'chords-32': chords('G#m', 'G#7', 'C#m', 'B', 'F#m'),
+  // Sturgill Simpson, I Don't Mind: chords as on Ben's tab, key of G, no capo.
+  'songs-5': [...chart('Key: G\nIntro: G Em G Em\nVerse: G Em G Em G Em | D C Em D\nChorus: D C D C | Em D\nSolo: G Em G Em | D C Em D\nBridge: D Em C Em | C Em D\nOutro: D C D C Em'), strum('D-DU-UDU')],
+  'chords-33': [{ type: 'chords', chords: ['G=320003~320004', 'Em', 'D', 'C'] }, strum('D-DU-UDU')],
   'strumming-1': [strum('DDDD')],
   'strumming-2': [strum('D-DU-UDU')],
   'strumming-3': [strum('DUDUDUDU')],
@@ -355,13 +366,19 @@ export const STARTER_NOTES = {
   'chords-28': 'Play each dominant seventh arpeggio up and down in quarter notes at 80 bpm: 1, 3, 5, ♭7. Listen for the ♭7, the note that makes it want to move on. Then do two notes per click.',
   'chords-29': 'Pick a key from the menu, then about a minute per progression at 80 bpm, one strum or boom-chuck per beat, four beats to a bar. Say the numbers out loud as you change. The quick change goes to IV in bar 2; Freight Train (Elizabeth Cotten) takes the III7, a major chord on the 3rd, back to IV; the ♭VII is the borrowed chord in Old Joe Clark. Once a progression is easy, change the key.',
   'chords-30': 'Pick a key, then about a minute per progression at 80 bpm, four beats to a bar; a bar with two numbers gets two beats each. The II7 is a major chord on the 2nd that pushes to the V. In the minor iv, the IV turns minor for a bar before home. The last one is in minor: key of A means A minor (Am-G-F-E7). Say the numbers as you play.',
-  'songs-11': 'Folk, capo on the 2nd fret: G shapes, sounding in A. The sound of the song is four chords that share a top: plant your ring finger and pinky on the 3rd fret of the B and high e strings and leave them there for G, A7sus4, Cadd9 and Dsus4, so only the bass fingers move and the top two strings ring through every change. The chorus goes round G, A7sus4, Cadd9, Dsus4, a bar each. Strum down, down-up, up-down-up with a loose wrist and let it drive. The Ultimate Guitar tab (linked) has the verse and the rest of the song.',
-  'chords-31': 'The four shapes behind Closer to Fine (Indigo Girls), capo 2. Ring finger and pinky stay on the 3rd fret of the B and high e strings the whole time; only the index and middle fingers move. Two bars of each at 80 bpm, G, A7sus4, Cadd9, Dsus4, then one bar each, strumming down, down-up, up-down-up. Once the changes are clean three times in a row, go up 5 bpm toward the record\'s tempo.',
+  'songs-11': 'Folk, capo on the 2nd fret: G shapes, sounding in A. Plant your ring finger and pinky on the 3rd fret of the B and high e strings and leave them there for G, A7sus4, Cadd9 and Dsus4, so only the bass fingers move and the top two strings ring through every change. Phrases end on a D figure: D, Dsus2 (lift the middle finger off the high e), D, then Dsus4 (pinky on the high e, 3rd fret). The verse ends on a Dadd11-to-C turn, and the pre-chorus rocks D, Cadd9, G. Strum down, down-up, up-down-up with a loose wrist and let it drive.',
+  'chords-31': 'The shapes behind Closer to Fine (Indigo Girls), capo 2. Ring finger and pinky stay on the 3rd fret of the B and high e strings for G, A7sus4, Cadd9 and Dsus4; only the index and middle fingers move. Two bars of each at 80 bpm, then one bar each, strumming down, down-up, up-down-up. Then the D figure, one beat each: D, Dsus2, D, Dsus4, using only the middle finger and pinky on the high e. Once it\'s clean three times in a row, go up 5 bpm toward the record\'s tempo.',
+  'songs-3': 'Key of E, no capo, and most of it is barre chords: B and C♯m on the A string, F♯m, G♯m and G♯7 on the low E. The verse keeps falling A, G♯m, C♯m, and each verse ends on a D-to-B turn that pulls into the chorus. In the chorus, G♯m to G♯7 is one finger: lift your pinky off the D string. Fingerpick the intro, then strum lightly with your fingers. If a barre is buzzing, play it slowly first with the Alison barre changes exercise in Chords.',
+  'chords-32': 'The barre chords from Elvis Costello\'s Alison, key of E. Four bars of each at 70 bpm, quarter-note strums: G♯m (E shape, 4th fret), G♯7 (lift the pinky), C♯m (A shape, 4th fret), B (A shape, 2nd fret), F♯m (E shape, 2nd fret). Then the chorus move, one bar each: G♯m, G♯7, C♯m, B. Keep the index finger straight and roll it slightly onto its edge. Clean three times in a row, then up 5 bpm.',
+  'songs-5': 'Key of G, no capo, four open chords: G, Em, D and C. The verse rocks between G and Em, then climbs out through D, C, Em, D; the chorus swings between D and C and lands on Em. Play G with your ring finger on the low E, middle on the A string and pinky on the high e: going to Em, the middle finger stays put and the ring finger drops to the D string. Strum down, down-up, up-down-up, and leave room for the mandolin in the solo.',
+  'chords-33': 'The changes in Sturgill Simpson\'s I Don\'t Mind, key of G. G (fingered 3-2-4, as shown) to Em keeps your middle finger on the A string, 2nd fret. Two bars each at 80 bpm, G-Em-G-Em, then D-C-Em-D, strumming down, down-up, up-down-up. Then one bar each. Clean three times in a row, then up 5 bpm.',
   'strumming-7': 'Make up a strumming pattern on the spot: keep your hand swinging down and up in time, and choose which strums hit the strings. Then play a song you know with it (G, C and D cover plenty) and keep it going for the whole five minutes. Like it? Add it to this item as a strumming pattern.',
 };
 
 /** Links that come with starter items. */
 const STARTER_LINKS = {
+  'songs-5': 'https://tabs.ultimate-guitar.com/tab/sturgill-simpson/i-dont-mind-official-5200212',
+  'songs-3': 'https://tabs.ultimate-guitar.com/tab/elvis-costello/alison-official-2972414',
   'songs-11': 'https://tabs.ultimate-guitar.com/tab/indigo-girls/closer-to-fine-official-2542443',
   'licks-13': 'https://www.nashvillescene.com/music/how-estonian-guitarist-laur-joamets-became-sturgill-simpsons-danny-gatton/article_3dedce8c-ef81-5b1d-9580-8dcdb7cc7142.html',
   'licks-6': 'https://www.youtube.com/results?search_query=easy+guitar+lick+lesson',
@@ -383,7 +400,23 @@ export const ADDED_ITEMS = [
   [6, ['chords-29', 'chords-30']],
   [7, ['licks-13']],
   [9, ['songs-11', 'chords-31']],
+  [10, ['chords-32', 'chords-33']],
 ];
+
+/** Closer to Fine as first shipped in v9, so v10 can update it if untouched. */
+export const STARTER_V9 = {
+  'songs-11': {
+    diagrams: [{ type: 'chords', chords: CLOSER_TO_FINE }, strum('D-DU-UDU')],
+    notes: 'Folk, capo on the 2nd fret: G shapes, sounding in A. The sound of the song is four chords that share a top: plant your ring finger and pinky on the 3rd fret of the B and high e strings and leave them there for G, A7sus4, Cadd9 and Dsus4, so only the bass fingers move and the top two strings ring through every change. The chorus goes round G, A7sus4, Cadd9, Dsus4, a bar each. Strum down, down-up, up-down-up with a loose wrist and let it drive. The Ultimate Guitar tab (linked) has the verse and the rest of the song.',
+  },
+  'chords-31': {
+    diagrams: [{ type: 'chords', chords: CLOSER_TO_FINE }, strum('D-DU-UDU')],
+    notes: 'The four shapes behind Closer to Fine (Indigo Girls), capo 2. Ring finger and pinky stay on the 3rd fret of the B and high e strings the whole time; only the index and middle fingers move. Two bars of each at 80 bpm, G, A7sus4, Cadd9, Dsus4, then one bar each, strumming down, down-up, up-down-up. Once the changes are clean three times in a row, go up 5 bpm toward the record\'s tempo.',
+  },
+};
+
+/** Starter songs that gained chords, notes and a link in v10 (filled in where still empty). */
+export const SONGS_V10 = ['songs-3', 'songs-5'];
 
 /** A starter item as shipped, by id (used to add new starter items to existing libraries). */
 export function starterItem(id) {

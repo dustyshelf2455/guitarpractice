@@ -86,12 +86,12 @@ test('swap cycles through candidates, skipping items already on the plan', () =>
   const lib = defaultLibrary();
   const plan = generatePlan(lib, '2026-10-03');
   const shown = [];
-  for (let i = 0; i < 8; i++) shown.push(applySwap(lib, plan, 'slot-5').id);
-  // Songs 2-4 are on other slots. Fresh candidates first: 5..10, then cycle.
-  assert.deepEqual(shown.slice(0, 6), ['songs-5', 'songs-6', 'songs-7', 'songs-8', 'songs-9', 'songs-10']);
+  for (let i = 0; i < 9; i++) shown.push(applySwap(lib, plan, 'slot-5').id);
+  // Songs 2-4 are on other slots. Fresh candidates first: 5..11, then cycle.
+  assert.deepEqual(shown.slice(0, 7), ['songs-5', 'songs-6', 'songs-7', 'songs-8', 'songs-9', 'songs-10', 'songs-11']);
   assert.ok(!shown.includes('songs-2') && !shown.includes('songs-3') && !shown.includes('songs-4'));
-  assert.equal(shown[6], 'songs-1', 'cycles back round, original included');
-  assert.equal(shown[7], 'songs-5');
+  assert.equal(shown[7], 'songs-1', 'cycles back round, original included');
+  assert.equal(shown[8], 'songs-5');
 });
 
 test('swap uses rotation order and is unavailable without alternatives', () => {
@@ -187,7 +187,7 @@ test('starter library matches the spec', () => {
   const count = (id) => activeItems(lib, id).length;
   assert.deepEqual(
     ['warmup', 'picking', 'scales', 'chords', 'songs', 'strumming', 'riffs', 'backing', 'licks'].map(count),
-    [6, 5, 5, 30, 10, 7, 5, 6, 13],
+    [6, 5, 5, 31, 11, 7, 5, 6, 13],
   );
   assert.ok(lib.items.every((it) => it.text.length <= 45));
   const areaCount = {};

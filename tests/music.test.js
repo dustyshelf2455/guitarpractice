@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   scaleTones, arpeggioTones, fretboardNotes, chordShape, parseChord, chordTokens, runNotes, runWindow,
   suggestDiagram, normaliseDiagram, describeDiagram, pretty, STRING_NAMES,
-  numeralChord, numeralBars, parseNumeral, PROGRESSION_KEYS,
+  numeralChord, numeralBars, parseNumeral, PROGRESSION_KEYS, parseNote,
 } from '../js/music.js';
 import { defaultLibrary, STARTER_DIAGRAMS, STARTER_NOTES, STARTER_NOTES_V7, SCHEMA_VERSION } from '../js/defaults.js';
 import { migrate, parseFile } from '../js/transfer.js';
@@ -209,13 +209,16 @@ test('written-out voicings: frets, fingers, inversion, and only chord tones', ()
   assert.match(describeDiagram({ type: 'chords', chords: ['G=xxx433'] }), /G \(1st inversion\)/);
   // Every written-out starter voicing plays its chord's notes and nothing else.
   const QUALITY = { '': 'major', m: 'minor', '7': '7' };
+  const STEPS = { sus4: [0, 5, 7], '7sus4': [0, 5, 7, 10], add9: [0, 2, 4, 7] };
   for (const list of Object.values(STARTER_DIAGRAMS)) {
     for (const d of list) {
       if (d.type !== 'chords') continue;
       for (const tok of d.chords.filter((t) => t.includes('='))) {
         const s = chordShape(tok);
         const c = parseChord(tok.split('=')[0]);
-        const want = new Set(arpeggioTones(c.root, QUALITY[c.quality]).map((t) => t.pc));
+        const want = new Set(STEPS[c.quality]
+          ? STEPS[c.quality].map((n) => (parseNote(c.root).pc + n) % 12)
+          : arpeggioTones(c.root, QUALITY[c.quality]).map((t) => t.pc));
         const got = new Set(s.frets.map((f, i) => (f < 0 ? null : ([4, 9, 2, 7, 11, 4][i] + f) % 12)).filter((p) => p != null));
         assert.deepEqual([...got].sort(), [...want].sort(), tok);
       }
@@ -277,4 +280,20 @@ test('v7 -> v8: the Life of Sin lick gets its new notes and link, unless edited'
   out = migrate({ schema_version: 7, library: lib, settings: {}, sessions: [], plans: [] });
   item = out.library.items.find((i) => i.id === 'licks-13');
   assert.equal(item.notes, 'my own notes', 'edited notes left alone');
+});
+
+test('v8 -> v9: Closer to Fine joins Songs, with its chord-change exercise', () => {
+  const lib = defaultLibrary();
+  lib.items = lib.items.filter((i) => !['songs-11', 'chords-31'].includes(i.id));
+  const out = migrate({ schema_version: 8, library: lib, settings: {}, sessions: [], plans: [] });
+  const song = out.library.items.find((i) => i.id === 'songs-11');
+  const drill = out.library.items.find((i) => i.id === 'chords-31');
+  assert.equal(song.text, 'Indigo Girls - Closer to Fine');
+  assert.match(song.url, /^https:\/\/tabs\.ultimate-guitar\.com\//);
+  assert.equal(drill.subtype_id, 'chords');
+  for (const it of [song, drill]) {
+    assert.deepEqual(it.diagrams[0].chords.map((t) => chordShape(t).name), ['G', 'A7sus4', 'Cadd9', 'Dsus4']);
+    assert.equal(it.diagrams[1].type, 'strum');
+    assert.match(it.notes, /capo/i);
+  }
 });

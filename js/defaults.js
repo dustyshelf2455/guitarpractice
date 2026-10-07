@@ -3,7 +3,7 @@
 
 import { parseTab, serialiseTab, normaliseRhythm } from './notation.js';
 
-export const SCHEMA_VERSION = 8;
+export const SCHEMA_VERSION = 9;
 export const SLOT_COUNT = 12;
 
 const AREAS = [
@@ -83,6 +83,7 @@ const LIBRARY = {
     // Progressions by number, in whatever key is picked on the block.
     'Five progressions to know, set 1, 80 bpm',
     'Five progressions to know, set 2, 80 bpm',
+    'Closer to Fine changes, capo 2, 80 bpm',
   ],
   songs: [
     'Lefty - Long Black Veil',
@@ -95,6 +96,7 @@ const LIBRARY = {
     'Blaze Foley - Cold Cold World',
     'Tom Dooley',
     "St. Anne's Reel",
+    'Indigo Girls - Closer to Fine',
   ],
   strumming: [
     'Down strums on every beat, 70 bpm',
@@ -162,6 +164,8 @@ const timedLick = (tab, rhythm, ...chordList) => {
   return [{ ...first, rhythm: normaliseRhythm(rhythm, parseTab(tab).length) }, ...rest];
 };
 
+const CLOSER_TO_FINE = ['G=320033~210034', 'A7sus4=x02033~001034', 'Cadd9=x32033~021034', 'Dsus4=x00233~000134'];
+
 export const STARTER_DIAGRAMS = {
   'picking-1': chords('G', 'C', 'D'),
   'picking-2': chords('G', 'C', 'D'),
@@ -216,6 +220,9 @@ export const STARTER_DIAGRAMS = {
     ['Minor iv, gospel and country ballads', 'I | I7 | IV | iv | I | V7 | I | I'],
     ['Minor key walk-down', 'i | bVII | bVI | V7'],
   ),
+  // Indigo Girls, Closer to Fine (capo 2): ring finger and pinky stay on the 3rd fret of B and e.
+  'chords-31': [{ type: 'chords', chords: CLOSER_TO_FINE }, strum('D-DU-UDU')],
+  'songs-11': [{ type: 'chords', chords: CLOSER_TO_FINE }, strum('D-DU-UDU')],
   'strumming-1': [strum('DDDD')],
   'strumming-2': [strum('D-DU-UDU')],
   'strumming-3': [strum('DUDUDUDU')],
@@ -348,11 +355,14 @@ export const STARTER_NOTES = {
   'chords-28': 'Play each dominant seventh arpeggio up and down in quarter notes at 80 bpm: 1, 3, 5, ♭7. Listen for the ♭7, the note that makes it want to move on. Then do two notes per click.',
   'chords-29': 'Pick a key from the menu, then about a minute per progression at 80 bpm, one strum or boom-chuck per beat, four beats to a bar. Say the numbers out loud as you change. The quick change goes to IV in bar 2; Freight Train (Elizabeth Cotten) takes the III7, a major chord on the 3rd, back to IV; the ♭VII is the borrowed chord in Old Joe Clark. Once a progression is easy, change the key.',
   'chords-30': 'Pick a key, then about a minute per progression at 80 bpm, four beats to a bar; a bar with two numbers gets two beats each. The II7 is a major chord on the 2nd that pushes to the V. In the minor iv, the IV turns minor for a bar before home. The last one is in minor: key of A means A minor (Am-G-F-E7). Say the numbers as you play.',
+  'songs-11': 'Folk, capo on the 2nd fret: G shapes, sounding in A. The sound of the song is four chords that share a top: plant your ring finger and pinky on the 3rd fret of the B and high e strings and leave them there for G, A7sus4, Cadd9 and Dsus4, so only the bass fingers move and the top two strings ring through every change. The chorus goes round G, A7sus4, Cadd9, Dsus4, a bar each. Strum down, down-up, up-down-up with a loose wrist and let it drive. The Ultimate Guitar tab (linked) has the verse and the rest of the song.',
+  'chords-31': 'The four shapes behind Closer to Fine (Indigo Girls), capo 2. Ring finger and pinky stay on the 3rd fret of the B and high e strings the whole time; only the index and middle fingers move. Two bars of each at 80 bpm, G, A7sus4, Cadd9, Dsus4, then one bar each, strumming down, down-up, up-down-up. Once the changes are clean three times in a row, go up 5 bpm toward the record\'s tempo.',
   'strumming-7': 'Make up a strumming pattern on the spot: keep your hand swinging down and up in time, and choose which strums hit the strings. Then play a song you know with it (G, C and D cover plenty) and keep it going for the whole five minutes. Like it? Add it to this item as a strumming pattern.',
 };
 
 /** Links that come with starter items. */
 const STARTER_LINKS = {
+  'songs-11': 'https://tabs.ultimate-guitar.com/tab/indigo-girls/closer-to-fine-official-2542443',
   'licks-13': 'https://www.nashvillescene.com/music/how-estonian-guitarist-laur-joamets-became-sturgill-simpsons-danny-gatton/article_3dedce8c-ef81-5b1d-9580-8dcdb7cc7142.html',
   'licks-6': 'https://www.youtube.com/results?search_query=easy+guitar+lick+lesson',
 };
@@ -372,6 +382,7 @@ export const ADDED_ITEMS = [
   [5, Array.from({ length: 15 }, (_, i) => `chords-${i + 14}`)],
   [6, ['chords-29', 'chords-30']],
   [7, ['licks-13']],
+  [9, ['songs-11', 'chords-31']],
 ];
 
 /** A starter item as shipped, by id (used to add new starter items to existing libraries). */

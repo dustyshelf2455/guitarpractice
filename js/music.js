@@ -198,7 +198,7 @@ const QUALITY_ALIASES = {
   '7': '7', dom7: '7',
   maj7: 'maj7', M7: 'maj7', 'Δ': 'maj7', 'Δ7': 'maj7',
   m7: 'm7', min7: 'm7', '-7': 'm7',
-  sus2: 'sus2', sus4: 'sus4', sus: 'sus4',
+  sus2: 'sus2', sus4: 'sus4', sus: 'sus4', '7sus4': '7sus4',
   add9: 'add9', '5': '5',
 };
 

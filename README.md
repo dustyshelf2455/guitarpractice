@@ -48,6 +48,8 @@ Install it rather than using it in a browser tab. Installed, it opens full scree
 
 **Open position pentatonics:** the Scales slot has Eric Haugen's nine open position pentatonic shapes (C, G, D, E, A and F major; A, E and D minor) at 70 bpm. Each card draws just that fingering, with strings the shape skips marked ×, and the chromatic passing notes from his second chart (the ♭3 in the major shapes, the ♭5 in the minor ones) as dashed dots. Editing the diagram keeps the shape as long as the root, scale and position stay the same.
 
+**Acoustic fills:** the Licks slot has fills in the open position after Eric Haugen's tasteful acoustic fills lesson: one card each for C, G, D, A, E, Am, Em and Dm at 70 bpm, plus G-D7-G-C with capo 2 at 80 bpm. Each is a four-bar loop with its rhythm: a bar of the chord (bass, two strums, the other bass, a strum), a crosspicking fill, the chord again, and a run with a chromatic passing note, with the chord box and the matching pentatonic shape from Scales.
+
 **Licks:** the last slot practises a lick: stock bluegrass, blues, country and folk licks around G, C and D (the G run, a C minor pentatonic run, a blues turnaround, a Chuck Berry double stop and more), each with tab and a note on how to practise it, plus "Find a new lick on YouTube and learn it". The tabs were written from teaching sources' descriptions and checked note by note. Add your own the same way.
 
 **Appearance** (Settings → Appearance):
@@ -107,6 +109,7 @@ npm test               # unit tests: timer engine, rotation, stats, import/expor
 End-to-end tests drive headless Chromium with a fake clock (Playwright installed globally):
 
 ```sh
+NODE_PATH=$(npm root -g) node tests/e2e/fills.cjs      # acoustic fills: four-bar tab, chord box, pentatonic shape
 NODE_PATH=$(npm root -g) node tests/e2e/smoke.cjs      # session flow, reload, full 60-minute run
 NODE_PATH=$(npm root -g) node tests/e2e/blocks.cjs     # Begin, re-roll, locking a block across days
 NODE_PATH=$(npm root -g) node tests/e2e/settings.cjs   # library, slots, theme, export/import, reset

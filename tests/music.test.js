@@ -371,3 +371,23 @@ test('v10 -> v11 migration adds the open pentatonics and reshapes E minor', () =
   assert.deepEqual(em2.diagrams, STARTER_DIAGRAMS['scales-4']);
   assert.match(em2.notes, /Haugen/);
 });
+
+test('v11 -> v12 migration adds the acoustic fills to Licks, each a playable four-bar tab', () => {
+  const ids = Array.from({ length: 9 }, (_, i) => `licks-${i + 14}`);
+  const lib = defaultLibrary();
+  lib.items = lib.items.filter((i) => !ids.includes(i.id));
+  const mine = lib.items.find((i) => i.id === 'licks-13');
+  mine.notes = 'my own note';
+  const out = migrate({ schema_version: 11, library: lib, settings: {}, sessions: [], plans: [] });
+  const added = out.library.items.filter((i) => ids.includes(i.id));
+  assert.equal(added.length, 9);
+  for (const it of added) {
+    const tab = it.diagrams[0];
+    assert.equal(tab.type, 'tab');
+    assert.ok(tab.rhythm, `${it.id} has a rhythm that fits its tab`);
+    assert.equal(tab.tab.split('\n')[0].split('|').length - 2, 4, `${it.id} is four bars`);
+    assert.match(it.notes, /Haugen/);
+    assert.match(it.text, /\d+ bpm/);
+  }
+  assert.equal(out.library.items.find((i) => i.id === 'licks-13').notes, 'my own note', 'existing notes are kept');
+});

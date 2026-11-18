@@ -3,7 +3,7 @@
 
 import { parseTab, serialiseTab, normaliseRhythm } from './notation.js';
 
-export const SCHEMA_VERSION = 11;
+export const SCHEMA_VERSION = 12;
 export const SLOT_COUNT = 12;
 
 const AREAS = [
@@ -140,6 +140,16 @@ const LIBRARY = {
     'Blues bend-and-release lick in G',
     'Fiddle-tune line in G, eighth notes',
     'Life of Sin intro (Sturgill Simpson), 100 bpm',
+    // Acoustic fills in the open position, after Eric Haugen's lesson: a bar of the chord, then a fill.
+    'Acoustic fills over C, 70 bpm',
+    'Acoustic fills over G, 70 bpm',
+    'Acoustic fills over D, 70 bpm',
+    'Acoustic fills over A, 70 bpm',
+    'Acoustic fills over E, 70 bpm',
+    'Acoustic fills over Am, 70 bpm',
+    'Acoustic fills over Em, 70 bpm',
+    'Acoustic fills over Dm, 70 bpm',
+    'Fills in a song: G-D7-G-C, capo 2, 80 bpm',
   ],
   backing: [
     'A minor pentatonic over an Am track',
@@ -202,6 +212,72 @@ const PENT_TIPS = {
   'scales-13': ['F major', 'the low E string, 1st fret', 'A♭', '♭3', 'D minor'],
 };
 const pentNote = ([name, where, note, interval, relative]) => `Open position ${name} pentatonic, from Eric Haugen's charts (same notes as ${relative} pentatonic). Start on the low root, ${where}: climb to the top of the shape, come back down to the lowest note, then finish on the root. Even eighth notes at 70 bpm, and let the open strings ring as notes. Once it's clean, add the dashed ${note} (the ${interval}): a passing note to slide or hammer through between its neighbours, not one to land on. Up 5 bpm after three clean runs.`;
+
+// Acoustic fills: bars of "rhythm:notes" tokens, notes as string letter + fret (E A D G B e),
+// joined with + when played together; h, p or / before a note is a hammer-on, pull-off or slide into it.
+const FILL_STRINGS = { E: 0, A: 1, D: 2, G: 3, B: 4, e: 5 };
+function fillTab(...bars) {
+  const events = [];
+  const rhythm = [];
+  bars.forEach((bar, b) => bar.trim().split(/\s+/).forEach((token, i) => {
+    const [value, chord] = token.split(':');
+    const notes = chord.split('+').map((n) => {
+      const m = /^([hp/]?)([EADGBe])(\d+)$/.exec(n);
+      return { string: FILL_STRINGS[m[2]], fret: Number(m[3]), ...(m[1] ? { tech: m[1] } : {}) };
+    }).sort((x, y) => y.string - x.string);
+    events.push(b && !i ? { notes, bar: true } : { notes });
+    rhythm.push(value);
+  }));
+  return { type: 'tab', tab: serialiseTab(events), rhythm: rhythm.join(' ') };
+}
+// The chord bar from the lesson: bass note, two eighth-note strums, the other bass note, a strum.
+const chordBar = (bass, alt, top) => `q:${bass} e:${top} e:${top} q:${alt} q:${top}`;
+const FILL_BARS = {
+  C: chordBar('A3', 'E3', 'D2+G0+B1+e0'),
+  G: chordBar('E3', 'D0', 'G0+B0+e3'),
+  D: chordBar('D0', 'A0', 'G2+B3+e2'),
+  A: chordBar('A0', 'E0', 'D2+G2+B2'),
+  E: chordBar('E0', 'A2', 'D2+G1+B0'),
+  Am: chordBar('A0', 'E0', 'D2+G2+B1'),
+  Em: chordBar('E0', 'A2', 'D2+G0+B0'),
+  Dm: chordBar('D0', 'A0', 'G2+B3+e1'),
+  D7: chordBar('D0', 'A0', 'G2+B1+e2'),
+};
+// Four bars: chord, crosspicking fill, chord, a run with a chromatic passing note; then the
+// chord it goes with and its pentatonic shape (the same one as the Scales card).
+const fills = (chord, crosspick, run, scaleId) => [
+  fillTab(FILL_BARS[chord], crosspick, FILL_BARS[chord], run),
+  { type: 'chords', chords: [chord] },
+  ...(scaleId ? OPEN_PENTATONICS[scaleId] : []),
+];
+const ACOUSTIC_FILLS = {
+  'licks-14': fills('C', 'e:A3 e:e0 e:D0 e:e0 e:D2 e:e0 e:G0 e:e0', 'e:A3 e:D0 e:D1 e:hD2 e:G0 e:G2 q:B1', 'scales-6'),
+  'licks-15': fills('G', 'e:E3 e:B3 e:A0 e:B3 e:A2 e:B3 e:D2 e:B3', 'e:B0 e:G2 e:G0 e:D2 e:D0 e:A2 e:A1 e:A0', 'scales-8'),
+  'licks-16': fills('D', 'e:D0 e:e2 e:D2 e:e2 e:D4 e:e2 e:G2 e:e2', 'e:e2 e:e0 e:B3 e:B0 e:G2 e:D4 e:D3 e:D2', 'scales-10'),
+  'licks-17': fills('A', 'e:A0 e:B2 e:A2 e:B2 e:A4 e:B2 e:D2 e:B2', 'e:A0 e:A2 e:A3 e:hA4 e:D2 e:D4 q:G2', 'scales-12'),
+  'licks-18': fills('E', 'e:D2 e:e0 e:D4 e:e0 e:G1 e:e0 e:B2 e:e0', 'e:E0 e:E3 e:hE4 e:A2 e:A4 e:D2 e:D4 e:G1', 'scales-11'),
+  'licks-19': fills('Am', 'e:A0 e:G2 e:A3 e:G2 e:D0 e:G2 e:D2 e:G2', 'e:B1 e:G2 e:G0 e:D2 e:D1 e:pD0 q:A3', 'scales-7'),
+  'licks-20': fills('Em', 'e:E0 e:B0 e:E3 e:B0 e:A0 e:B0 e:D0 e:B0', 'e:B0 e:G3 e:pG2 e:G0 e:D2 e:D0 e:A2 e:E3', 'scales-4'),
+  'licks-21': fills('Dm', 'e:D0 e:B1 e:D3 e:B1 e:G0 e:B1 e:G2 e:B1', 'e:e1 e:B3 e:B1 e:G2 e:G1 e:pG0 q:D3', 'scales-9'),
+  // G, D7, G to C, then the G run as the fill, round and round.
+  'licks-22': [
+    fillTab(FILL_BARS.G, FILL_BARS.D7, 'q:E3 e:G0+B0+e3 e:G0+B0+e3 q:A3 q:D2+G0+B1+e0', 'e:B0 e:G2 e:G0 e:D2 e:D0 e:A2 e:A1 e:A0'),
+    { type: 'chords', chords: ['G', 'D7', 'C'] },
+  ],
+};
+
+// Notes for the acoustic fills: [chord, the scale card, the crosspicking fill, the run and its passing note].
+const FILL_TIPS = {
+  'licks-14': ['C', 'C major pentatonic', 'the bass climbs C, D, E, G on the A, D and G strings while you pick the open high e after every note', 'climbs from the low C and hammers through E♭ into E on the D string, landing on the C at the B string, 1st fret'],
+  'licks-15': ['G', 'G major pentatonic', 'the bass climbs G, A, B, E while you pick D on the B string, 3rd fret after every note (keep it held)', 'walks down from the open B, through B♭ on the A string, 1st fret, so it lands on the low G of the next bar'],
+  'licks-16': ['D', 'D major pentatonic', 'the D string climbs D, E, F♯ and the G string adds A, with the high e, 2nd fret (F♯) after every note', 'comes down from the top of the shape and walks down chromatically on the D string, 4th, 3rd, 2nd fret (F♯, F, E), into the open D'],
+  'licks-17': ['A', 'A major pentatonic', 'the A string climbs A, B, C♯ and the D string adds E, with C♯ on the B string, 2nd fret, after every note', 'climbs from the open A and hammers C into C♯ on the A string, landing on the A at the G string, 2nd fret'],
+  'licks-18': ['E', 'E major pentatonic', 'E, F♯ and G♯ on the D and G strings, then C♯ on the B string, with the open high e after every note', 'climbs from the open low E and hammers G into G♯ on the low E string, 3rd to 4th fret, the bluesy sound of country fills in E'],
+  'licks-19': ['Am', 'A minor pentatonic', 'the bass climbs A, C, D, E while you pick A on the G string, 2nd fret, after every note', 'comes down from C on the B string and pulls off through E♭ (the ♭5, the blue note) on the D string, landing on the C at the A string, 3rd fret'],
+  'licks-20': ['Em', 'E minor pentatonic', 'the bass climbs E, G, A, D while you pick the open B string after every note', 'comes down from the open B and pulls off through B♭ (the ♭5) on the G string, 3rd fret, ending on the low G that leads back to E'],
+  'licks-21': ['Dm', 'D minor pentatonic', 'the D and G strings climb D, F, G, A while you pick C on the B string, 1st fret, after every note', 'comes down from F on the high e and pulls off through A♭ (the ♭5) on the G string, landing on the F at the D string, 3rd fret'],
+};
+const fillNote = ([chord, scaleName, crosspick, run]) => `Acoustic fills over ${chord}, after Eric Haugen's lesson on tasteful fills in the open position. Bars 1 and 3 are the chord: bass note, two quick strums, the other bass note, a strum. Bars 2 and 4 are fills, made only from the notes of ${scaleName} in the open position (the shape on the card, the same as the ${scaleName} card in Scales), so the chord shape is never far away. The first fill crosspicks: ${crosspick}. Let everything ring. The second fill ${run}. The chromatic note is a passing note between two scale notes: pass through it, never stop on it.\n\nStart at 70 bpm with the metronome. Keep the strumming hand moving through the fills so the time never drops, and land back on the bass note right on beat 1. Once it's clean three times in a row, go up 5 bpm. Then make your own: one bar of the chord, one bar of fill from the same shape, ending on a chord tone.`;
 
 const CLOSER_TO_FINE = ['G=320033~210034', 'A7sus4=x02033~001034', 'Cadd9=x32033~021034', 'Dsus4=x00233~000134'];
 // The D figure that ends its phrases: D, Dsus2, D, Dsus4.
@@ -365,6 +441,7 @@ D|-------------------------|-------------------------------|---|
 A|-------------------------|-------------------------------|---|
 E|-------------------------|---------------------------3b4-|-0-|`,
   'q e e q e e | e e e e e e q | q', 'E'),
+  ...ACOUSTIC_FILLS,
   'riffs-1': scale('A', 'minor_pentatonic', 5),
   'backing-1': scale('A', 'minor_pentatonic', 5),
   'backing-4': scale('A', 'blues', 5),
@@ -373,6 +450,8 @@ E|-------------------------|---------------------------3b4-|-0-|`,
 /** Notes that come with starter items (instructions, practice tips). */
 export const STARTER_NOTES = {
   ...Object.fromEntries(Object.entries(PENT_TIPS).map(([id, tip]) => [id, pentNote(tip)])),
+  ...Object.fromEntries(Object.entries(FILL_TIPS).map(([id, tip]) => [id, fillNote(tip)])),
+  'licks-22': 'The fills in a song, after the Rolling Stones\' Sweet Virginia, the song Eric Haugen\'s fills lesson starts with: capo on the 2nd fret, G shapes. Bar 1 G, bar 2 D7, bar 3 G for two beats and C for two (bass on the A string, 3rd fret), then bar 4 is the G fill: walk down the G major pentatonic from the open B, through B♭ on the A string, 1st fret, and land on the low G as it starts again. Same chord bar as the other fills: bass note, two quick strums, the other bass, a strum. Start at 80 bpm; the record is about 107. Then swap in other fills over G (the Acoustic fills over G card) and add a C fill (the Acoustic fills over C card) where the C comes round. The lesson\'s point: keep the fills short, from the shape of the chord you\'re on, and always land back in time.',
   'strumming-3': 'Rest your fretting hand lightly across all the strings so every strum is a muted chuck. Keep the hand moving down and up; it\'s all about the groove.',
   'licks-1': 'Bluegrass, beginner. The classic way to end a phrase in G. Strum G, then play the run in one bar at about 70 bpm: pick the low G and the open A, and let the hammer-on and slide sound A♯ and B. Let the open G ring at the end.',
   'licks-2': 'Folk, beginner. Hold a full C chord. Lift your middle and index fingers and hammer them back on, letting everything ring. The same trick works on G: A string, open, hammer onto fret 2.',
@@ -420,6 +499,7 @@ const STARTER_LINKS = {
   'songs-11': 'https://tabs.ultimate-guitar.com/tab/indigo-girls/closer-to-fine-official-2542443',
   'licks-13': 'https://www.nashvillescene.com/music/how-estonian-guitarist-laur-joamets-became-sturgill-simpsons-danny-gatton/article_3dedce8c-ef81-5b1d-9580-8dcdb7cc7142.html',
   'licks-6': 'https://www.youtube.com/results?search_query=easy+guitar+lick+lesson',
+  ...Object.fromEntries(Array.from({ length: 9 }, (_, i) => [`licks-${i + 14}`, 'https://www.youtube.com/results?search_query=eric+haugen+tasteful+acoustic+fills'])),
 };
 
 /** Starter notes as first shipped, so a later version can update them if untouched. */
@@ -440,6 +520,7 @@ export const ADDED_ITEMS = [
   [9, ['songs-11', 'chords-31']],
   [10, ['chords-32', 'chords-33']],
   [11, Array.from({ length: 8 }, (_, i) => `scales-${i + 6}`)],
+  [12, Object.keys(ACOUSTIC_FILLS)],
 ];
 
 /** E minor pentatonic as shipped before v11 (a plain open position scale), so v11 can give it Haugen's shape. */

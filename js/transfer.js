@@ -2,7 +2,7 @@
 // Everything here is pure so it can be tested without a browser.
 
 import {
-  SCHEMA_VERSION, SLOT_COUNT, defaultSettings, STARTER_DIAGRAMS, STARTER_NOTES, starterText, starterItem, ADDED_ITEMS,
+  SCHEMA_VERSION, SLOT_COUNT, defaultSettings, STARTER_DIAGRAMS, STARTER_NOTES, starterText, starterItem, ADDED_ITEMS, SCALES4_V10,
   NOTES_LIMIT, SLOTS_V3, STARTER_NOTES_V7, starterLink, SONGS_V10, STARTER_V9,
 } from './defaults.js';
 import { normaliseDiagram } from './music.js';
@@ -85,6 +85,14 @@ export function migrate(data) {
       if (!was || starterText(it.id) !== it.text) continue;
       if (JSON.stringify(it.diagrams) === JSON.stringify(was.diagrams)) it.diagrams = clone(STARTER_DIAGRAMS[it.id]);
       if (it.notes === was.notes) it.notes = STARTER_NOTES[it.id];
+    }
+  }
+  // v11: E minor pentatonic, if untouched, gets Haugen's open shape with its passing notes, and notes.
+  if (from < 11) {
+    for (const it of out.library?.items || []) {
+      if (it.id !== 'scales-4' || starterText(it.id) !== it.text) continue;
+      if (!(Array.isArray(it.diagrams) && it.diagrams.length) || JSON.stringify(it.diagrams) === JSON.stringify(SCALES4_V10)) it.diagrams = clone(STARTER_DIAGRAMS[it.id]);
+      if (!it.notes) it.notes = STARTER_NOTES[it.id];
     }
   }
   out.schema_version = SCHEMA_VERSION;

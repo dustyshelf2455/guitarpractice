@@ -4,7 +4,7 @@
 
 import { el, svg } from './util.js';
 import {
-  scaleTones, arpeggioTones, fretboardNotes, chordShape, parseChord, describeDiagram, pretty, STRING_NAMES, runNotes, runWindow,
+  scaleTones, arpeggioTones, fretboardNotes, shapeNotes, chordShape, parseChord, describeDiagram, pretty, STRING_NAMES, runNotes, runWindow,
   PROGRESSION_KEYS, numeralBars, numeralChord, prettyNumeral,
 } from './music.js';
 import {
@@ -30,11 +30,16 @@ export function renderDiagram(d, itemText = '', { upright = false } = {}) {
   if (!toneList.length) return null;
   const title = describeDiagram(d);
   const repeat = plain(title) === plain(itemText);
+  const label = (t) => pretty(d.labels === 'intervals' ? t.interval : t.name);
+  const shaped = d.type === 'scale' && d.shape;
+  const data = shaped ? { ...shapeNotes(d, toneList), marksUnused: true } : { ...fretboardNotes(toneList, d.position), marksOpen: true };
+  const passing = shaped ? [...new Map(data.notes.filter((n) => n.passing).map((n) => [n.name, n])).values()] : [];
   return el('figure', { class: 'diagram diagram-board' },
     el('figcaption', { class: 'diagram-title' },
       repeat ? null : title.replace(/^./, (c) => c.toUpperCase()),
-      el('span', { class: 'diagram-notes', text: toneList.map((t) => pretty(d.labels === 'intervals' ? t.interval : t.name)).join(' ') })),
-    boards({ ...fretboardNotes(toneList, d.position), marksOpen: true }, (n) => (d.labels === 'intervals' ? n.interval : pretty(n.name)), title, upright));
+      el('span', { class: 'diagram-notes', text: toneList.map(label).join(' ') }),
+      passing.length ? el('span', { class: 'diagram-passing', text: `passing ${passing.map(label).join(' ')}` }) : null),
+    boards(data, label, title, upright));
 }
 
 /** A walk-up or bass run: numbered in playing order; the note it lands on is solid. */
@@ -54,7 +59,9 @@ function runDiagram(d, upright) {
  */
 function boards(data, labelOf, title, upright) {
   const [lo, hi] = data.window;
-  data = { ...data, window: [lo, hi + 1], muted: data.marksOpen && lo === 0 ? openStringsOut(data.notes) : [] };
+  const muted = !data.marksOpen && !data.marksUnused || lo !== 0 ? []
+    : data.marksOpen ? openStringsOut(data.notes) : [0, 1, 2, 3, 4, 5].filter((s) => !data.notes.some((n) => n.string === s));
+  data = { ...data, window: [lo, hi + 1], muted };
   const across = fretboard(data, labelOf, title);
   if (!upright) return across;
   across.classList.add('board-h');
@@ -69,8 +76,8 @@ export function renderDiagrams(list, itemText = '', options = {}) {
 // ------------------------------------------------------------------ fretboard
 
 const openStringsOut = (notes) => [0, 1, 2, 3, 4, 5].filter((s) => !notes.some((n) => n.string === s && n.fret === 0));
-const dotClass = (n) => `board-dot${n.root ? ' root' : ''}${n.fret === 0 ? ' open' : ''}`;
-const ariaNotes = (title, notes, muted) => `${title}. ${notes.length} notes: ${notes.map((n) => `${STRING_NAMES[n.string]} string ${n.fret === 0 ? 'open' : `fret ${n.fret}`} ${n.name}`).join(', ')}`
+const dotClass = (n) => `board-dot${n.root ? ' root' : ''}${n.fret === 0 ? ' open' : ''}${n.passing ? ' passing' : ''}`;
+const ariaNotes = (title, notes, muted) => `${title}. ${notes.length} notes: ${notes.map((n) => `${STRING_NAMES[n.string]} string ${n.fret === 0 ? 'open' : `fret ${n.fret}`} ${n.name}${n.passing ? ' (passing)' : ''}`).join(', ')}`
   + (muted.length ? `. Open ${muted.map((s) => STRING_NAMES[s]).join(', ')} not in it` : '');
 
 function fretboard({ notes, window: [lo, hi], muted }, labelOf, title) {

@@ -56,7 +56,7 @@ function draftFrom(d) {
   if (!d) return draft;
   draft.type = d.type;
   if (d.type === 'scale' || d.type === 'arpeggio') Object.assign(draft, { root: d.root, position: d.position, labels: d.labels });
-  if (d.type === 'scale') draft.scale = d.scale;
+  if (d.type === 'scale') Object.assign(draft, { scale: d.scale, from: d });
   if (d.type === 'arpeggio') draft.quality = d.quality;
   if (d.type === 'chords') draft.chords = d.chords.join(' ');
   if (d.type === 'progression') Object.assign(draft, { chart: d.text, shapes: d.shapes || [] });
@@ -86,10 +86,17 @@ export function diagramEditor(initial, getText) {
       default: {
         const position = draft.position === 'open' ? 'open' : Number(draft.position);
         return normaliseDiagram(draft.type === 'scale'
-          ? { type: 'scale', root: draft.root, scale: draft.scale, position, labels: draft.labels }
+          ? { type: 'scale', root: draft.root, scale: draft.scale, position, labels: draft.labels, ...keptShape(position) }
           : { type: 'arpeggio', root: draft.root, quality: draft.quality, position, labels: draft.labels });
       }
     }
+  }
+
+  // A set shape (open position pentatonics) stays while its root, scale and position do.
+  function keptShape(position) {
+    const d = draft.from;
+    if (!d || !d.shape || d.root !== draft.root || d.scale !== draft.scale || d.position !== position) return {};
+    return { shape: d.shape, ...(d.passing ? { passing: d.passing } : {}) };
   }
 
   function open(index) {

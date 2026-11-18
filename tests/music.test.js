@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   scaleTones, arpeggioTones, fretboardNotes, chordShape, parseChord, chordTokens, runNotes, runWindow,
   suggestDiagram, normaliseDiagram, describeDiagram, pretty, STRING_NAMES,
-  numeralChord, numeralBars, parseNumeral, PROGRESSION_KEYS, parseNote,
+  numeralChord, numeralBars, parseNumeral, PROGRESSION_KEYS, parseNote, shapeNotes,
 } from '../js/music.js';
 import { defaultLibrary, STARTER_DIAGRAMS, STARTER_NOTES, STARTER_NOTES_V7, STARTER_V9, SCHEMA_VERSION } from '../js/defaults.js';
 import { migrate, parseFile } from '../js/transfer.js';
@@ -334,4 +334,40 @@ test('v9 -> v10: Closer to Fine gets the full chart from the tab, unless edited'
   item = out.library.items.find((i) => i.id === 'songs-11');
   assert.equal(item.notes, 'mine', 'edited notes left alone');
   assert.equal(item.diagrams[0].type, 'progression', 'untouched diagrams still updated');
+});
+
+test('open position pentatonics: every shape note is in its scale, passing notes are not', () => {
+  const ids = ['scales-4', ...Array.from({ length: 8 }, (_, i) => `scales-${i + 6}`)];
+  for (const id of ids) {
+    const d = STARTER_DIAGRAMS[id][0];
+    assert.ok(d.shape.length >= 8 && d.passing.length === 2, id);
+    const { notes, window } = shapeNotes(d, scaleTones(d.root, d.scale));
+    assert.equal(notes.length, d.shape.length + d.passing.length);
+    assert.equal(window[0], 0, `${id} is open position`);
+    assert.ok(notes.some((n) => n.root), `${id} has its root`);
+  }
+  const names = (id) => shapeNotes(STARTER_DIAGRAMS[id][0], scaleTones(STARTER_DIAGRAMS[id][0].root, STARTER_DIAGRAMS[id][0].scale)).notes;
+  assert.deepEqual(names('scales-6').filter((n) => n.passing).map((n) => [n.name, n.interval]), [['Eb', '♭3'], ['Eb', '♭3']]);
+  assert.deepEqual(names('scales-7').filter((n) => n.passing).map((n) => [n.name, n.interval]), [['Eb', '♭5'], ['Eb', '♭5']]);
+  assert.deepEqual(names('scales-13').filter((n) => n.passing).map((n) => n.name), ['Ab', 'Ab']);
+  assert.deepEqual(shapeNotes(STARTER_DIAGRAMS['scales-12'][0], scaleTones('A', 'major_pentatonic')).window, [0, 5]);
+  // Off-scale shape notes and in-scale passing notes are dropped.
+  const d = normaliseDiagram({ type: 'scale', root: 'C', scale: 'major_pentatonic', position: 'open', labels: 'notes', shape: [[1, 3], [1, 2], [2, 0], [2, 2]], passing: [[2, 1], [2, 2]] });
+  assert.deepEqual(d.shape, [[1, 3], [2, 0], [2, 2]]);
+  assert.deepEqual(d.passing, [[2, 1]]);
+});
+
+test('v10 -> v11 migration adds the open pentatonics and reshapes E minor', () => {
+  const lib = defaultLibrary();
+  lib.items = lib.items.filter((i) => !/^scales-([6-9]|1[0-3])$/.test(i.id));
+  const em = lib.items.find((i) => i.id === 'scales-4');
+  em.diagrams = [{ type: 'scale', root: 'E', scale: 'minor_pentatonic', position: 'open', labels: 'notes' }];
+  em.notes = '';
+  const out = migrate({ schema_version: 10, library: lib, settings: {}, sessions: [], plans: [] });
+  const added = out.library.items.filter((i) => /^scales-([6-9]|1[0-3])$/.test(i.id));
+  assert.equal(added.length, 8);
+  assert.ok(added.every((i) => /open position, 70 bpm$/.test(i.text) && i.diagrams[0].shape && i.notes));
+  const em2 = out.library.items.find((i) => i.id === 'scales-4');
+  assert.deepEqual(em2.diagrams, STARTER_DIAGRAMS['scales-4']);
+  assert.match(em2.notes, /Haugen/);
 });

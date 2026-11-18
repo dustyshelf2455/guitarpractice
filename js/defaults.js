@@ -3,7 +3,7 @@
 
 import { parseTab, serialiseTab, normaliseRhythm } from './notation.js';
 
-export const SCHEMA_VERSION = 10;
+export const SCHEMA_VERSION = 11;
 export const SLOT_COUNT = 12;
 
 const AREAS = [
@@ -48,6 +48,15 @@ const LIBRARY = {
     'G major scale, open position',
     'E minor pentatonic, open position',
     'A minor pentatonic',
+    // Eric Haugen's open position pentatonics (E minor is scales-4 above).
+    'C major pentatonic, open position, 70 bpm',
+    'A minor pentatonic, open position, 70 bpm',
+    'G major pentatonic, open position, 70 bpm',
+    'D minor pentatonic, open position, 70 bpm',
+    'D major pentatonic, open position, 70 bpm',
+    'E major pentatonic, open position, 70 bpm',
+    'A major pentatonic, open position, 70 bpm',
+    'F major pentatonic, open position, 70 bpm',
   ],
   chords: [
     'Open chords: C, G, D, Em, Am',
@@ -166,6 +175,34 @@ const timedLick = (tab, rhythm, ...chordList) => {
   return [{ ...first, rhythm: normaliseRhythm(rhythm, parseTab(tab).length) }, ...rest];
 };
 
+// Eric Haugen's open position pentatonic shapes: [string, fret] (0 = low E), and the chromatic
+// passing notes from his second chart (the ♭3 in the major shapes, the ♭5 in the minor ones).
+const pent = (root, kind, shape, passing) => [{ type: 'scale', root, scale: `${kind}_pentatonic`, position: 'open', labels: 'notes', shape, passing }];
+const OPEN_PENTATONICS = {
+  'scales-4': pent('E', 'minor', [[0, 0], [0, 3], [1, 0], [1, 2], [2, 0], [2, 2], [3, 0], [3, 2], [4, 0], [4, 3], [5, 0], [5, 3]], [[1, 1], [3, 3]]),
+  'scales-6': pent('C', 'major', [[1, 3], [2, 0], [2, 2], [3, 0], [3, 2], [4, 1], [4, 3], [5, 0], [5, 3]], [[2, 1], [4, 4]]),
+  'scales-7': pent('A', 'minor', [[1, 0], [1, 3], [2, 0], [2, 2], [3, 0], [3, 2], [4, 1], [4, 3], [5, 0], [5, 3]], [[2, 1], [4, 4]]),
+  'scales-8': pent('G', 'major', [[0, 3], [1, 0], [1, 2], [2, 0], [2, 2], [3, 0], [3, 2], [4, 0], [4, 3], [5, 0], [5, 3]], [[1, 1], [3, 3]]),
+  'scales-9': pent('D', 'minor', [[2, 0], [2, 3], [3, 0], [3, 2], [4, 1], [4, 3], [5, 1], [5, 3]], [[3, 1], [5, 4]]),
+  'scales-10': pent('D', 'major', [[2, 0], [2, 2], [2, 4], [3, 2], [4, 0], [4, 3], [5, 0], [5, 2]], [[2, 3], [5, 1]]),
+  'scales-11': pent('E', 'major', [[0, 0], [0, 2], [0, 4], [1, 2], [1, 4], [2, 2], [2, 4], [3, 1], [4, 0], [4, 2], [5, 0], [5, 2], [5, 4]], [[0, 3], [5, 3]]),
+  'scales-12': pent('A', 'major', [[1, 0], [1, 2], [1, 4], [2, 2], [2, 4], [3, 2], [4, 0], [4, 2], [5, 0], [5, 2], [5, 5]], [[1, 3], [4, 1]]),
+  'scales-13': pent('F', 'major', [[0, 1], [0, 3], [1, 0], [1, 3], [2, 0], [2, 3], [3, 0], [3, 2], [4, 1], [4, 3], [5, 1]], [[0, 4], [3, 1]]),
+};
+// [where the low root is, the passing note, its interval, the relative scale with the same notes].
+const PENT_TIPS = {
+  'scales-4': ['E minor', 'the open low E', 'B♭', '♭5', 'G major'],
+  'scales-6': ['C major', 'the A string, 3rd fret', 'E♭', '♭3', 'A minor'],
+  'scales-7': ['A minor', 'the open A string', 'E♭', '♭5', 'C major'],
+  'scales-8': ['G major', 'the low E string, 3rd fret', 'B♭', '♭3', 'E minor'],
+  'scales-9': ['D minor', 'the open D string', 'A♭', '♭5', 'F major'],
+  'scales-10': ['D major', 'the open D string', 'F', '♭3', 'B minor'],
+  'scales-11': ['E major', 'the open low E', 'G', '♭3', 'C♯ minor'],
+  'scales-12': ['A major', 'the open A string', 'C', '♭3', 'F♯ minor'],
+  'scales-13': ['F major', 'the low E string, 1st fret', 'A♭', '♭3', 'D minor'],
+};
+const pentNote = ([name, where, note, interval, relative]) => `Open position ${name} pentatonic, from Eric Haugen's charts (same notes as ${relative} pentatonic). Start on the low root, ${where}: climb to the top of the shape, come back down to the lowest note, then finish on the root. Even eighth notes at 70 bpm, and let the open strings ring as notes. Once it's clean, add the dashed ${note} (the ${interval}): a passing note to slide or hammer through between its neighbours, not one to land on. Up 5 bpm after three clean runs.`;
+
 const CLOSER_TO_FINE = ['G=320033~210034', 'A7sus4=x02033~001034', 'Cadd9=x32033~021034', 'Dsus4=x00233~000134'];
 // The D figure that ends its phrases: D, Dsus2, D, Dsus4.
 const D_FIGURE = ['D=xx0232~000132', 'Dsus2=xx0230~000130'];
@@ -179,8 +216,8 @@ export const STARTER_DIAGRAMS = {
   'scales-1': scale('C', 'major', 'open'),
   'scales-2': scale('D', 'major', 'open'),
   'scales-3': scale('G', 'major', 'open'),
-  'scales-4': scale('E', 'minor_pentatonic', 'open'),
   'scales-5': scale('A', 'minor_pentatonic', 5),
+  ...OPEN_PENTATONICS,
   'chords-1': chords('C', 'G', 'D', 'Em', 'Am'),
   'chords-2': chords('F'),
   'chords-3': chords('C', 'G', 'Am', 'F'),
@@ -335,6 +372,7 @@ E|-------------------------|---------------------------3b4-|-0-|`,
 
 /** Notes that come with starter items (instructions, practice tips). */
 export const STARTER_NOTES = {
+  ...Object.fromEntries(Object.entries(PENT_TIPS).map(([id, tip]) => [id, pentNote(tip)])),
   'strumming-3': 'Rest your fretting hand lightly across all the strings so every strum is a muted chuck. Keep the hand moving down and up; it\'s all about the groove.',
   'licks-1': 'Bluegrass, beginner. The classic way to end a phrase in G. Strum G, then play the run in one bar at about 70 bpm: pick the low G and the open A, and let the hammer-on and slide sound A♯ and B. Let the open G ring at the end.',
   'licks-2': 'Folk, beginner. Hold a full C chord. Lift your middle and index fingers and hammer them back on, letting everything ring. The same trick works on G: A string, open, hammer onto fret 2.',
@@ -401,7 +439,11 @@ export const ADDED_ITEMS = [
   [7, ['licks-13']],
   [9, ['songs-11', 'chords-31']],
   [10, ['chords-32', 'chords-33']],
+  [11, Array.from({ length: 8 }, (_, i) => `scales-${i + 6}`)],
 ];
+
+/** E minor pentatonic as shipped before v11 (a plain open position scale), so v11 can give it Haugen's shape. */
+export const SCALES4_V10 = scale('E', 'minor_pentatonic', 'open');
 
 /** Closer to Fine as first shipped in v9, so v10 can update it if untouched. */
 export const STARTER_V9 = {

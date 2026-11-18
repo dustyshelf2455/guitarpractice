@@ -46,6 +46,8 @@ Install it rather than using it in a browser tab. Installed, it opens full scree
 - **Strumming pattern**: tap each slot to choose down ↓, up ↑, muted chuck × or a miss, and tap > to accent it; pick 4/4 or 3/4, eighths or sixteenths. With the metronome on, the card lights each strum in time.
 - When the item's text names a scale, arpeggio, chords or a strumming pattern (e.g. "B minor scale, 2nd position", "D DU UDU"), the editor suggests it, and new items get it automatically.
 
+**Open position pentatonics:** the Scales slot has Eric Haugen's nine open position pentatonic shapes (C, G, D, E, A and F major; A, E and D minor) at 70 bpm. Each card draws just that fingering, with strings the shape skips marked ×, and the chromatic passing notes from his second chart (the ♭3 in the major shapes, the ♭5 in the minor ones) as dashed dots. Editing the diagram keeps the shape as long as the root, scale and position stay the same.
+
 **Licks:** the last slot practises a lick: stock bluegrass, blues, country and folk licks around G, C and D (the G run, a C minor pentatonic run, a blues turnaround, a Chuck Berry double stop and more), each with tab and a note on how to practise it, plus "Find a new lick on YouTube and learn it". The tabs were written from teaching sources' descriptions and checked note by note. Add your own the same way.
 
 **Appearance** (Settings → Appearance):

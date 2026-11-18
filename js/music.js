@@ -3,6 +3,9 @@
 //
 // Diagram data stored on a library item (item.diagrams is a list):
 //   { type: 'scale',    root: 'C', scale: 'major',  position: 'open' | 1..12, labels: 'notes' | 'intervals' }
+//                       optional shape: [[string, fret], ...] draws just that fingering (a set shape such as
+//                       Eric Haugen's open position pentatonics), passing: [[string, fret], ...] its chromatic
+//                       passing notes (outside the scale), drawn dashed
 //   { type: 'arpeggio', root: 'C', quality: 'major', position: 'open' | 1..12, labels: 'notes' | 'intervals' }
 //   { type: 'chords',   chords: ['C', 'G', 'Am', 'F:E'] }   ':E' / ':A' asks for that barre shape,
 //                                                         'G=xxx433' a written-out voicing (triads)
@@ -126,6 +129,31 @@ export function fretboardNotes(toneList, position) {
     }
   });
   return { notes, window: [lo, hi] };
+}
+
+// Degree for a chromatic note outside the scale, by semitones above the root (flats: ♭3, ♭5, ♭7...).
+const CHROMATIC_DEGREE = { 1: 1, 2: 1, 3: 2, 4: 2, 5: 3, 6: 4, 7: 4, 8: 5, 9: 5, 10: 6, 11: 6 };
+
+/**
+ * The notes of a set scale shape (d.shape, d.passing): shape notes take their
+ * names from the scale, passing notes are spelled as flats of the degree above.
+ */
+export function shapeNotes(d, toneList) {
+  const byPc = new Map(toneList.map((t) => [t.pc, t]));
+  const rootPc = parseNote(d.root).pc;
+  const notes = (d.shape || []).map(([string, fret]) => {
+    const t = byPc.get((TUNING[string] + fret) % 12);
+    return { string, fret, name: t.name, interval: t.interval, root: t.root };
+  });
+  for (const [string, fret] of d.passing || []) {
+    const semis = (TUNING[string] + fret - rootPc + 24) % 12;
+    const degree = CHROMATIC_DEGREE[semis];
+    notes.push({ string, fret, name: spell(d.root, degree, semis).name, interval: intervalName(degree, semis), root: false, passing: true });
+  }
+  const frets = notes.map((n) => n.fret);
+  const lo = Math.min(...frets);
+  const hi = Math.max(...frets);
+  return { notes, window: lo <= 1 ? [0, Math.max(3, hi)] : [lo, Math.max(lo + 3, hi)] };
 }
 
 /** Fret of a pitch class on the low E string, 0-11. */
@@ -360,7 +388,22 @@ export function normaliseDiagram(d) {
   const labels = d.labels === 'intervals' ? 'intervals' : 'notes';
   const position = POSITIONS.has(d.position) ? d.position : 'open';
   if (d.type === 'scale' && parseNote(d.root) && SCALES[d.scale]) {
-    return { type: 'scale', root: noteName(parseNote(d.root).letter, parseNote(d.root).acc), scale: d.scale, position, labels };
+    const root = noteName(parseNote(d.root).letter, parseNote(d.root).acc);
+    const out = { type: 'scale', root, scale: d.scale, position, labels };
+    // A set shape: its notes must be in the scale, its passing notes outside it.
+    const pcs = new Set(scaleTones(root, d.scale).map((t) => t.pc));
+    const spots = (list, inScale) => (Array.isArray(list) ? list : [])
+      .filter((n) => Array.isArray(n) && Number.isInteger(n[0]) && Number.isInteger(n[1]) && n[0] >= 0 && n[0] <= 5 && n[1] >= 0 && n[1] <= 15)
+      .filter(([s, f]) => pcs.has((TUNING[s] + f) % 12) === inScale)
+      .map(([s, f]) => [s, f])
+      .slice(0, 24);
+    const shape = spots(d.shape, true);
+    if (shape.length >= 3) {
+      out.shape = shape;
+      const passing = spots(d.passing, false);
+      if (passing.length) out.passing = passing;
+    }
+    return out;
   }
   if (d.type === 'arpeggio' && parseNote(d.root) && ARPEGGIOS[d.quality]) {
     return { type: 'arpeggio', root: noteName(parseNote(d.root).letter, parseNote(d.root).acc), quality: d.quality, position, labels };

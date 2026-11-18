@@ -423,7 +423,8 @@ export function normaliseDiagram(d) {
     const events = parseTab(d.tab);
     if (!events.length) return null;
     const rhythm = normaliseRhythm(d.rhythm, events.length);
-    return rhythm ? { type: 'tab', tab: serialiseTab(events), rhythm } : { type: 'tab', tab: serialiseTab(events) };
+    const title = typeof d.title === 'string' ? d.title.trim().slice(0, 60) : '';
+    return { type: 'tab', tab: serialiseTab(events), ...(rhythm ? { rhythm } : {}), ...(title ? { title } : {}) };
   }
   if (d.type === 'progression' && typeof d.text === 'string') {
     const text = cleanChart(d.text.slice(0, 20000));

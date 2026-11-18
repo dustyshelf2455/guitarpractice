@@ -60,7 +60,7 @@ function draftFrom(d) {
   if (d.type === 'arpeggio') draft.quality = d.quality;
   if (d.type === 'chords') draft.chords = d.chords.join(' ');
   if (d.type === 'progression') Object.assign(draft, { chart: d.text, shapes: d.shapes || [] });
-  if (d.type === 'tab') Object.assign(draft, { tab: d.tab, rhythm: d.rhythm || '' });
+  if (d.type === 'tab') Object.assign(draft, { tab: d.tab, rhythm: d.rhythm || '', title: d.title || '' });
   if (d.type === 'strum') Object.assign(draft, { strum: d.pattern, accents: [...(d.accents || [])] });
   return draft;
 }
@@ -81,7 +81,7 @@ export function diagramEditor(initial, getText) {
     switch (draft.type) {
       case 'chords': return normaliseDiagram({ type: 'chords', chords: chordTokens(draft.chords) });
       case 'progression': return normaliseDiagram({ type: 'progression', text: draft.chart, shapes: draft.shapes });
-      case 'tab': return normaliseDiagram({ type: 'tab', tab: draft.tab, rhythm: draft.rhythm });
+      case 'tab': return normaliseDiagram({ type: 'tab', tab: draft.tab, rhythm: draft.rhythm, title: draft.title });
       case 'strum': return normaliseDiagram({ type: 'strum', pattern: draft.strum, accents: draft.accents });
       default: {
         const position = draft.position === 'open' ? 'open' : Number(draft.position);

@@ -223,7 +223,7 @@ export function chordBox(shape) {
 
 // ------------------------------------------------------------------ tab (licks)
 
-const BEND_WORDS = { 1: '½', 2: 'full', 3: '1½', 4: '2' };
+const BEND_WORDS = { 0: '¼', 1: '½', 2: 'full', 3: '1½', 4: '2' };
 
 /** A lick as tab: six lines, high e on top, wrapped into rows of up to eight notes (at bar lines when it has them). */
 function tabDiagram(d) {
@@ -244,7 +244,8 @@ function tabDiagram(d) {
   const systems = rows.map(([a, b]) => tabSystem(events.slice(a, b), per, a === 0,
     rhythm && rhythm.slice(a, b).map((r, i) => ({ ...r, at: beats[a + i] }))));
   return el('figure', { class: 'diagram diagram-tab', role: 'img', 'aria-label': `Tab, ${events.length} notes: ${names.map(pretty).join(', ')}` },
-    events.length <= 16 ? el('figcaption', { class: 'diagram-title' }, el('span', { class: 'diagram-notes', text: names.map(pretty).join(' ') })) : null,
+    d.title || events.length <= 16 ? el('figcaption', { class: 'diagram-title' }, d.title || null,
+      events.length <= 16 ? el('span', { class: 'diagram-notes', text: names.map(pretty).join(' ') }) : null) : null,
     systems);
 }
 

@@ -2,7 +2,7 @@
 // Everything here is pure so it can be tested without a browser.
 
 import {
-  SCHEMA_VERSION, SLOT_COUNT, defaultSettings, STARTER_DIAGRAMS, STARTER_NOTES, starterText, starterItem, ADDED_ITEMS, SCALES4_V10,
+  SCHEMA_VERSION, SLOT_COUNT, defaultSettings, STARTER_DIAGRAMS, STARTER_NOTES, starterText, starterItem, ADDED_ITEMS, SCALES4_V10, FILLS_V12,
   NOTES_LIMIT, SLOTS_V3, STARTER_NOTES_V7, starterLink, SONGS_V10, STARTER_V9,
 } from './defaults.js';
 import { normaliseDiagram } from './music.js';
@@ -15,6 +15,13 @@ const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
 const optNum = (v) => v == null || isNum(v);
 
 /** Upgrade older data to the current schema, one version at a time. */
+/** A short hash of a string (FNV-1a), to recognise starter content as shipped without storing it. */
+export function fingerprint(text) {
+  let h = 0x811c9dc5;
+  for (const c of String(text)) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619) >>> 0; }
+  return h.toString(36);
+}
+
 export function migrate(data) {
   const out = clone(data);
   let v = out.schema_version || 1;
@@ -93,6 +100,16 @@ export function migrate(data) {
       if (it.id !== 'scales-4' || starterText(it.id) !== it.text) continue;
       if (!(Array.isArray(it.diagrams) && it.diagrams.length) || JSON.stringify(it.diagrams) === JSON.stringify(SCALES4_V10)) it.diagrams = clone(STARTER_DIAGRAMS[it.id]);
       if (!it.notes) it.notes = STARTER_NOTES[it.id];
+    }
+  }
+  // v13: the fills cards (added in v12) become Eric Haugen's tab note for note, where untouched.
+  if (from === 12) {
+    for (const it of out.library?.items || []) {
+      const was = FILLS_V12[it.id];
+      if (!was) continue;
+      if (it.text === was[0]) it.text = starterText(it.id);
+      if (fingerprint(JSON.stringify((Array.isArray(it.diagrams) ? it.diagrams : []).map(normaliseDiagram))) === was[1]) it.diagrams = clone(STARTER_DIAGRAMS[it.id]);
+      if (fingerprint(it.notes || '') === was[2]) it.notes = STARTER_NOTES[it.id];
     }
   }
   out.schema_version = SCHEMA_VERSION;

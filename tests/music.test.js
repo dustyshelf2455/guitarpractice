@@ -5,8 +5,9 @@ import {
   suggestDiagram, normaliseDiagram, describeDiagram, pretty, STRING_NAMES,
   numeralChord, numeralBars, parseNumeral, PROGRESSION_KEYS, parseNote, shapeNotes,
 } from '../js/music.js';
-import { defaultLibrary, STARTER_DIAGRAMS, STARTER_NOTES, STARTER_NOTES_V7, STARTER_V9, SCHEMA_VERSION } from '../js/defaults.js';
-import { migrate, parseFile } from '../js/transfer.js';
+import { defaultLibrary, STARTER_DIAGRAMS, STARTER_NOTES, STARTER_NOTES_V7, STARTER_V9, SCHEMA_VERSION, FILLS_V12 } from '../js/defaults.js';
+import { migrate, parseFile, fingerprint } from '../js/transfer.js';
+import { parseTab } from '../js/notation.js';
 
 const names = (list) => list.map((t) => t.name).join(' ');
 const frets = (s) => s.frets.map((f) => (f < 0 ? 'x' : f)).join('');
@@ -372,7 +373,7 @@ test('v10 -> v11 migration adds the open pentatonics and reshapes E minor', () =
   assert.match(em2.notes, /Haugen/);
 });
 
-test('v11 -> v12 migration adds the acoustic fills to Licks, each a playable four-bar tab', () => {
+test('v11 -> v12 migration adds the acoustic fills to Licks, as tabs with rhythms and titles', () => {
   const ids = Array.from({ length: 9 }, (_, i) => `licks-${i + 14}`);
   const lib = defaultLibrary();
   lib.items = lib.items.filter((i) => !ids.includes(i.id));
@@ -382,12 +383,34 @@ test('v11 -> v12 migration adds the acoustic fills to Licks, each a playable fou
   const added = out.library.items.filter((i) => ids.includes(i.id));
   assert.equal(added.length, 9);
   for (const it of added) {
-    const tab = it.diagrams[0];
-    assert.equal(tab.type, 'tab');
-    assert.ok(tab.rhythm, `${it.id} has a rhythm that fits its tab`);
-    assert.equal(tab.tab.split('\n')[0].split('|').length - 2, 4, `${it.id} is four bars`);
+    const tabs = it.diagrams.filter((d) => d.type === 'tab');
+    assert.ok(tabs.length >= 4 && it.diagrams.length <= 6, `${it.id}: 4-5 tabs and a chord box`);
+    assert.ok(tabs.every((t) => t.rhythm && t.title), `${it.id}: every tab has a rhythm that fits and a title`);
     assert.match(it.notes, /Haugen/);
     assert.match(it.text, /\d+ bpm/);
   }
   assert.equal(out.library.items.find((i) => i.id === 'licks-13').notes, 'my own note', 'existing notes are kept');
+});
+
+test('the fills follow Eric Haugen\'s tab: Sweet Virginia is 20 bars, bar lengths add up', () => {
+  const sv = STARTER_DIAGRAMS['licks-22'].filter((d) => d.type === 'tab');
+  assert.equal(sv.length, 5);
+  assert.equal(sv.map((t) => parseTab(t.tab).filter((e, k) => k === 0 || e.bar).length).reduce((a, b) => a + b), 20);
+  // Bar 1 opens on the full G (low G with the open D, G and B), bar 18 is the D7 run.
+  assert.deepEqual(parseTab(sv[0].tab)[0].notes.map((n) => `${n.string}:${n.fret}`), ['4:0', '3:0', '2:0', '0:3']);
+  assert.match(sv[4].tab.split('\n')[2], /3\\2/, 'B♭ slides down to A on the G string in bar 18');
+});
+
+test('v12 -> v13 migration swaps untouched fills cards for the note-for-note versions', () => {
+  const lib = defaultLibrary();
+  const old = lib.items.find((i) => i.id === 'licks-22');
+  const edited = lib.items.find((i) => i.id === 'licks-14');
+  // As shipped in v12: a fingerprint match stands in for the old content.
+  Object.assign(old, { text: FILLS_V12['licks-22'][0], diagrams: [{ type: 'tab', tab: 'e|-0-|\nB|---|\nG|---|\nD|---|\nA|---|\nE|---|' }], notes: '' });
+  edited.notes = 'Ben\'s note';
+  const out = migrate({ schema_version: 12, library: lib, settings: {}, sessions: [], plans: [] });
+  const sv = out.library.items.find((i) => i.id === 'licks-22');
+  assert.equal(sv.text, 'Sweet Virginia fills, capo 2, 80 bpm');
+  assert.equal(out.library.items.find((i) => i.id === 'licks-14').notes, 'Ben\'s note', 'an edited note is kept');
+  assert.equal(fingerprint('Acoustic fills over C, 70 bpm').length > 0, true);
 });

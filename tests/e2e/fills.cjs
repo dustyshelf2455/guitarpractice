@@ -34,7 +34,7 @@ async function until(fn, ms = 3000) {
     await page.goto(BASE);
     await page.waitForSelector('.tile[data-state]');
     const i = await app(() => window.timebox.app.boardTiles().findIndex((t) => t.subtype_id === 'licks'));
-    for (const [id, name] of [['licks-14', 'fills-c'], ['licks-22', 'fills-song']]) {
+    for (const [id, name, tabs] of [['licks-14', 'fills-c', 4], ['licks-18', 'fills-e', 5], ['licks-22', 'sweet-virginia', 5]]) {
       const rolled = await app(async ([i, id]) => {
         const a = window.timebox.app;
         for (let n = 0; n < 300 && a.boardTiles()[i].item_id !== id; n++) if (!(await a.swap(i))) return false;
@@ -42,14 +42,15 @@ async function until(fn, ms = 3000) {
       }, [i, id]);
       check(rolled, `${id} on the licks block (${scheme})`);
       await page.locator('.tile').nth(i).click();
-      await until(() => page.locator('.focus .diagram-tab').isVisible());
-      const rows = page.locator('.focus .diagram-tab svg.tab');
-      check((await rows.count()) === 4, `${id}: four rows, one per bar`);
-      check((await page.locator('.focus .diagram-tab .tab-stem').count()) >= 23, `${id}: a stem under every note`);
-      check((await page.locator('.focus .diagram-chords, .focus .chord-box, .focus svg.chord').count()) > 0, `${id}: chord box shown`);
-      if (id === 'licks-14') check((await page.locator('.focus .diagram-passing').count()) > 0, 'C pentatonic shape with its passing note');
+      await until(() => page.locator('.focus .diagram-tab').first().isVisible());
+      const figs = page.locator('.focus .diagram-tab');
+      check((await figs.count()) === tabs, `${id}: ${tabs} tabs (${await figs.count()})`);
+      const titles = await figs.locator('.diagram-title').allTextContents();
+      check(titles.length === tabs && titles.every((t) => t.trim()), `${id}: every tab titled (${titles.map((t) => t.slice(0, 20)).join(' / ')})`);
+      check((await page.locator('.focus .diagram-tab .tab-stem').count()) >= 40, `${id}: rhythm drawn`);
+      if (id === 'licks-18') check((await page.locator('.focus .tab-tech', { hasText: '¼' }).count()) === 2, 'two quarter-step curls in the blues lick');
       const fits = await app(() => [...document.querySelectorAll('.focus .diagram-tab svg.tab')].every((s) => s.getBoundingClientRect().right <= window.innerWidth));
-      check(fits, `${id}: tab fits the phone width`);
+      check(fits, `${id}: tabs fit the phone width`);
       await page.screenshot({ path: path.join(SHOTS, 'fills', `${name}-${scheme}.png`), fullPage: true });
       await page.goto(BASE);
       await page.waitForSelector('.tile[data-state]');

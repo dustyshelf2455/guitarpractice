@@ -1,8 +1,8 @@
 // Metronome sheet. The click keeps going when the sheet is closed; the toolbar
 // button shows the tempo while it plays. If the current block mentions a tempo
-// ("70 bpm") the metronome offers it.
+// ("70 bpm") in its title or notes, the metronome offers it.
 
-import { el, icon, parseBpm, setDigits } from '../util.js';
+import { el, icon, blockBpm, setDigits } from '../util.js';
 import { metronome, freshAudio } from '../audio.js';
 import { openSheet } from './sheets.js';
 
@@ -17,7 +17,8 @@ export function openMetronomeSheet(app, { onChange }) {
   // A tempo from the running (or last active) block.
   const s = app.active;
   const blockIndex = s ? (s.running ?? s.last_tile) : null;
-  const blockBpm = blockIndex != null ? parseBpm(s.tiles[blockIndex].item_text) : null;
+  const tile = blockIndex != null ? s.tiles[blockIndex] : null;
+  const blockTempo = tile ? blockBpm(tile, app.item(tile.item_id)) : null;
 
   const bpmValue = el('output', { class: 'metro-bpm', 'aria-live': 'polite' });
   const slider = el('input', {
@@ -26,9 +27,9 @@ export function openMetronomeSheet(app, { onChange }) {
   });
   const pulse = el('div', { class: 'metro-pulse', 'aria-hidden': 'true' });
   const playBtn = el('button', { class: 'btn btn-primary metro-play', type: 'button', onclick: toggle });
-  const blockChip = blockBpm && blockBpm !== metronome.bpm
-    ? el('button', { class: 'chip', type: 'button', onclick: () => { setBpm(blockBpm); blockChip.hidden = true; } },
-      `Use ${blockBpm} bpm from this block`)
+  const blockChip = blockTempo && blockTempo !== metronome.bpm
+    ? el('button', { class: 'chip', type: 'button', onclick: () => { setBpm(blockTempo); blockChip.hidden = true; } },
+      `Use ${blockTempo} bpm from this block`)
     : null;
 
   const step = (d, label) => el('button', { class: 'step-btn', type: 'button', 'aria-label': label, onclick: () => setBpm(metronome.bpm + d) },

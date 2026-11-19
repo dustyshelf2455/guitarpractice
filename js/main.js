@@ -3,7 +3,7 @@
 import { App } from './state.js';
 import { openStore, requestPersistence } from './store.js';
 import { TILE_MS, tileElapsed, sessionElapsed } from './engine.js';
-import { el, parseBpm } from './util.js';
+import { el, blockBpm } from './util.js';
 import {
   unlockAudio, resumeAudio, freshAudio, playChime, vibrate, scheduleChime, cancelChime, chimeWasScheduledFor, metronome,
 } from './audio.js';
@@ -190,10 +190,10 @@ function followBlock() {
   if (runningInView && followed !== key) {
     followed = key;
     if (!auto) return;
-    // A new block: its own tempo ("70 bpm") if it names one, otherwise the one you last chose.
+    // A new block: its own tempo ("70 bpm") if its title or notes name one, otherwise the one you last chose.
     if (key !== lastTempoBlock) {
       const m = app.settings.metronome;
-      metronome.setBpm(parseBpm(t.item_text) ?? m.bpm);
+      metronome.setBpm(blockBpm(t, app.item(t.item_id)) ?? m.bpm);
       metronome.beats = m.beats;
       metronome.accent = m.accent;
       lastTempoBlock = key;

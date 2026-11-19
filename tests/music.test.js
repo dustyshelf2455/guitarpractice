@@ -5,9 +5,10 @@ import {
   suggestDiagram, normaliseDiagram, describeDiagram, pretty, STRING_NAMES,
   numeralChord, numeralBars, parseNumeral, PROGRESSION_KEYS, parseNote, shapeNotes,
 } from '../js/music.js';
-import { defaultLibrary, STARTER_DIAGRAMS, STARTER_NOTES, STARTER_NOTES_V7, STARTER_V9, SCHEMA_VERSION, FILLS_V12 } from '../js/defaults.js';
+import { defaultLibrary, STARTER_DIAGRAMS, STARTER_NOTES, STARTER_NOTES_V7, STARTER_V9, SCHEMA_VERSION, FILLS_V12, PENT_V13 } from '../js/defaults.js';
 import { migrate, parseFile, fingerprint } from '../js/transfer.js';
 import { parseTab } from '../js/notation.js';
+import { parseBpm, blockBpm } from '../js/util.js';
 
 const names = (list) => list.map((t) => t.name).join(' ');
 const frets = (s) => s.frets.map((f) => (f < 0 ? 'x' : f)).join('');
@@ -367,7 +368,7 @@ test('v10 -> v11 migration adds the open pentatonics and reshapes E minor', () =
   const out = migrate({ schema_version: 10, library: lib, settings: {}, sessions: [], plans: [] });
   const added = out.library.items.filter((i) => /^scales-([6-9]|1[0-3])$/.test(i.id));
   assert.equal(added.length, 8);
-  assert.ok(added.every((i) => /open position, 70 bpm$/.test(i.text) && i.diagrams[0].shape && i.notes));
+  assert.ok(added.every((i) => /open position$/.test(i.text) && i.diagrams[0].shape && i.notes));
   const em2 = out.library.items.find((i) => i.id === 'scales-4');
   assert.deepEqual(em2.diagrams, STARTER_DIAGRAMS['scales-4']);
   assert.match(em2.notes, /Haugen/);
@@ -413,4 +414,28 @@ test('v12 -> v13 migration swaps untouched fills cards for the note-for-note ver
   assert.equal(sv.text, 'Sweet Virginia fills, capo 2, 80 bpm');
   assert.equal(out.library.items.find((i) => i.id === 'licks-14').notes, 'Ben\'s note', 'an edited note is kept');
   assert.equal(fingerprint('Acoustic fills over C, 70 bpm').length > 0, true);
+});
+
+test('v13 -> v14 migration shortens untouched pentatonic titles and notes, keeps edits', () => {
+  const lib = defaultLibrary();
+  const c = lib.items.find((i) => i.id === 'scales-6');
+  const a = lib.items.find((i) => i.id === 'scales-7');
+  Object.assign(c, { text: PENT_V13['scales-6'][0], notes: PENT_V13['scales-6'][1] });
+  Object.assign(a, { text: 'A minor pentatonic, open, my way', notes: 'Ben\'s note' });
+  const out = migrate({ schema_version: 13, library: lib, settings: {}, sessions: [], plans: [] });
+  const item = (id) => out.library.items.find((i) => i.id === id);
+  assert.equal(PENT_V13['scales-6'][0], 'C major pentatonic, open position, 70 bpm');
+  assert.equal(item('scales-6').text, 'C major pentatonic, open position');
+  assert.equal(item('scales-6').notes, STARTER_NOTES['scales-6']);
+  assert.ok(STARTER_NOTES['scales-6'].length < PENT_V13['scales-6'][1].length * 0.75, 'notes are shorter');
+  assert.equal(item('scales-7').text, 'A minor pentatonic, open, my way', 'an edited title is kept');
+  assert.equal(item('scales-7').notes, 'Ben\'s note', 'an edited note is kept');
+});
+
+test('a block takes its tempo from its title, or else its notes', () => {
+  assert.equal(parseBpm('Walk-ups in G-C-G-D-G, 70 bpm'), 70);
+  assert.equal(parseBpm('Over a G7 vamp at 60–70 bpm'), 60, 'a range gives its start');
+  assert.equal(blockBpm({ item_text: 'C major pentatonic, open position' }, { notes: STARTER_NOTES['scales-6'] }), 70);
+  assert.equal(blockBpm({ item_text: 'Sweet Virginia fills, capo 2, 80 bpm' }, { notes: 'The record is about 107 bpm.' }), 80, 'the title wins');
+  assert.equal(blockBpm({ item_text: 'Open chords' }, null), null);
 });

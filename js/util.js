@@ -119,12 +119,17 @@ export function safeUrl(value) {
   }
 }
 
-/** First "NN bpm" in a string, if any (used to preset the metronome). */
+/** First "NN bpm" in a string, if any (used to preset the metronome). A range ("60–70 bpm") gives its start. */
 export function parseBpm(text) {
-  const m = /(\d{2,3})\s*bpm/i.exec(text || '');
+  const m = /(\d{2,3})(?:\s*[–-]\s*\d{2,3})?\s*bpm/i.exec(text || '');
   if (!m) return null;
   const n = Number(m[1]);
   return n >= 30 && n <= 260 ? n : null;
+}
+
+/** A block's own tempo: from its title, or else from its item's notes. */
+export function blockBpm(tile, item) {
+  return parseBpm(tile?.item_text) ?? parseBpm(item?.notes);
 }
 
 // ---- DOM helpers (only called in the browser) ----

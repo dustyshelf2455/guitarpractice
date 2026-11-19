@@ -476,6 +476,9 @@ h1, h2, h3, p { margin: 0; }
 /* A fretboard grows into the room that's left and is drawn whole within it
    (the SVG scales to fit both ways). With too little room the page scrolls. */
 .focus-details > .diagram-board { flex: 1 1 0; min-height: 11rem; display: flex; flex-direction: column; }
+/* A lone fretboard keeps most of the screen even when the card has notes:
+   the notes go below it and scroll into view, rather than shrinking the neck. */
+.focus-details:not(.multi) > .diagram-board { min-height: min(22rem, 46svh); }
 .focus-details > .diagram-board > .board { flex: 1 1 0; min-height: 0; width: 100%; height: 100%; max-height: none; }
 .focus-details .diagram + .diagram { margin-top: 0; }
 .focus .diagram-title { font-size: 0.9375rem; margin-bottom: 0.5rem; }
@@ -576,7 +579,7 @@ h1, h2, h3, p { margin: 0; }
   .focus-chips { margin-top: 0; }
   .focus-chips .chip { min-height: 2.25rem; }
   .focus-details { margin-top: 0.5rem; }
-  .focus-details > .diagram-board { min-height: 8rem; }
+  .focus-details > .diagram-board, .focus-details:not(.multi) > .diagram-board { min-height: 8rem; }
   /* Two diagrams (a run and its chords, a lick and its chord): side by side. */
   .focus-details.multi { flex-direction: row; align-items: center; gap: 1.5rem; }
   .focus-details.multi > .diagram-board { align-self: stretch; }

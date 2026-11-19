@@ -12,6 +12,11 @@ import {
 } from './notation.js';
 
 const plain = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9#♯♭]+/g, ' ').trim();
+// The caption repeats the item when every word of it (bar "scale") is already in the title.
+const covers = (itemText, title) => {
+  const have = new Set(plain(itemText).split(' '));
+  return plain(title).split(' ').every((w) => w === 'scale' || have.has(w));
+};
 
 /**
  * One diagram. `itemText` lets the caption skip a description that just
@@ -29,7 +34,7 @@ export function renderDiagram(d, itemText = '', { upright = false } = {}) {
   const toneList = d.type === 'scale' ? scaleTones(d.root, d.scale) : arpeggioTones(d.root, d.quality);
   if (!toneList.length) return null;
   const title = describeDiagram(d);
-  const repeat = plain(title) === plain(itemText);
+  const repeat = covers(itemText, title);
   const label = (t) => pretty(d.labels === 'intervals' ? t.interval : t.name);
   const shaped = d.type === 'scale' && d.shape;
   const data = shaped ? { ...shapeNotes(d, toneList), marksUnused: true } : { ...fretboardNotes(toneList, d.position), marksOpen: true };

@@ -4,7 +4,7 @@
 import { parseTab, serialiseTab, normaliseRhythm } from './notation.js';
 import { FILLS, SWEET_VIRGINIA } from './fills.js';
 
-export const SCHEMA_VERSION = 13;
+export const SCHEMA_VERSION = 14;
 export const SLOT_COUNT = 12;
 
 const AREAS = [
@@ -50,14 +50,14 @@ const LIBRARY = {
     'E minor pentatonic, open position',
     'A minor pentatonic',
     // Eric Haugen's open position pentatonics (E minor is scales-4 above).
-    'C major pentatonic, open position, 70 bpm',
-    'A minor pentatonic, open position, 70 bpm',
-    'G major pentatonic, open position, 70 bpm',
-    'D minor pentatonic, open position, 70 bpm',
-    'D major pentatonic, open position, 70 bpm',
-    'E major pentatonic, open position, 70 bpm',
-    'A major pentatonic, open position, 70 bpm',
-    'F major pentatonic, open position, 70 bpm',
+    'C major pentatonic, open position',
+    'A minor pentatonic, open position',
+    'G major pentatonic, open position',
+    'D minor pentatonic, open position',
+    'D major pentatonic, open position',
+    'E major pentatonic, open position',
+    'A major pentatonic, open position',
+    'F major pentatonic, open position',
   ],
   chords: [
     'Open chords: C, G, D, Em, Am',
@@ -212,7 +212,10 @@ const PENT_TIPS = {
   'scales-12': ['A major', 'the open A string', 'C', '♭3', 'F♯ minor'],
   'scales-13': ['F major', 'the low E string, 1st fret', 'A♭', '♭3', 'D minor'],
 };
-const pentNote = ([name, where, note, interval, relative]) => `Open position ${name} pentatonic, from Eric Haugen's charts (same notes as ${relative} pentatonic). Start on the low root, ${where}: climb to the top of the shape, come back down to the lowest note, then finish on the root. Even eighth notes at 70 bpm, and let the open strings ring as notes. Once it's clean, add the dashed ${note} (the ${interval}): a passing note to slide or hammer through between its neighbours, not one to land on. Up 5 bpm after three clean runs.`;
+// Kept short so the neck has the room (the tempo still presets the metronome from here).
+const pentNote = ([name, where, note, interval, relative]) => `From Eric Haugen's charts (same notes as ${relative} pentatonic). Start on the low root, ${where}: up the shape, back down, and end on the root. Even eighth notes, 70 bpm. Once it's clean, slide or hammer through the dashed ${note} (the ${interval}) without landing on it. Up 5 bpm after three clean runs.`;
+// The pentatonic cards as shipped in v11-v13: their old title, and a hash of their old notes.
+const pentNoteV13 = ([name, where, note, interval, relative]) => `Open position ${name} pentatonic, from Eric Haugen's charts (same notes as ${relative} pentatonic). Start on the low root, ${where}: climb to the top of the shape, come back down to the lowest note, then finish on the root. Even eighth notes at 70 bpm, and let the open strings ring as notes. Once it's clean, add the dashed ${note} (the ${interval}): a passing note to slide or hammer through between its neighbours, not one to land on. Up 5 bpm after three clean runs.`;
 
 // Eric Haugen's acoustic fills lesson, note for note from his tab sheet (see js/fills.js).
 const FILL_CARDS = [
@@ -467,6 +470,11 @@ export const STARTER_NOTES_V7 = {
 
 /** The link for a starter item, if it has one. */
 export const starterLink = (id) => STARTER_LINKS[id] || '';
+
+/** The open position pentatonics as shipped in v11-v13 (title, then their notes), so v14 can shorten untouched ones. */
+export const PENT_V13 = Object.fromEntries(Object.entries(PENT_TIPS).map(([id, tip]) => [id, [
+  id === 'scales-4' ? 'E minor pentatonic, open position' : `${tip[0]} pentatonic, open position, 70 bpm`, pentNoteV13(tip),
+]]));
 
 /** Starter items added in a later schema version: [version, ids]. */
 export const ADDED_ITEMS = [

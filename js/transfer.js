@@ -2,7 +2,7 @@
 // Everything here is pure so it can be tested without a browser.
 
 import {
-  SCHEMA_VERSION, SLOT_COUNT, defaultSettings, STARTER_DIAGRAMS, STARTER_NOTES, starterText, starterItem, ADDED_ITEMS, SCALES4_V10, FILLS_V12,
+  SCHEMA_VERSION, SLOT_COUNT, defaultSettings, STARTER_DIAGRAMS, STARTER_NOTES, starterText, starterItem, ADDED_ITEMS, SCALES4_V10, FILLS_V12, PENT_V13,
   NOTES_LIMIT, SLOTS_V3, STARTER_NOTES_V7, starterLink, SONGS_V10, STARTER_V9,
 } from './defaults.js';
 import { normaliseDiagram } from './music.js';
@@ -110,6 +110,15 @@ export function migrate(data) {
       if (it.text === was[0]) it.text = starterText(it.id);
       if (fingerprint(JSON.stringify((Array.isArray(it.diagrams) ? it.diagrams : []).map(normaliseDiagram))) === was[1]) it.diagrams = clone(STARTER_DIAGRAMS[it.id]);
       if (fingerprint(it.notes || '') === was[2]) it.notes = STARTER_NOTES[it.id];
+    }
+  }
+  // v14: the open position pentatonics get shorter titles and notes, where untouched.
+  if (from < 14) {
+    for (const it of out.library?.items || []) {
+      const was = PENT_V13[it.id];
+      if (!was) continue;
+      if (it.text === was[0]) it.text = starterText(it.id);
+      if (it.notes === was[1]) it.notes = STARTER_NOTES[it.id];
     }
   }
   out.schema_version = SCHEMA_VERSION;
